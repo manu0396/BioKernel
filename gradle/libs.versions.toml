@@ -28,6 +28,8 @@ espresso = "3.6.1"
 appcompat = "1.6.1"
 material = "1.10.0"
 runtime = "1.10.3"
+mockk = "1.13.13"
+turbine = "1.1.0"
 
 [libraries]
 # Koin
@@ -78,7 +80,14 @@ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-co
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtime" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
+turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+koin-test = { group = "io.insert-koin", name = "koin-test", version.ref = "koin" }
 
+# Testing - UI
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 [bundles]
 compose = [
     "androidx-compose-ui",
