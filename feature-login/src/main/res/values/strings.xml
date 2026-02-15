@@ -1,0 +1,10 @@
+<resources>
+    <string name="login_title">NeoGenesis BioKernel</string>
+    <string name="login_identifier_hint">Scientist Identifier</string>
+    <string name="login_token_hint">Security Token</string>
+    <string name="login_access_button">Access Retina-on-a-Chip Dashboard</string>
+    <string name="login_error_invalid">Invalid credentials for NeoGenesis access</string>
+    <string name="login_error_generic">Authentication Failed</string>
+    <string name="security_token">Security Token</string>
+    <string name="access_retina_dashboard">Access Retina-on-a-Chip Dashboard</string>
+</resources>
