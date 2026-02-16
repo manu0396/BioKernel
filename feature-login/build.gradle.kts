@@ -8,6 +8,7 @@ android {
     namespace = "com.neogenesis.feature_login"
     compileSdk = 35
     defaultConfig { minSdk = 24 }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -22,16 +23,22 @@ android {
 dependencies {
     implementation(project(":domain"))
     implementation(project(":components"))
+
+    // Compose BOM
     implementation(platform(libs.androidx.compose.bom))
+
+    // Android Standard
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.core.ktx)
+
+    // Compose Runtime
     implementation(libs.androidx.compose.runtime)
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.material3)
+    implementation(libs.bundles.compose)
+
+    // Navigation
     implementation(libs.androidx.compose.navigation)
+
+    // DI (Koin)
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
 }
-
-
-

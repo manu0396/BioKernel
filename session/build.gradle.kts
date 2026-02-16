@@ -16,6 +16,15 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
+    flavorDimensions += "environment"
+    productFlavors {
+        create("demo") {
+            dimension = "environment"
+        }
+        create("prod") {
+            dimension = "environment"
+        }
+    }
 }
 
 kotlin {
@@ -25,6 +34,8 @@ kotlin {
 dependencies {
     implementation(project(":data-core"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
 }
 
 
