@@ -1,4 +1,4 @@
-pluginManagement {
+﻿pluginManagement {
     repositories {
         google {
             content {
@@ -36,3 +36,6 @@ include(":session")
 include(":components")
 include(":feature-login")
 include(":feature-dashboard")
+
+
+
