@@ -1,4 +1,4 @@
-<resources>
+﻿<resources>
     <string name="login_title">NeoGenesis BioKernel</string>
     <string name="login_identifier_hint">Scientist Identifier</string>
     <string name="login_token_hint">Security Token</string>
@@ -8,3 +8,6 @@
     <string name="security_token">Security Token</string>
     <string name="access_retina_dashboard">Access Retina-on-a-Chip Dashboard</string>
 </resources>
+
+
+

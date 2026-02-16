@@ -1,11 +1,11 @@
-plugins {
+﻿plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
 android {
-    namespace = "com.neurogenesis.components"
+    namespace = "com.neogenesis.components"
     compileSdk = 35
     defaultConfig { minSdk = 24 }
     buildFeatures {
@@ -23,8 +23,13 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":domain"))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.compose.material3)
     implementation(libs.bundles.compose)
     implementation(libs.koin.android)
 }
+
+
+

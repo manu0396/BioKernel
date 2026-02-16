@@ -1,11 +1,11 @@
-plugins {
+﻿plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.sqldelight)
 }
 
 android {
-    namespace = "com.neurogenesis.data"
+    namespace = "com.neogenesis.data"
     compileSdk = 35
     defaultConfig { minSdk = 24 }
     buildFeatures {
@@ -24,7 +24,7 @@ kotlin {
 sqldelight {
     databases {
         create("BioKernelDatabase") {
-            packageName.set("com.neurogenesis.data.db")
+            packageName.set("com.neogenesis.data.db")
         }
     }
 }
@@ -40,3 +40,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 }
+
+
+

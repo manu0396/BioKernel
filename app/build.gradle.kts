@@ -1,15 +1,17 @@
-plugins {
+﻿plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 android {
-    namespace = "com.neurogenesis.biokernel"
+    namespace = "com.neogenesis.biokernel"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.neurogenesis.biokernel"
+        applicationId = "com.neogenesis.biokernel"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -60,14 +62,16 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
 
-    // Persistence Driver (Required for DI initialization)
+    //SQLDelight
     implementation(libs.sqldelight.android.driver)
-
-    // Persistence Driver (Required for DI initialization in AppModule)
     implementation(libs.sqldelight.android.driver)
 
     // Networking
     implementation(libs.bundles.ktor)
+
+    //Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.bundles.firebase)
 
     // Architecture Modules
     implementation(project(":domain"))
@@ -78,3 +82,6 @@ dependencies {
     implementation(project(":feature-login"))
     implementation(project(":feature-dashboard"))
 }
+
+
+

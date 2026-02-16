@@ -1,10 +1,10 @@
-plugins {
+﻿plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
 }
 
 android {
-    namespace = "com.neurogenesis.domain"
+    namespace = "com.neogenesis.domain"
     compileSdk = 35
     defaultConfig { minSdk = 24 }
     buildFeatures {
@@ -24,3 +24,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.koin.android)
 }
+
+
+

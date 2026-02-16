@@ -1,11 +1,11 @@
-plugins {
+﻿plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
 android {
-    namespace = "com.neurogenesis.feature_dashboard"
+    namespace = "com.neogenesis.feature_dashboard"
     compileSdk = 35
 
     defaultConfig {
@@ -57,3 +57,6 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+
+
+
