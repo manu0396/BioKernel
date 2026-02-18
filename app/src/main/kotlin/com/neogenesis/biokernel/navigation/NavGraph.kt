@@ -1,4 +1,4 @@
-// app/src/main/kotlin/com/neogenesis/biokernel/navigation/NavGraph.kt
+
 package com.neogenesis.biokernel.navigation
 
 import androidx.compose.runtime.Composable
@@ -38,3 +38,5 @@ fun BioKernelNavGraph() {
         }
     }
 }
+
+

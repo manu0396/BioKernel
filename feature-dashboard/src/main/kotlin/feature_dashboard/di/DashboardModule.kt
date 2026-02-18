@@ -1,4 +1,4 @@
-﻿package feature_dashboard.di
+package feature_dashboard.di
 
 
 import feature_dashboard.ui.viewmodel.DashboardViewModel
@@ -10,6 +10,9 @@ val dashboardModule = module {
     viewModelOf(::RetinaDashboardViewModel)
     viewModelOf(::DashboardViewModel)
 }
+
+
+
 
 
 

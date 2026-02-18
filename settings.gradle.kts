@@ -1,4 +1,4 @@
-﻿pluginManagement {
+pluginManagement {
     repositories {
         google {
             content {
@@ -13,8 +13,6 @@
 }
 
 plugins {
-    // This block MUST come after pluginManagement
-    // Allows Gradle to automatically download the required JDK 21
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
 }
 
@@ -23,6 +21,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url = uri("https://repo.zetetic.net/public/")
+            content { includeGroup("net.zetetic") }
+        }
     }
 }
 
@@ -36,6 +38,4 @@ include(":session")
 include(":components")
 include(":feature-login")
 include(":feature-dashboard")
-
-
-
+include(":server")

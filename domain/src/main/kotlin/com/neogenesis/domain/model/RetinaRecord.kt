@@ -8,3 +8,5 @@ data class RetinaRecord(
     val imageUrl: String? = null,
     val toxicity: String
 )
+
+

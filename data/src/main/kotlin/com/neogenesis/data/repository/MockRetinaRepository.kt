@@ -1,7 +1,7 @@
-﻿// data/src/main/kotlin/com/neogenesis/data/repository/MockRetinaRepository.kt
 package com.neogenesis.data.repository
 
 import com.neogenesis.domain.model.RetinaAnalysis
+import com.neogenesis.domain.model.RetinaSample
 import com.neogenesis.domain.model.ToxicityLevel
 import com.neogenesis.domain.repository.RetinaRepository
 import kotlinx.coroutines.delay
@@ -14,35 +14,106 @@ class MockRetinaRepository : RetinaRepository {
 
     private val _localData = MutableStateFlow<List<RetinaAnalysis>>(emptyList())
 
-    override fun getLocalAnalysis(): Flow<List<RetinaAnalysis>> = _localData.asStateFlow()
+    override fun getLocalAnalysis(patientId: String): Flow<List<RetinaAnalysis>> {
+        return _localData.asStateFlow()
+    }
 
     override suspend fun syncAnalysis(patientId: String) {
         delay(1500)
         val currentTime = System.currentTimeMillis()
-        val newSamples = listOf(
+
+        val mockData = listOf(
             RetinaAnalysis(
-                id = "MX-${patientId.take(3)}-01",
-                rawHash = "0x8A2F${patientId.hashCode()}", // Hash simulado
-                countryIso = "MEX", // Localización requerida por UI
-                timestamp = currentTime,
-                date = "2024-05-20 10:30", // Fecha formateada
+                id = "BIO-001-${patientId.take(3)}",
+                rawHash = "0x${(patientId + "1").hashCode().toString(16).uppercase()}",
+                countryIso = "ESP",
+                compatibilityScore = 98.2,
                 toxicity = ToxicityLevel.LOW,
-                toxicityScore = 0.05f, // Score requerido por UI
-                compatibilityScore = 99.1,
-                notes = "Optimal growth confirmed."
+                toxicityScore = 0.12f,
+                timestamp = currentTime - 86400000,
+                date = "2026-02-16 09:30",
+                notes = "Estructura celular �ptima."
             ),
             RetinaAnalysis(
-                id = "PE-${patientId.take(3)}-09",
-                rawHash = "0xBC42${patientId.hashCode()}",
+                id = "BIO-002-${patientId.take(3)}",
+                rawHash = "0x${(patientId + "2").hashCode().toString(16).uppercase()}",
+                countryIso = "MEX",
+                compatibilityScore = 65.4,
+                toxicity = ToxicityLevel.MODERATE,
+                toxicityScore = 0.45f,
+                timestamp = currentTime - 43200000,
+                date = "2026-02-16 21:15",
+                notes = "Ligera inflamaci�n en tejido perif�rico."
+            ),
+            RetinaAnalysis(
+                id = "BIO-003-${patientId.take(3)}",
+                rawHash = "0x${(patientId + "3").hashCode().toString(16).uppercase()}",
                 countryIso = "PER",
-                timestamp = currentTime,
-                date = "2024-05-20 11:15",
+                compatibilityScore = 32.1,
                 toxicity = ToxicityLevel.HIGH,
-                toxicityScore = 0.88f,
-                compatibilityScore = 12.4,
-                notes = "CRITICAL: Tissue rejection."
+                toxicityScore = 0.78f,
+                timestamp = currentTime - 3600000,
+                date = "2026-02-17 16:00",
+                notes = "Presencia de agentes corrosivos detectada."
+            ),
+            RetinaAnalysis(
+                id = "BIO-004-${patientId.take(3)}",
+                rawHash = "0xLETHAL_ALPHA",
+                countryIso = "GLO",
+                compatibilityScore = 8.9,
+                toxicity = ToxicityLevel.LETHAL,
+                toxicityScore = 1.0f,
+                timestamp = currentTime,
+                date = "2026-02-17 17:20",
+                notes = "ALERTA NIVEL 4: Contaminaci�n biol�gica severa."
+            ),
+            RetinaAnalysis(
+                id = "BIO-005-${patientId.take(3)}",
+                rawHash = "0x${(patientId + "5").hashCode().toString(16).uppercase()}",
+                countryIso = "ESP",
+                compatibilityScore = 95.0,
+                toxicity = ToxicityLevel.LOW,
+                toxicityScore = 0.15f,
+                timestamp = currentTime - 172800000,
+                date = "2026-02-15 11:45",
+                notes = "Control rutinario sin anomal�as."
+            ),
+            RetinaAnalysis(
+                id = "BIO-MOD-992",
+                rawHash = "0x7D2A${patientId.take(2)}",
+                countryIso = "MEX",
+                compatibilityScore = 62.4,
+                toxicity = ToxicityLevel.MODERATE,
+                toxicityScore = 0.45f,
+                timestamp = System.currentTimeMillis() - 120000,
+                date = "2026-02-17 18:25",
+                notes = "Inflamaci�n leve detectada en el tejido epitelial. Requiere seguimiento."
             )
         )
-        _localData.update { newSamples }
+        _localData.update { mockData }
+    }
+
+    override suspend fun deleteAnalysisByPatient(patientId: String) {
+        _localData.update { emptyList() }
+    }
+    override suspend fun fetchRetinaSamples(patientId: String): Result<List<RetinaSample>> {
+        delay(500)
+
+        val mockSamples = listOf(
+            RetinaSample(
+                id = "S-001",
+                toxicityScore = 0.15,
+                date = "2026-02-18 10:00"
+            ),
+            RetinaSample(
+                id = "S-002",
+                toxicityScore = 0.45,
+                date = "2026-02-18 12:00"
+            )
+        )
+
+        return Result.success(mockSamples)
     }
 }
+
+

@@ -1,4 +1,4 @@
-﻿package com.neogenesis.components.theme
+package com.neogenesis.components.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -22,6 +22,9 @@ fun BioKernelTheme(
         content = content
     )
 }
+
+
+
 
 
 

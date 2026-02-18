@@ -1,4 +1,4 @@
-﻿package com.neogenesis.components.theme
+package com.neogenesis.components.theme
 
 import androidx.compose.ui.graphics.Color
 
@@ -9,10 +9,13 @@ object BioKernelColors {
     val BioWhite = Color(0xFFE6F1FF)
     val BioTeal = Color(0xFF64FFDA)
 
-    // Glassmorphism overlays
+    
     val GlassBorder = Color(0xFFFFFFFF).copy(alpha = 0.15f)
     val GlassSurface = Color(0xFFFFFFFF).copy(alpha = 0.05f)
 }
+
+
+
 
 
 

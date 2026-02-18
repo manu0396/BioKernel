@@ -1,6 +1,6 @@
-﻿plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
+plugins {
+    id("neogenesis.biokernel.android.library")
+    id("org.jetbrains.kotlin.android")
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -11,6 +11,7 @@ android {
     defaultConfig {
         minSdk = 24
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        missingDimensionStrategy("environment", "demo")
         consumerProguardFiles("consumer-rules.pro")
     }
 
@@ -18,23 +19,13 @@ android {
         compose = true
         buildConfig = true
     }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-    }
-    kotlinOptions {
-        jvmTarget = "21"
-    }
-}
-
-kotlin {
-    jvmToolchain(21)
 }
 
 dependencies {
     implementation(project(":domain"))
     implementation(project(":components"))
+    implementation(project(":session"))
+    implementation((project(":data-core")))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
@@ -42,21 +33,24 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.bundles.koin)
-
-    // Unit Testing
+    coreLibraryDesugaring(libs.desugar.jdk)
+    
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.koin.test)
     testImplementation(libs.mockk)
 
-    // Instrumentation Testing (UI)
+    
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+
+
+
 
 
 

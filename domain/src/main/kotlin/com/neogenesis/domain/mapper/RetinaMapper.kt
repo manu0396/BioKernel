@@ -24,3 +24,5 @@ fun RetinaAnalysis.toRecord(): RetinaRecord {
         diagnosisDetails = this.notes
     )
 }
+
+

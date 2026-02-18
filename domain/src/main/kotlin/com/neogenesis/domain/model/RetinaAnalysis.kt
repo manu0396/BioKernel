@@ -1,4 +1,4 @@
-﻿package com.neogenesis.domain.model
+package com.neogenesis.domain.model
 
 enum class ToxicityLevel { LOW, MODERATE, HIGH, LETHAL }
 
@@ -16,3 +16,5 @@ data class RetinaAnalysis(
     val isImplantable: Boolean
         get() = toxicity == ToxicityLevel.LOW && compatibilityScore > 90.0
 }
+
+

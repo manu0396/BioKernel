@@ -1,4 +1,4 @@
-﻿package com.neogenesis.domain.usecases
+package com.neogenesis.domain.usecases
 
 import com.neogenesis.domain.repository.RetinaRepository
 
@@ -9,6 +9,9 @@ class SyncRetinaAnalysisUseCase(
         repository.syncAnalysis(patientId)
     }
 }
+
+
+
 
 
 

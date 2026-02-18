@@ -1,4 +1,4 @@
-// components/src/main/kotlin/com/neogenesis/components/widgets/RetinaCard.kt
+
 package com.neogenesis.components.widgets
 
 import androidx.compose.animation.core.Spring
@@ -84,3 +84,5 @@ fun RetinaCard(
         }
     }
 }
+
+

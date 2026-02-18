@@ -1,4 +1,4 @@
-﻿package com.neogenesis.components.widgets
+package com.neogenesis.components.widgets
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
@@ -40,6 +40,9 @@ fun BioKernelCard(
         }
     }
 }
+
+
+
 
 
 
