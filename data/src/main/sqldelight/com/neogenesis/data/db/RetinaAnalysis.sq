@@ -12,4 +12,7 @@ INSERT OR REPLACE INTO RetinaEntity(id, patientId, score, toxicity, timestamp, n
 VALUES (?, ?, ?, ?, ?, ?);
 
 selectAll:
-SELECT * FROM RetinaEntity;
+SELECT * FROM RetinaEntity WHERE patientId = ?;
+
+deleteByPatient:
+DELETE FROM RetinaEntity WHERE patientId = ?;

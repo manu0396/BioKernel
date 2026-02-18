@@ -1,12 +1,13 @@
-﻿package com.neogenesis.feature_login.ui
+package com.neogenesis.feature_login.ui
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import android.util.Log
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,12 +25,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -56,8 +51,14 @@ fun LoginScreen(
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
-            if (effect is LoginEffect.NavigateToRetinaDashboard) {
-                onAuthenticated()
+            when (effect) {
+                is LoginEffect.NavigateToDashboard,
+                is LoginEffect.NavigateToRetinaDashboard -> {
+                    onAuthenticated()
+                }
+                is LoginEffect.ShowToast -> {
+                    Log.d("LoginScreen", "Auth log: ${effect.message}")
+                }
             }
         }
     }
@@ -98,6 +99,18 @@ fun LoginScreen(
             )
 
             Spacer(modifier = Modifier.height(32.dp))
+
+            // Display Session Metadata
+            state.sessionMetadata?.let { metadata ->
+                Text(
+                    text = "Ultima conexion segura: ${metadata.lastSync}",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
             if (!state.isLoading) {
                 Button(
                     onClick = {
@@ -120,10 +133,6 @@ fun LoginScreen(
     }
 }
 
-/**
- * Loader Específico para Login (Copia local del diseño BioKernel).
- * Nota: Asegúrate de tener ic_launcher_foreground en este módulo también.
- */
 @Composable
 fun LoginLoader(modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "login_loader")
@@ -155,7 +164,7 @@ fun LoginLoader(modifier: Modifier = Modifier) {
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClick = {} // Absorber clics
+                onClick = {}
             ),
         contentAlignment = Alignment.Center
     ) {

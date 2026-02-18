@@ -1,0 +1,12 @@
+CREATE TABLE session_metadata (
+    id INTEGER NOT NULL PRIMARY KEY,
+    patient_id TEXT,
+    last_sync TEXT
+);
+
+insertMetadata:
+INSERT OR REPLACE INTO session_metadata(id, patient_id, last_sync)
+VALUES (?, ?, ?);
+
+selectMetadata:
+SELECT * FROM session_metadata WHERE id = 1;
