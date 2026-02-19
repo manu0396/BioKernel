@@ -5,7 +5,6 @@ enum class ToxicityLevel { LOW, MODERATE, HIGH, LETHAL }
 data class RetinaAnalysis(
     val id: String,
     val rawHash: String,
-    val countryIso: String,
     val timestamp: Long,
     val date: String,
     val toxicity: ToxicityLevel,

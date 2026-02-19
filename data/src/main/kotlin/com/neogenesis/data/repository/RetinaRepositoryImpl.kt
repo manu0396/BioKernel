@@ -3,7 +3,7 @@ package com.neogenesis.data.repository
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import com.neogenesis.data.db.BioKernelDatabase
-import com.neogenesis.data_core.network.KtorNeoService
+import com.neogenesis.data_core.network.BioApiService
 import com.neogenesis.domain.model.RetinaAnalysis
 import com.neogenesis.domain.model.RetinaSample
 import com.neogenesis.domain.model.ToxicityLevel
@@ -16,10 +16,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 class RetinaRepositoryImpl(
-    private val api: KtorNeoService,
+    private val api: BioApiService,
     private val db: BioKernelDatabase
 ) : RetinaRepository {
 
@@ -35,7 +34,6 @@ class RetinaRepositoryImpl(
                     RetinaAnalysis(
                         id = entity.id,
                         rawHash = "0x${entity.id.hashCode().toString(16).uppercase()}",
-                        countryIso = "GLO",
                         compatibilityScore = entity.score,
                         toxicity = ToxicityLevel.valueOf(entity.toxicity),
                         toxicityScore = mapToxicityToScore(entity.toxicity),
@@ -48,7 +46,9 @@ class RetinaRepositoryImpl(
     }
 
     override suspend fun syncAnalysis(patientId: String): Unit = withContext(Dispatchers.IO) {
+        // Ahora el acceso a RetinaSampleDto es legal gracias al cambio 'api' en Gradle
         val remoteData = api.fetchRetinaSamples(patientId)
+
         db.retinaAnalysisQueries.transaction {
             remoteData.forEach { dto ->
                 db.retinaAnalysisQueries.insertAnalysis(
@@ -66,7 +66,6 @@ class RetinaRepositoryImpl(
     override suspend fun fetchRetinaSamples(patientId: String): Result<List<RetinaSample>> {
         return try {
             val dtos = api.fetchRetinaSamples(patientId)
-
             val domainSamples = dtos.map { dto ->
                 RetinaSample(
                     id = dto.id,
@@ -74,7 +73,6 @@ class RetinaRepositoryImpl(
                     date = dto.timestamp
                 )
             }
-
             Result.success(domainSamples)
         } catch (e: Exception) {
             Result.failure(e)

@@ -66,11 +66,6 @@ fun RetinaCard(
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(
-                    text = record.countryIso,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
             }
 
             Spacer(modifier = Modifier.height(4.dp))

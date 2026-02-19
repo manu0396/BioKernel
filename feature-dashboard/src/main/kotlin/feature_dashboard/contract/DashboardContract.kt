@@ -1,5 +1,6 @@
 package feature_dashboard.contract
 
+import com.neogenesis.components.util.UiText
 import com.neogenesis.domain.model.RetinaAnalysis
 import com.neogenesis.domain.model.ToxicityLevel
 
@@ -8,7 +9,7 @@ data class DashboardState(
     val allSamples: List<RetinaAnalysis> = emptyList(),
     val results: List<RetinaAnalysis> = emptyList(),
     val selectedRecord: RetinaAnalysis? = null,
-    val error: String? = null
+    val error: UiText? = null
 )
 
 sealed class DashboardIntent {

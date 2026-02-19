@@ -43,28 +43,30 @@ android {
 
 dependencies {
     implementation(project(":domain"))
-
-    
+    api(project(":shared-network"))
+    implementation(platform(libs.firebase.bom))
     implementation(libs.androidx.security.crypto)
+    implementation(libs.koin.workmanager)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
-
-    
     implementation(libs.koin.android)
-
-    
-    implementation(libs.bundles.ktor)
+    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.ktor.client.logging)
     implementation(libs.ktor.client.mock)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.appcompat)
     implementation(libs.kotlinx.coroutines.android)
-
-    
     api(libs.sqldelight.android.driver)
     implementation(libs.sqldelight.runtime)
     implementation(libs.android.database.sqlcipher)
     implementation(libs.androidx.sqlite.ktx)
+    implementation(libs.firebase.messaging)
+    implementation(libs.bundles.ktor)
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.work.testing)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 

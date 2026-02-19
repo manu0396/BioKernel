@@ -2,21 +2,40 @@ package com.neogenesis.data_core.di
 
 import android.util.Log
 import androidx.fragment.app.FragmentActivity
-import com.neogenesis.data_core.network.KtorNeoService
-import com.neogenesis.data_core.network.KtorNeoServiceImpl
-import com.neogenesis.data_core.persistence.*
+import com.neogenesis.data_core.network.BioApiService
+import com.neogenesis.data_core.persistence.BiometricAuthManager
+import com.neogenesis.data_core.persistence.BiometricAuthManagerImpl
+import com.neogenesis.data_core.persistence.CryptoManager
+import com.neogenesis.data_core.persistence.CryptoManagerImpl
+import com.neogenesis.data_core.persistence.EncryptedDriverFactory
+import com.neogenesis.data_core.persistence.SecureKeyManager
+import com.neogenesis.data_core.persistence.SecureKeyManagerImpl
+import com.neogenesis.data_core.worker.HazardWorker
 import com.neogenesis.datacore.BuildConfig
-import io.ktor.client.*
-import io.ktor.client.engine.mock.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
+import com.neogenesis.domain.model.BioKernelException
+import com.neogenesis.domain.session.SessionManager
+import io.ktor.client.HttpClient
+import io.ktor.client.HttpClientConfig
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpResponseValidator
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
+import io.ktor.http.headersOf
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.koin.androidContext
-import org.koin.core.module.dsl.singleOf
+import org.koin.androidx.workmanager.dsl.worker
 import org.koin.dsl.module
 
 private val commonJson = Json {
@@ -27,20 +46,16 @@ private val commonJson = Json {
 }
 
 val dataCoreModule = module {
-    single {
-        val shouldMock = BuildConfig.DEBUG && (BuildConfig.FLAVOR.contains("mock", true) || true)
-
-        if (shouldMock) {
-            createMockKtorClient()
-        } else {
-            createRealKtorClient()
-        }
+    single<HttpClient> {
+        val sessionManager: SessionManager = get()
+        val isMock = BuildConfig.DEBUG && BuildConfig.FLAVOR.contains("mock", true)
+        if (isMock) createMockKtorClient(sessionManager) else createRealKtorClient(sessionManager)
     }
 
     single {
-        KtorNeoService(
+        BioApiService(
             client = get(),
-            baseUrl = "http://10.0.2.2:8080"
+            baseUrl = BuildConfig.BASE_URL
         )
     }
     single<SecureKeyManager> { SecureKeyManagerImpl(androidContext()) }
@@ -49,9 +64,12 @@ val dataCoreModule = module {
     factory<BiometricAuthManager> { (activity: FragmentActivity) ->
         BiometricAuthManagerImpl(activity)
     }
+    single<CryptoManager> { CryptoManagerImpl() }
+
+    worker { HazardWorker(get(), get(), get()) }
 }
 
-private fun HttpClientConfig<*>.installStandardFeatures() {
+private fun HttpClientConfig<*>.installStandardFeatures(sessionManager: SessionManager) {
     install(ContentNegotiation) { json(commonJson) }
     install(Logging) {
         logger = object : Logger { override fun log(message: String) { Log.d("KtorHTTP", message) } }
@@ -65,15 +83,38 @@ private fun HttpClientConfig<*>.installStandardFeatures() {
         url(BuildConfig.BASE_URL)
         contentType(ContentType.Application.Json)
     }
+
+    HttpResponseValidator {
+        validateResponse { response ->
+            val status = response.status
+            val code = status.value
+            if (code in 200..299) return@validateResponse
+            when (code) {
+                401 -> {
+                    sessionManager.clear()
+                    throw BioKernelException.UnauthorizedException()
+                }
+                403 -> throw BioKernelException.ServerException(code, "Acceso restringido al Bio-Nodo.")
+                404 -> throw BioKernelException.ServerException(code, "Recurso no encontrado.")
+                409 -> throw BioKernelException.ServerException(code, "Conflicto: La muestra ya existe.")
+                in 500..599 -> {
+                    throw BioKernelException.ServerException(code, "Error crítico en la infraestructura de BioKernel.")
+                }
+                else -> {
+                    throw BioKernelException.ServerException(code, "Error de red inesperado.")
+                }
+            }
+        }
+    }
 }
 
-fun createRealKtorClient(): HttpClient = HttpClient(OkHttp) {
-    installStandardFeatures()
+fun createRealKtorClient(sessionManager: SessionManager): HttpClient = HttpClient(OkHttp) {
+    installStandardFeatures(sessionManager)
 }
 
-fun createMockKtorClient(): HttpClient {
+fun createMockKtorClient(sessionManager: SessionManager): HttpClient {
     return HttpClient(MockEngine) {
-        installStandardFeatures()
+        installStandardFeatures(sessionManager)
 
         engine {
             addHandler { request ->

@@ -1,15 +1,15 @@
 package com.neogenesis.data.repository
 
 import android.util.Log
-import com.neogenesis.data_core.network.KtorNeoService
+import com.neogenesis.data_core.network.BioApiService
 import com.neogenesis.domain.model.SessionMetadata
 import com.neogenesis.domain.model.User
 import com.neogenesis.domain.repository.LoginRepository
 import kotlinx.coroutines.flow.Flow
-import com.neogenesis.session.manager.SessionManager
+import com.neogenesis.domain.session.SessionManager
 
 class LoginRepositoryImpl(
-    private val apiService: KtorNeoService,
+    private val apiService: BioApiService,
     private val sessionManager: SessionManager
 ) : LoginRepository {
 

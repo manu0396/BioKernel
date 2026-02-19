@@ -22,7 +22,6 @@ fun AnalysisDetailDialog(record: RetinaAnalysis, onDismiss: () -> Unit) {
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Hash: ${record.rawHash}", style = MaterialTheme.typography.bodySmall)
-                Text("Ubicación: ${record.countryIso}", style = MaterialTheme.typography.bodyMedium)
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                 Text("Notas de Laboratorio:", style = MaterialTheme.typography.labelLarge)
                 Text(record.notes, style = MaterialTheme.typography.bodyLarge)

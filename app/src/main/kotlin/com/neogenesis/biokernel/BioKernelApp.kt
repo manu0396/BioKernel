@@ -12,6 +12,7 @@ import com.neogenesis.session.di.sessionModule
 import feature_dashboard.di.dashboardModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
+import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
 
@@ -21,6 +22,7 @@ class BioKernelApp : Application() {
         startKoin {
             androidLogger(Level.DEBUG)
             androidContext(this@BioKernelApp)
+            workManagerFactory()
             modules(
                 dataCoreModule,
                 persistenceModule,

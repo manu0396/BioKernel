@@ -1,3 +1,14 @@
+import java.util.Properties
+import java.io.FileInputStream
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    FileInputStream(keystorePropertiesFile).use { stream ->
+        keystoreProperties.load(stream)
+    }
+}
+
 plugins {
     id("neogenesis.biokernel.android.application")
     id("org.jetbrains.kotlin.android")
@@ -45,9 +56,24 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            val storePath = project.findProperty("BIO_STORE_FILE") as? String
+            if (!storePath.isNullOrEmpty()) {
+                storeFile = file(storePath)
+                storePassword = project.findProperty("BIO_STORE_PASSWORD") as? String
+                keyAlias = project.findProperty("BIO_KEY_ALIAS") as? String
+                keyPassword = project.findProperty("BIO_KEY_PASSWORD") as? String
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -61,6 +87,10 @@ android {
     packaging {
         jniLibs {
             useLegacyPackaging = true
+        }
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/versions/9/previous-compilation-data.bin"
         }
     }
 }
@@ -88,6 +118,8 @@ dependencies {
     implementation(libs.android.database.sqlcipher)
     implementation(libs.androidx.sqlite.ktx)
     implementation(libs.androidx.biometric)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.koin.workmanager)
     coreLibraryDesugaring(libs.desugar.jdk)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

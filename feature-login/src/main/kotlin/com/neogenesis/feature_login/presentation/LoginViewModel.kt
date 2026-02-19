@@ -7,7 +7,7 @@ import com.neogenesis.domain.auth.LoginIntent
 import com.neogenesis.domain.auth.LoginViewState
 import com.neogenesis.domain.model.SessionMetadata
 import com.neogenesis.domain.repository.LoginRepository
-import com.neogenesis.session.manager.SessionManager // INYECCIÓN NECESARIA
+import com.neogenesis.domain.session.SessionManager // INYECCIÓN NECESARIA
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
