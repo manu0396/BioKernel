@@ -91,6 +91,7 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val errorMessage = state.error?.asString()
     var selectedFilter by remember { mutableStateOf<ToxicityLevel?>(null) }
     var authStatus by remember { mutableStateOf(AuthStatus.AUTHENTICATED) }
 
@@ -169,9 +170,9 @@ fun DashboardScreen(
                         )
 
                         Box(modifier = Modifier.weight(1f)) {
-                            if (state.error != null) {
+                            if (errorMessage!= null) {
                                 ErrorRetryView(
-                                    message = state.error ?: "Unknown Error",
+                                    message = errorMessage,
                                     onRetry = { viewModel.handleIntent(DashboardIntent.LoadRetinaData) },
                                     modifier = Modifier.align(Alignment.Center)
                                 )

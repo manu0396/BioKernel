@@ -1,5 +1,5 @@
 [versions]
-# --- INFRASTRUCTURE (Estabilizado) ---
+# --- INFRASTRUCTURE ---
 agp = "8.6.1"
 kotlin = "2.1.0"
 kotlinxSerialization = "1.7.3"
@@ -12,7 +12,7 @@ sqldelight = "2.0.2"
 sqlcipher = "4.5.4"
 androidxSqlite = "2.4.0"
 
-# --- DI (DEPENDENCY INJECTION) ---
+# --- DI ---
 koin = "4.0.0"
 
 # --- UI & ANDROIDX ---
@@ -25,6 +25,7 @@ navigationCompose = "2.8.3"
 material3 = "1.3.1"
 androidx-biometric = "1.2.0-alpha05"
 logbackClassic = "1.5.6"
+workRuntime = "2.9.0"
 
 
 # --- FIREBASE ---
@@ -41,7 +42,8 @@ material = "1.10.0"
 runtime = "1.10.3"
 mockk = "1.13.13"
 turbine = "1.1.0"
-jetbrainsKotlinJvm = "2.1.0"
+koinAndroidxWorkmanager = "3.5.0"
+robolectric = "4.12.2"
 
 [libraries]
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
@@ -66,6 +68,8 @@ androidx-security-crypto = { group = "androidx.security", name = "security-crypt
 androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "androidxLifecycle" }
 androidx-compose-navigation = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "androidx-biometric" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntime"}
+koin-workmanager = { group = "io.insert-koin", name = "koin-androidx-workmanager", version.ref = "koinAndroidxWorkmanager" }
 
 # --- COMPOSE ---
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
@@ -85,7 +89,7 @@ ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "k
 ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 
-# --- KTOR SERVER (Mocking Infrastructure) ---
+# --- KTOR SERVER ---
 ktor-server-core = { group = "io.ktor", name = "ktor-server-core-jvm", version.ref = "ktor" }
 ktor-server-netty = { group = "io.ktor", name = "ktor-server-netty-jvm", version.ref = "ktor" }
 ktor-server-content-negotiation = { group = "io.ktor", name = "ktor-server-content-negotiation-jvm", version.ref = "ktor" }
@@ -119,6 +123,8 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 koin-test = { group = "io.insert-koin", name = "koin-test", version.ref = "koin" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+androidx-work-testing = { group = "androidx.work", name = "work-testing", version.ref = "workRuntime" }
 
 # Testing - UI
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
@@ -169,4 +175,5 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlyticsPlugin" }
-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
+jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+ktor = { id = "io.ktor.plugin", version.ref = "ktor" }

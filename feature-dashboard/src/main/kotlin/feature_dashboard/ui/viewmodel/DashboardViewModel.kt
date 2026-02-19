@@ -5,9 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.neogenesis.domain.model.RetinaAnalysis
 import com.neogenesis.domain.model.ToxicityLevel
 import com.neogenesis.domain.usecases.SyncRetinaDataUseCase
-import com.neogenesis.session.manager.SessionManager
+import com.neogenesis.domain.session.SessionManager
 import feature_dashboard.contract.DashboardIntent
 import feature_dashboard.contract.DashboardState
+import feature_dashboard.util.BioErrorHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,7 +21,8 @@ import java.util.TimeZone
 
 class DashboardViewModel(
     private val syncRetinaDataUseCase: SyncRetinaDataUseCase,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val errorHandler: BioErrorHandler
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DashboardState())
@@ -80,7 +82,6 @@ class DashboardViewModel(
                         RetinaAnalysis(
                             id = sample.id,
                             rawHash = "0x${sample.id.hashCode().toString(16).uppercase()}",
-                            countryIso = "GLO",
                             compatibilityScore = (1.0 - sample.toxicityScore) * 100,
                             toxicity = mapScoreToToxicity(sample.toxicityScore),
                             toxicityScore = sample.toxicityScore.toFloat(),
@@ -100,14 +101,17 @@ class DashboardViewModel(
                     }
                 }
                 .onFailure { error ->
+                    val userMessage = errorHandler.map(error)
+
                     _state.update {
-                        it.copy(isLoading = false, error = error.message)
+                        it.copy(
+                            isLoading = false,
+                            error = userMessage
+                        )
                     }
                 }
         }
     }
-
-    // --- Helper Mappings ---
 
     private fun mapScoreToToxicity(score: Double): ToxicityLevel {
         return when {

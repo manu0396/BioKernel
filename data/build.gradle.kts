@@ -41,10 +41,12 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":data-core"))
     implementation(project(":session"))
+    implementation(project(":shared-network"))
     implementation(libs.koin.android)
     api(libs.sqldelight.android.driver)
     implementation(libs.sqldelight.coroutines.extensions)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.koin.workmanager)
     coreLibraryDesugaring(libs.desugar.jdk)
 }
 

@@ -37,6 +37,10 @@ dependencies {
     implementation(libs.koin.androidx.compose)
     implementation(libs.androidx.security.crypto)
     coreLibraryDesugaring(libs.desugar.jdk)
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 
