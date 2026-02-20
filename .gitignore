@@ -4,6 +4,7 @@ gradle.properties
 /local.properties
 .idea/
 .gradle/
+jdk-command.txt
 /.idea/compiler.xml
 /.idea/deploymentTargetSelector.xml
 .idea/gradle.xml
