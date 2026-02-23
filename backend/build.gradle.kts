@@ -1,20 +1,86 @@
-plugins {
-    id("org.jetbrains.kotlin.jvm")
-    alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.ktor)
-}
+import com.google.protobuf.gradle.id
 
-dependencies {
-    implementation(project(":shared-network"))
-    implementation(libs.bundles.ktor.server)
+plugins {
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
+    application
+    alias(libs.plugins.protobuf)
+    alias(libs.plugins.shadow)
 }
 
 application {
-    mainClass.set("com.neurogenesis.backend.ApplicationKt")
+    mainClass.set("com.neogenesis.platform.backend.MainKt")
 }
 
-tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar> {
-    manifest {
-        attributes["Main-Class"] = "com.neurogenesis.backend.ApplicationKt"
+tasks.shadowJar {
+    archiveBaseName.set("backend")
+    archiveClassifier.set("all")
+    archiveVersion.set("")
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+dependencies {
+    implementation(project(":domain"))
+    implementation(project(":firmware-protocol"))
+
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.auth)
+    implementation(libs.ktor.server.auth.jwt)
+    implementation(libs.ktor.server.content.negotiation)
+    implementation(libs.ktor.server.request.validation)
+    implementation(libs.ktor.serialization.json)
+    implementation(libs.ktor.server.call.logging)
+    implementation(libs.ktor.server.call.id)
+    implementation(libs.ktor.server.status.pages)
+    implementation(libs.ktor.server.openapi)
+    implementation(libs.ktor.server.swagger)
+
+    implementation(libs.exposed.core)
+    implementation(libs.exposed.dao)
+    implementation(libs.exposed.jdbc)
+    implementation(libs.hikari)
+    implementation(libs.postgres)
+
+    implementation(libs.grpc.netty)
+    implementation(libs.grpc.protobuf)
+    implementation(libs.grpc.stub)
+    implementation(libs.grpc.kotlin)
+
+    implementation(libs.logback)
+    implementation(libs.logstash)
+    implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.coroutines)
+    implementation(libs.flyway)
+    implementation(libs.jbcrypt)
+
+    testImplementation(kotlin("test"))
+    testImplementation(libs.grpc.inprocess)
+    testImplementation(libs.ktor.server.test.host)
+    testImplementation(libs.ktor.client.content.negotiation)
+    testImplementation(libs.ktor.client.serialization)
+    testImplementation(libs.h2)
+}
+
+protobuf {
+    protoc {
+        artifact = libs.protobuf.protoc.get().toString()
+    }
+    plugins {
+        id("grpc") {
+            artifact = libs.grpc.protoc.get().toString()
+        }
+        id("grpckt") {
+            artifact = "${libs.grpc.kotlin.protoc.get()}:jdk8@jar"
+        }
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.plugins { id("grpc") }
+            task.plugins { id("grpckt") }
+        }
     }
 }

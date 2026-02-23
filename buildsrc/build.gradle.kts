@@ -3,10 +3,13 @@ plugins {
     `java-gradle-plugin`
 }
 
+val agpVersion = "8.5.2"
+val kotlinVersion = "2.0.10"
+
 dependencies {
-    implementation(libs.android.gradlePlugin)
-    implementation(libs.kotlin.gradlePlugin)
-    compileOnly(libs.kotlin.compiler.embeddable)
+    compileOnly("com.android.tools.build:gradle:$agpVersion")
+    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+    compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlinVersion")
 }
 
 sourceSets {

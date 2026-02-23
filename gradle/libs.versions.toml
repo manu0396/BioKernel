@@ -1,179 +1,100 @@
 [versions]
-# --- INFRASTRUCTURE ---
-agp = "8.6.1"
-kotlin = "2.1.0"
-kotlinxSerialization = "1.7.3"
-kotlinxCoroutines = "1.9.0"
-
-# --- NETWORKING & DATA ---
-ktor = "3.0.1"
-ktorClientMock = "2.3.12"
-sqldelight = "2.0.2"
-sqlcipher = "4.5.4"
-androidxSqlite = "2.4.0"
-
-# --- DI ---
-koin = "4.0.0"
-
-# --- UI & ANDROIDX ---
-composeBom = "2024.10.01"
-androidxCore = "1.15.0"
-androidxLifecycle = "2.8.7"
-androidxActivity = "1.9.3"
-androidxSecurity = "1.1.0-alpha06"
-navigationCompose = "2.8.3"
-material3 = "1.3.1"
-androidx-biometric = "1.2.0-alpha05"
-logbackClassic = "1.5.6"
-workRuntime = "2.9.0"
-
-
-# --- FIREBASE ---
-googleServices = "4.4.2"
-firebaseBom = "33.9.0"
-crashlyticsPlugin = "3.0.3"
-
-# --- TESTING ---
-junit = "4.13.2"
-androidxJunit = "1.2.1"
-espresso = "3.6.1"
-appcompat = "1.6.1"
-material = "1.10.0"
-runtime = "1.10.3"
-mockk = "1.13.13"
-turbine = "1.1.0"
-koinAndroidxWorkmanager = "3.5.0"
-robolectric = "4.12.2"
+kotlin = "2.0.10"
+agp = "8.5.2"
+compose = "1.6.11"
+ktor = "2.3.12"
+serialization = "1.7.1"
+datetime = "0.6.1"
+coroutines = "1.9.0"
+grpc = "1.65.1"
+grpcKotlin = "1.4.1"
+protobuf = "4.27.1"
+shadow = "8.1.1"
+logback = "1.5.6"
+logstash = "7.4"
+hikari = "5.1.0"
+exposed = "0.52.0"
+postgres = "42.7.4"
+flyway = "10.14.0"
+jbcrypt = "0.4"
+koin = "3.5.6"
+activityCompose = "1.9.2"
+composeUi = "1.6.8"
+material3 = "1.2.1"
+lifecycle = "2.8.4"
+h2 = "2.2.224"
+securityCrypto = "1.1.0-alpha06"
+detekt = "1.23.6"
+ktlintPlugin = "12.1.1"
 
 [libraries]
-android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
-kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
-kotlin-compiler-embeddable = { group = "org.jetbrains.kotlin", name = "kotlin-compiler-embeddable", version.ref = "kotlin" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 
-# --- KOIN ---
-koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
-koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
-koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
-
-# --- COROUTINES ---
-kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
-kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
-
-
-# --- ANDROIDX CORE & SECURITY ---
-androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidxCore" }
-androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "androidxLifecycle" }
-androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "androidxActivity" }
-androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "androidxSecurity" }
-androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "androidxLifecycle" }
-androidx-compose-navigation = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
-androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "androidx-biometric" }
-androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntime"}
-koin-workmanager = { group = "io.insert-koin", name = "koin-androidx-workmanager", version.ref = "koinAndroidxWorkmanager" }
-
-# --- COMPOSE ---
-androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
-androidx-compose-ui-core = { group = "androidx.compose.ui", name = "ui" }
-androidx-compose-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
-androidx-compose-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
-androidx-compose-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
-androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
-
-# --- KTOR NETWORKING ---
-ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
-ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
-ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
+ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor" }
+ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+ktor-server-request-validation = { module = "io.ktor:ktor-server-request-validation", version.ref = "ktor" }
+ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
+ktor-server-call-id = { module = "io.ktor:ktor-server-call-id", version.ref = "ktor" }
+ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
+ktor-server-openapi = { module = "io.ktor:ktor-server-openapi", version.ref = "ktor" }
+ktor-server-swagger = { module = "io.ktor:ktor-server-swagger", version.ref = "ktor" }
+ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-client-serialization = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
-ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
-ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
-kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 
-# --- KTOR SERVER ---
-ktor-server-core = { group = "io.ktor", name = "ktor-server-core-jvm", version.ref = "ktor" }
-ktor-server-netty = { group = "io.ktor", name = "ktor-server-netty-jvm", version.ref = "ktor" }
-ktor-server-content-negotiation = { group = "io.ktor", name = "ktor-server-content-negotiation-jvm", version.ref = "ktor" }
-ktor-server-status-pages = { group = "io.ktor", name = "ktor-server-status-pages-jvm", version.ref = "ktor" }
-logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logbackClassic" }
-ktor-serialization-kotlinx-json-jvm = { group = "io.ktor", name = "ktor-serialization-kotlinx-json-jvm", version.ref = "ktor" }
-# --- PERSISTENCE ---
-sqldelight-android-driver = { group = "app.cash.sqldelight", name = "android-driver", version.ref = "sqldelight" }
-sqldelight-runtime = { group = "app.cash.sqldelight", name = "runtime", version.ref = "sqldelight" }
-sqldelight-coroutines-extensions = { group = "app.cash.sqldelight", name = "coroutines-extensions", version.ref = "sqldelight" }
-androidx-sqlite-ktx = { module = "androidx.sqlite:sqlite-ktx", version.ref = "androidxSqlite"}
-android-database-sqlcipher = { module = "net.zetetic:android-database-sqlcipher", version.ref = "sqlcipher"}
+koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 
-# --- FIREBASE ---
-firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
-firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
-firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
-firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
-firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
-firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging-ktx" }
-desugar-jdk = { group = "com.android.tools", name = "desugar_jdk_libs", version = { require = "2.0.4" } }
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
+postgres = { module = "org.postgresql:postgresql", version.ref = "postgres" }
+flyway = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+jbcrypt = { module = "org.mindrot:jbcrypt", version.ref = "jbcrypt" }
+logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+logstash = { module = "net.logstash.logback:logstash-logback-encoder", version.ref = "logstash" }
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
 
-# --- TESTING ---
-junit = { group = "junit", name = "junit", version.ref = "junit" }
-androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxJunit" }
-androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
-androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
-androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtime" }
-kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
-turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
-mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
-koin-test = { group = "io.insert-koin", name = "koin-test", version.ref = "koin" }
-robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
-androidx-work-testing = { group = "androidx.work", name = "work-testing", version.ref = "workRuntime" }
+grpc-netty = { module = "io.grpc:grpc-netty-shaded", version.ref = "grpc" }
+grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
+grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
+grpc-kotlin = { module = "io.grpc:grpc-kotlin-stub", version.ref = "grpcKotlin" }
+grpc-inprocess = { module = "io.grpc:grpc-inprocess", version.ref = "grpc" }
+grpc-okhttp = { module = "io.grpc:grpc-okhttp", version.ref = "grpc" }
 
-# Testing - UI
-androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
-androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
+protobuf-protoc = { module = "com.google.protobuf:protoc", version.ref = "protobuf" }
+grpc-protoc = { module = "io.grpc:protoc-gen-grpc-java", version.ref = "grpc" }
+grpc-kotlin-protoc = { module = "io.grpc:protoc-gen-grpc-kotlin", version.ref = "grpcKotlin" }
 
-[bundles]
-compose = [
-    "androidx-compose-ui-core",
-    "androidx-compose-graphics",
-    "androidx-compose-tooling-preview",
-    "androidx-compose-material3"
-]
-ktor = [
-    "ktor-client-core",
-    "ktor-client-okhttp",
-    "ktor-client-content-negotiation",
-    "ktor-client-logging",
-    "ktor-serialization-kotlinx-json"
-]
-
-ktor-server = [
-    "ktor-server-core",
-    "ktor-server-netty",
-    "ktor-server-content-negotiation",
-    "ktor-server-status-pages",
-    "ktor-serialization-kotlinx-json-jvm",
-    "logback-classic"
-]
-
-koin = [
-    "koin-core", "koin-android", "koin-androidx-compose"
-]
-firebase = [
-    "firebase-analytics",
-    "firebase-crashlytics",
-    "firebase-auth",
-    "firebase-firestore",
-    "firebase-messaging"
-]
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "composeUi" }
+androidx-compose-ui-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "composeUi" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
+androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
+androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
 
 [plugins]
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-android-lint = { id = "com.android.lint", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
-google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
-firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlyticsPlugin" }
-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
+compose = { id = "org.jetbrains.compose", version.ref = "compose" }
+protobuf = { id = "com.google.protobuf", version = "0.9.4" }
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }

@@ -1,0 +1,26 @@
+build:
+  maxIssues: 0
+
+complexity:
+  active: false
+
+coroutines:
+  active: false
+
+performance:
+  active: false
+
+potential-bugs:
+  active: true
+
+exceptions:
+  active: false
+
+style:
+  active: false
+
+naming:
+  active: false
+
+comments:
+  active: false

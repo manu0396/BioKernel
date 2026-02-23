@@ -1,25 +1,64 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-    id("neogenesis.biokernel.android.library")
-    id("org.jetbrains.kotlin.android")
-    id("neogenesis.biokernel.android.common")
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.android.library)
 }
 
-android {
-    namespace = "com.neogenesis.domain"
-    compileSdk = 35
-    defaultConfig { minSdk = 24 }
-    buildFeatures {
-        buildConfig = true
+kotlin {
+    androidTarget {
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
+    }
+    jvm("desktop") {
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
+    }
+
+    sourceSets {
+        val commonMain by getting {
+            kotlin.setSrcDirs(listOf("src/commonMain/kotlin"))
+            dependencies {
+                implementation(libs.kotlinx.datetime)
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kotlinx.coroutines)
+                implementation(libs.koin.core)
+            }
+        }
+        val commonTest by getting {
+            kotlin.setSrcDirs(listOf("src/commonTest/kotlin"))
+            dependencies {
+                implementation(kotlin("test"))
+                implementation(libs.kotlinx.coroutines)
+            }
+        }
+        val androidMain by getting {
+            kotlin.setSrcDirs(listOf("src/androidMain/kotlin"))
+        }
+        val androidUnitTest by getting
+        val desktopMain by getting {
+            kotlin.setSrcDirs(listOf("src/desktopMain/kotlin"))
+        }
+        val desktopTest by getting
     }
 }
 
-dependencies {
-    implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.koin.android)
+android {
+    namespace = "com.neogenesis.platform.shared"
+    compileSdk = 34
+    buildToolsVersion = "35.0.0"
+    defaultConfig {
+        minSdk = 26
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
 }
-
-
-
-
-
 

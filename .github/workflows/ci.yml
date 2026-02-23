@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - "**"
+      - ".github/workflows/**"
+  pull_request:
+    paths:
+      - "**"
+      - ".github/workflows/**"
+
+jobs:
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Gradle Quality Gates + Build
+        run: |
+          ./gradlew --no-daemon -PstrictQuality=true -PwarningsAsErrors=true \
+            clean \
+            ktlintCheck \
+            detekt \
+            :androidApp:lintDebug \
+            :domain:allTests \
+            :data:allTests \
+            :shared-network:allTests \
+            :backend:test \
+            :androidApp:testDebugUnitTest \
+            :desktopApp:test \
+            :desktopApp:compileKotlin
