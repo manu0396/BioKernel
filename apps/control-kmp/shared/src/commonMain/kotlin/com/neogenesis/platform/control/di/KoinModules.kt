@@ -6,9 +6,11 @@ import com.neogenesis.platform.control.data.RegenOpsRepository
 import com.neogenesis.platform.control.data.local.RegenOpsLocalDataSource
 import com.neogenesis.platform.control.data.oidc.OidcDeviceAuthService
 import com.neogenesis.platform.control.data.remote.ControlApi
+import com.neogenesis.platform.control.data.remote.DemoControlApi
 import com.neogenesis.platform.control.data.remote.CommercialApi
 import com.neogenesis.platform.control.data.remote.HttpCommercialApi
 import com.neogenesis.platform.control.data.oidc.OidcRepository
+import com.neogenesis.platform.control.data.stream.DemoStreamClient
 import com.neogenesis.platform.control.data.stream.RegenOpsStreamClient
 import com.neogenesis.platform.control.presentation.RegenOpsViewModel
 import com.neogenesis.platform.control.data.db.RegenOpsDatabase
@@ -47,7 +49,13 @@ fun commonModule(appConfig: AppConfig) = module {
     single { RegenOpsLocalDataSource(get()) }
     single { OidcDeviceAuthService(get(), get()) }
     single { OidcRepository(get(), get(), get()) }
-    single { RegenOpsRepository(get<ControlApi>(), get(), get<RegenOpsStreamClient>()) }
+    single {
+        if (System.getenv("DEMO_MODE") == "true") {
+            RegenOpsRepository(DemoControlApi(), get(), DemoStreamClient())
+        } else {
+            RegenOpsRepository(get<ControlApi>(), get(), get<RegenOpsStreamClient>())
+        }
+    }
     single<CommercialApi> { HttpCommercialApi(get()) }
     single { RegenOpsViewModel(get(), get(), get(), get()) }
 }
