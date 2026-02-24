@@ -1,0 +1,29 @@
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+
+plugins {
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.compose)
+    alias(libs.plugins.kotlin.compose)
+}
+
+dependencies {
+    implementation(project(":apps:control-kmp:shared"))
+    implementation(libs.koin.core)
+    implementation(compose.desktop.currentOs)
+    implementation(compose.material3)
+}
+
+compose.desktop {
+    application {
+        mainClass = "com.neogenesis.platform.control.desktop.DesktopApp"
+        nativeDistributions {
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            packageName = "RegenOpsControl"
+            packageVersion = "1.0.0"
+        }
+    }
+}
+
+kotlin {
+    jvmToolchain(17)
+}

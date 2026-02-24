@@ -1,0 +1,61 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16
+    container_name: regenops-postgres
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - regenops_pgdata:/var/lib/postgresql/data
+
+  core-server:
+    build:
+      context: .
+      dockerfile: services/core-server/Dockerfile
+    container_name: regenops-core-server
+    env_file:
+      - .env
+    environment:
+      DB_URL: ${DB_URL}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DRIVER: ${DB_DRIVER}
+      DB_POOL_SIZE: ${DB_POOL_SIZE}
+      APP_VERSION: ${APP_VERSION}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_AUDIENCE: ${JWT_AUDIENCE}
+      JWT_SECRET: ${JWT_SECRET}
+      PAIRING_SECRET: ${PAIRING_SECRET}
+      HTTP_PORT: ${HTTP_PORT}
+      GRPC_PORT: ${GRPC_PORT}
+      GRPC_ENABLED: ${GRPC_ENABLED}
+    ports:
+      - "${HTTP_PORT}:${HTTP_PORT}"
+      - "${GRPC_PORT}:${GRPC_PORT}"
+    depends_on:
+      - postgres
+
+  device-gateway:
+    build:
+      context: .
+      dockerfile: agents/device-gateway/Dockerfile
+    container_name: regenops-device-gateway
+    env_file:
+      - .env
+    environment:
+      CORE_GRPC_HOST: ${CORE_GRPC_HOST}
+      CORE_GRPC_PORT: ${CORE_GRPC_PORT}
+      CORE_GRPC_TLS: ${CORE_GRPC_TLS}
+      GATEWAY_ID: ${GATEWAY_ID}
+      SIM_RUN_ID: ${SIM_RUN_ID}
+    depends_on:
+      - core-server
+
+volumes:
+  regenops_pgdata:

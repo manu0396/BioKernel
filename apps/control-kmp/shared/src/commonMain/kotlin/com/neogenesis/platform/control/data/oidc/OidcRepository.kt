@@ -1,0 +1,67 @@
+package com.neogenesis.platform.control.data.oidc
+
+import com.neogenesis.platform.shared.domain.AuthTokens
+import com.neogenesis.platform.shared.network.ApiResult
+import com.neogenesis.platform.shared.network.AppLogger
+import com.neogenesis.platform.shared.network.NetworkError
+import com.neogenesis.platform.shared.network.TokenStorage
+import kotlinx.coroutines.delay
+
+class OidcRepository(
+    private val service: OidcDeviceAuthService,
+    private val tokenStorage: TokenStorage,
+    private val logger: AppLogger
+) {
+    suspend fun startDeviceAuthorization(config: OidcConfig): ApiResult<DeviceAuthorization> {
+        return when (val response = service.requestDeviceAuthorization(config)) {
+            is ApiResult.Success -> {
+                ApiResult.Success(
+                    DeviceAuthorization(
+                        deviceCode = response.value.deviceCode,
+                        userCode = response.value.userCode,
+                        verificationUri = response.value.verificationUri,
+                        verificationUriComplete = response.value.verificationUriComplete,
+                        expiresIn = response.value.expiresIn,
+                        intervalSeconds = response.value.interval
+                    )
+                )
+            }
+            is ApiResult.Failure -> response
+        }
+    }
+
+    suspend fun pollForTokens(config: OidcConfig, deviceCode: String, intervalSeconds: Int): ApiResult<AuthTokens> {
+        repeat(60) {
+            when (val response = service.pollToken(config, deviceCode)) {
+                is ApiResult.Success -> {
+                    val token = response.value
+                    val refresh = token.refreshToken ?: ""
+                    if (refresh.isNotBlank()) {
+                        tokenStorage.writeTokens(token.accessToken, refresh)
+                    } else {
+                        tokenStorage.writeTokens(token.accessToken, "")
+                    }
+                    return ApiResult.Success(AuthTokens(token.accessToken, refresh))
+                }
+                is ApiResult.Failure -> {
+                    val err = response.error
+                    if (err is NetworkError.HttpError && err.statusCode == 400 && err.message.contains("authorization_pending")) {
+                        delay(intervalSeconds * 1000L)
+                    } else if (err is NetworkError.HttpError && err.statusCode == 400 && err.message.contains("slow_down")) {
+                        delay((intervalSeconds + 5) * 1000L)
+                    } else {
+                        service.logAuthFailure("OIDC device flow failed", err)
+                        return response
+                    }
+                }
+            }
+        }
+        val timeout = NetworkError.TimeoutError("device_code_timeout")
+        logger.log(com.neogenesis.platform.shared.network.LogLevel.WARN, "OIDC device auth timeout", emptyMap())
+        return ApiResult.Failure(timeout)
+    }
+
+    fun hasTokens(): Boolean = tokenStorage.readAccessToken()?.isNotBlank() == true
+
+    fun clearTokens() = tokenStorage.clear()
+}

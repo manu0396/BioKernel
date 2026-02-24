@@ -1,9 +1,0 @@
-{
-  "openapi": "3.0.3",
-  "info": {"title": "NeoGenesis Platform API", "version": "1.0.0"},
-  "paths": {
-    "/api/v1/auth/login": {"post": {"summary": "Login"}},
-    "/api/v1/telemetry/{jobId}/{deviceId}": {"post": {"summary": "Ingest telemetry"}},
-    "/api/v1/print-jobs": {"post": {"summary": "Create print job"}}
-  }
-}

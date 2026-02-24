@@ -1,0 +1,159 @@
+syntax = "proto3";
+
+package regenops.v1;
+
+option java_package = "com.neogenesis.platform.proto.v1";
+option java_multiple_files = true;
+
+message ProtocolVersion {
+  string protocol_id = 1;
+  string version_id = 2;
+  string version = 3;
+  string payload = 4;
+  bool published = 5;
+  string created_at = 6;
+}
+
+message ProtocolSummary {
+  string protocol_id = 1;
+  string name = 2;
+  string summary = 3;
+  ProtocolVersion latest_version = 4;
+}
+
+message CreateDraftRequest {
+  string name = 1;
+  string summary = 2;
+  string payload = 3;
+}
+
+message UpdateDraftRequest {
+  string protocol_id = 1;
+  string payload = 2;
+}
+
+message PublishVersionRequest {
+  string protocol_id = 1;
+  string version_id = 2;
+}
+
+message ListProtocolsRequest {}
+message ListProtocolsResponse {
+  repeated ProtocolSummary protocols = 1;
+}
+
+message GetProtocolVersionRequest {
+  string protocol_id = 1;
+  string version_id = 2;
+}
+
+message DiffVersionsRequest {
+  string protocol_id = 1;
+  string left_version_id = 2;
+  string right_version_id = 3;
+}
+
+message DiffVersionsResponse {
+  string diff = 1;
+}
+
+service ProtocolService {
+  rpc CreateDraft(CreateDraftRequest) returns (ProtocolVersion);
+  rpc UpdateDraft(UpdateDraftRequest) returns (ProtocolVersion);
+  rpc PublishVersion(PublishVersionRequest) returns (ProtocolVersion);
+  rpc ListProtocols(ListProtocolsRequest) returns (ListProtocolsResponse);
+  rpc GetProtocolVersion(GetProtocolVersionRequest) returns (ProtocolVersion);
+  rpc DiffVersions(DiffVersionsRequest) returns (DiffVersionsResponse);
+}
+
+message StartRunRequest {
+  string protocol_id = 1;
+  string version_id = 2;
+}
+
+message RunRef {
+  string run_id = 1;
+  string status = 2;
+}
+
+message PauseRunRequest { string run_id = 1; }
+message AbortRunRequest { string run_id = 1; }
+message GetRunRequest { string run_id = 1; }
+
+message RunEvent {
+  string run_id = 1;
+  string event_type = 2;
+  string message = 3;
+  string created_at = 4;
+}
+
+message TelemetryFrame {
+  string run_id = 1;
+  string timestamp = 2;
+  double pressure_kpa = 3;
+  double flow_rate = 4;
+}
+
+service RunService {
+  rpc StartRun(StartRunRequest) returns (RunRef);
+  rpc PauseRun(PauseRunRequest) returns (RunRef);
+  rpc AbortRun(AbortRunRequest) returns (RunRef);
+  rpc GetRun(GetRunRequest) returns (RunRef);
+  rpc StreamRunEvents(GetRunRequest) returns (stream RunEvent);
+  rpc StreamTelemetry(GetRunRequest) returns (stream TelemetryFrame);
+}
+
+message RegisterGatewayRequest {
+  string gateway_id = 1;
+  string version = 2;
+}
+
+message GatewayStatus {
+  string status = 1;
+}
+
+message HeartbeatRequest {
+  string gateway_id = 1;
+  string status = 2;
+}
+
+message PushRunEventsRequest {
+  string gateway_id = 1;
+  string run_id = 2;
+  repeated RunEvent events = 3;
+}
+
+message PushTelemetryRequest {
+  string gateway_id = 1;
+  string run_id = 2;
+  repeated TelemetryFrame frames = 3;
+}
+
+message FetchConfigRequest {
+  string gateway_id = 1;
+}
+
+message FetchConfigResponse {
+  string config_json = 1;
+}
+
+service GatewayService {
+  rpc RegisterGateway(RegisterGatewayRequest) returns (GatewayStatus);
+  rpc Heartbeat(HeartbeatRequest) returns (GatewayStatus);
+  rpc PushRunEvents(PushRunEventsRequest) returns (GatewayStatus);
+  rpc PushTelemetry(PushTelemetryRequest) returns (GatewayStatus);
+  rpc FetchConfig(FetchConfigRequest) returns (FetchConfigResponse);
+}
+
+message GetReproducibilityScoreRequest { string run_id = 1; }
+message GetReproducibilityScoreResponse { double score = 1; }
+message ListDriftAlertsRequest { string run_id = 1; }
+message ListDriftAlertsResponse { repeated string alerts = 1; }
+message ExportRunReportRequest { string run_id = 1; }
+message ExportRunReportResponse { string report_url = 1; }
+
+service MetricsService {
+  rpc GetReproducibilityScore(GetReproducibilityScoreRequest) returns (GetReproducibilityScoreResponse);
+  rpc ListDriftAlerts(ListDriftAlertsRequest) returns (ListDriftAlertsResponse);
+  rpc ExportRunReport(ExportRunReportRequest) returns (ExportRunReportResponse);
+}
