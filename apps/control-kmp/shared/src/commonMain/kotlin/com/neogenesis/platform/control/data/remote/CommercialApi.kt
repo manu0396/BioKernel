@@ -11,7 +11,12 @@ import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.http.HttpHeaders
 import kotlinx.serialization.Serializable
-import java.util.UUID
+import kotlin.random.Random
+
+interface CommercialApi {
+    suspend fun fetchPipeline(): ApiResult<CommercialPipeline>
+    suspend fun exportCsv(): ApiResult<ByteArray>
+}
 
 @Serializable
 private data class CommercialPipelineResponse(
@@ -34,7 +39,7 @@ class HttpCommercialApi(
 ) : CommercialApi {
     override suspend fun fetchPipeline(): ApiResult<CommercialPipeline> = runCatching {
         val response: CommercialPipelineResponse = client.get("/api/v1/commercial/pipeline") {
-            header("X-Correlation-Id", "corr-${UUID.randomUUID()}")
+            header("X-Correlation-Id", randomCorrelationId())
         }.body()
         val stages = response.stages.mapValues { (_, opportunities) ->
             opportunities.map { it.toDomain() }
@@ -44,7 +49,7 @@ class HttpCommercialApi(
 
     override suspend fun exportCsv(): ApiResult<ByteArray> = runCatching {
         val bytes: ByteArray = client.get("/api/v1/commercial/pipeline/export") {
-            header("X-Correlation-Id", "corr-${UUID.randomUUID()}")
+            header("X-Correlation-Id", randomCorrelationId())
             header(HttpHeaders.Accept, "text/csv")
         }.body()
         ApiResult.Success(bytes)
@@ -62,3 +67,5 @@ private fun CommercialOpportunityResponse.toDomain(): CommercialOpportunity {
         loiSigned = loiSigned
     )
 }
+
+private fun randomCorrelationId(): String = "corr-${Random.nextInt(0, Int.MAX_VALUE)}"

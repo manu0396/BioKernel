@@ -8,11 +8,10 @@ import com.neogenesis.platform.shared.network.safeApiCall
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.post
-import io.ktor.client.request.contentType
 import io.ktor.client.request.setBody
+import io.ktor.client.request.forms.FormDataContent
 import io.ktor.http.ContentType
 import io.ktor.http.Parameters
-import io.ktor.http.content.FormDataContent
 
 class OidcDeviceAuthService(
     private val client: HttpClient,
@@ -37,7 +36,6 @@ class OidcDeviceAuthService(
         return safeApiCall(logger, correlationId = null) {
             client.post(endpoint) {
                 setBody(FormDataContent(params))
-                contentType(ContentType.Application.FormUrlEncoded)
             }
         }
     }
@@ -54,12 +52,18 @@ class OidcDeviceAuthService(
         return safeApiCall(logger, correlationId = null) {
             client.post(endpoint) {
                 setBody(FormDataContent(params))
-                contentType(ContentType.Application.FormUrlEncoded)
             }
         }
     }
 
     fun logAuthFailure(message: String, error: NetworkError) {
-        logger.log(LogLevel.WARN, message, mapOf("reason" to error.message))
+        val reason = when (error) {
+            is NetworkError.HttpError -> error.message
+            is NetworkError.SerializationError -> error.message
+            is NetworkError.ConnectivityError -> error.message
+            is NetworkError.TimeoutError -> error.message
+            is NetworkError.UnknownError -> error.message
+        }
+        logger.log(LogLevel.WARN, message, mapOf("reason" to reason))
     }
 }
