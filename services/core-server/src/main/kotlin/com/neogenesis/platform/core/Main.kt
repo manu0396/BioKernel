@@ -57,8 +57,8 @@ fun Application.module(appConfig: AppConfig = AppConfig.fromEnv()) {
     install(CallLogging) {
         level = Level.INFO
         callIdMdc("correlation_id")
-        mdc("tenant_id") { call.request.header("X-Tenant-Id") ?: "" }
-        mdc("run_id") { call.request.header("X-Run-Id") ?: "" }
+        mdc("tenant_id") { call -> call.request.header("X-Tenant-Id") ?: "" }
+        mdc("run_id") { call -> call.request.header("X-Run-Id") ?: "" }
     }
     installRequestMetrics(NoopMetrics())
     installPrometheusMetrics()
@@ -122,7 +122,7 @@ fun Application.module(appConfig: AppConfig = AppConfig.fromEnv()) {
         commandBus,
         checkpointTracker
     )
-    val platformServices = listOf(
+    val platformServices: List<io.grpc.BindableService> = listOf(
         firmwareBridge,
         TelemetryStreamServiceImpl(telemetryBus),
         DeviceControlServiceImpl(commandBus),
