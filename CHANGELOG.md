@@ -13,3 +13,11 @@ All notable changes to this project will be documented in this file.
 - Added shared-network smoke tests for cleartext/TLS safeguards and auth token persistence.
 - Hardened desktop token storage at rest and switched clients to TLS-first defaults.
 - Added release and security documentation for reproducible v1.0.0 tagging and distribution.
+
+## 1.0.0 - 2026-02-24
+- Monorepo reconfiguration with `apps/`, `services/`, `agents/`, `shared/`, and `ops` layout.
+- RegenOps Control KMP app (Android/Desktop) with protocol list, run control, and live telemetry streaming.
+- gRPC services for Protocol/Run/Gateway/Metrics + HTTP fallback endpoints for Control.
+- Device Gateway agent with register/heartbeat + simulated telemetry/events.
+- Observability baseline: JSON logs, `/metrics` Prometheus, OTEL exporter hook.
+- DevEx: docker-compose, Makefile, and Windows runLocal script.
