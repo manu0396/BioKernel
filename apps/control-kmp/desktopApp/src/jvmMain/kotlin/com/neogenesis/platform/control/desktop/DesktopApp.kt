@@ -34,6 +34,11 @@ object DesktopApp : KoinComponent {
                     viewModel = viewModel,
                     openExternalUrl = { url ->
                         runCatching { Desktop.getDesktop().browse(URI(url)) }
+                    },
+                    shareCsv = { bytes ->
+                        val file = java.io.File(System.getProperty("user.home"), "commercial_pipeline.csv")
+                        file.writeBytes(bytes)
+                        runCatching { Desktop.getDesktop().open(file) }
                     }
                 )
             }

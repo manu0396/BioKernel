@@ -45,11 +45,11 @@ jobs:
             clean \
             ktlintCheck \
             detekt \
-            :androidApp:lintDebug \
-            :domain:allTests \
-            :data:allTests \
-            :shared-network:allTests \
-            :backend:test \
-            :androidApp:testDebugUnitTest \
-            :desktopApp:test \
-            :desktopApp:compileKotlin
+            :apps:control-kmp:androidApp:lintDebug \
+            :shared:domain:allTests \
+            :shared:data:allTests \
+            :shared:network:allTests \
+            :services:core-server:test \
+            :apps:control-kmp:androidApp:testDebugUnitTest \
+            :apps:control-kmp:desktopApp:compileKotlin \
+            :agents:device-gateway:test
