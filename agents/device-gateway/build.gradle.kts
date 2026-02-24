@@ -8,7 +8,7 @@ application {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 tasks.jar {
@@ -22,6 +22,7 @@ dependencies {
     implementation(libs.grpc.protobuf)
     implementation(libs.grpc.stub)
     implementation(libs.grpc.kotlin)
+    implementation(libs.neogenesis.contracts)
     implementation(libs.kotlinx.coroutines)
     implementation(libs.kotlinx.datetime)
     implementation(libs.logback)

@@ -1,12 +1,12 @@
 package com.neogenesis.platform.gateway
 
-import com.neogenesis.platform.proto.v1.GatewayServiceGrpcKt
-import com.neogenesis.platform.proto.v1.HeartbeatRequest
-import com.neogenesis.platform.proto.v1.PushRunEventsRequest
-import com.neogenesis.platform.proto.v1.PushTelemetryRequest
-import com.neogenesis.platform.proto.v1.RegisterGatewayRequest
-import com.neogenesis.platform.proto.v1.RunEvent
-import com.neogenesis.platform.proto.v1.TelemetryFrame
+import com.neogenesis.grpc.GatewayRunEvent
+import com.neogenesis.grpc.GatewayServiceGrpcKt
+import com.neogenesis.grpc.GatewayTelemetry
+import com.neogenesis.grpc.HeartbeatRequest
+import com.neogenesis.grpc.PushRunEventsRequest
+import com.neogenesis.grpc.PushTelemetryRequest
+import com.neogenesis.grpc.RegisterGatewayRequest
 import io.grpc.ManagedChannel
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder
 import kotlinx.coroutines.delay
@@ -31,7 +31,7 @@ object DeviceGateway {
         val registerResponse = stub.registerGateway(
             RegisterGatewayRequest.newBuilder()
                 .setGatewayId(gatewayId)
-                .setVersion("0.1.0")
+                .setDisplayName("Gateway $gatewayId")
                 .build()
         )
         println("Registered gateway: ${registerResponse.status}")
@@ -41,36 +41,45 @@ object DeviceGateway {
             val heartbeat = stub.heartbeat(
                 HeartbeatRequest.newBuilder()
                     .setGatewayId(gatewayId)
-                    .setStatus("OK")
                     .build()
             )
             println("Heartbeat: ${heartbeat.status}")
 
-            val event = RunEvent.newBuilder()
+            val event = GatewayRunEvent.newBuilder()
                 .setRunId(runId)
                 .setEventType("GATEWAY_TICK")
-                .setMessage("Tick $tick")
-                .setCreatedAt(Instant.now().toString())
+                .setPayloadJson("""{"message":"Tick $tick"}""")
+                .setCreatedAtMs(Instant.now().toEpochMilli())
+                .setSeq(tick.toLong())
                 .build()
             stub.pushRunEvents(
                 PushRunEventsRequest.newBuilder()
                     .setGatewayId(gatewayId)
-                    .setRunId(runId)
                     .addEvents(event)
                     .build()
             )
 
-            val telemetry = TelemetryFrame.newBuilder()
+            val pressureTelemetry = GatewayTelemetry.newBuilder()
                 .setRunId(runId)
-                .setTimestamp(Instant.now().toString())
-                .setPressureKpa(110.0 + tick)
-                .setFlowRate(4.0 + tick * 0.1)
+                .setMetricKey("pressure_kpa")
+                .setMetricValue(110.0 + tick)
+                .setUnit("kPa")
+                .setRecordedAtMs(Instant.now().toEpochMilli())
+                .setSeq(tick.toLong())
+                .build()
+            val flowTelemetry = GatewayTelemetry.newBuilder()
+                .setRunId(runId)
+                .setMetricKey("flow_rate")
+                .setMetricValue(4.0 + tick * 0.1)
+                .setUnit("l/min")
+                .setRecordedAtMs(Instant.now().toEpochMilli())
+                .setSeq(tick.toLong())
                 .build()
             stub.pushTelemetry(
                 PushTelemetryRequest.newBuilder()
                     .setGatewayId(gatewayId)
-                    .setRunId(runId)
-                    .addFrames(telemetry)
+                    .addTelemetry(pressureTelemetry)
+                    .addTelemetry(flowTelemetry)
                     .build()
             )
 

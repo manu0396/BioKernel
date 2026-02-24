@@ -21,6 +21,7 @@ allprojects {
     version = "1.0.0"
 
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
     }
@@ -81,4 +82,3 @@ subprojects {
 tasks.register<Exec>("runSimulator") {
     commandLine("python", "tools/device_simulator.py")
 }
-
