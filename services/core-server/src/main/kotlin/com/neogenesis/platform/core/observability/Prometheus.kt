@@ -5,8 +5,8 @@ import io.ktor.server.application.call
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.response.respondText
-import io.micrometer.prometheus.PrometheusConfig
-import io.micrometer.prometheus.PrometheusMeterRegistry
+import io.micrometer.prometheusmetrics.PrometheusConfig
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 
 fun Application.installPrometheusMetrics(): PrometheusMeterRegistry {
     val registry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
