@@ -38,6 +38,21 @@ class MainActivity : ComponentActivity(), KoinComponent {
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                             startActivity(intent)
                         }
+                    },
+                    shareCsv = { bytes ->
+                        val file = java.io.File(cacheDir, "commercial_pipeline.csv")
+                        file.writeBytes(bytes)
+                        val uri = androidx.core.content.FileProvider.getUriForFile(
+                            this,
+                            "${packageName}.fileprovider",
+                            file
+                        )
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/csv"
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        startActivity(Intent.createChooser(shareIntent, "Export CSV"))
                     }
                 )
             }

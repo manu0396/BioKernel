@@ -6,6 +6,8 @@ import com.neogenesis.platform.control.data.RegenOpsRepository
 import com.neogenesis.platform.control.data.local.RegenOpsLocalDataSource
 import com.neogenesis.platform.control.data.oidc.OidcDeviceAuthService
 import com.neogenesis.platform.control.data.remote.ControlApi
+import com.neogenesis.platform.control.data.remote.CommercialApi
+import com.neogenesis.platform.control.data.remote.HttpCommercialApi
 import com.neogenesis.platform.control.data.oidc.OidcRepository
 import com.neogenesis.platform.control.data.stream.RegenOpsStreamClient
 import com.neogenesis.platform.control.presentation.RegenOpsViewModel
@@ -46,5 +48,6 @@ fun commonModule(appConfig: AppConfig) = module {
     single { OidcDeviceAuthService(get(), get()) }
     single { OidcRepository(get(), get(), get()) }
     single { RegenOpsRepository(get<ControlApi>(), get(), get<RegenOpsStreamClient>()) }
-    single { RegenOpsViewModel(get(), get(), get()) }
+    single<CommercialApi> { HttpCommercialApi(get()) }
+    single { RegenOpsViewModel(get(), get(), get(), get()) }
 }
