@@ -234,6 +234,60 @@ fun LiveRunScreen(
     }
 }
 
+@Composable
+fun CommercialPipelineScreen(
+    pipeline: CommercialPipeline,
+    selected: CommercialOpportunity?,
+    error: String?,
+    onSelect: (CommercialOpportunity) -> Unit,
+    onExport: () -> Unit,
+    onRefresh: () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Commercial Pipeline", style = MaterialTheme.typography.titleLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onRefresh) { Text("Refresh") }
+                    Button(onClick = onExport) { Text("Export CSV") }
+                }
+            }
+            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            val stages = pipeline.stages
+            if (stages.isEmpty()) {
+                Text("No opportunities available.")
+                return
+            }
+            stages.forEach { (stage, items) ->
+                Text(stage, style = MaterialTheme.typography.titleSmall)
+                items.forEach { opportunity ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(opportunity) }
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(opportunity.name)
+                        Text("€${opportunity.expectedRevenueEur}")
+                    }
+                }
+            }
+            selected?.let { opp ->
+                Text("Detail", style = MaterialTheme.typography.titleSmall)
+                Text("Name: ${opp.name}")
+                Text("Stage: ${opp.stage}")
+                Text("Expected €: ${opp.expectedRevenueEur}")
+                Text("Probability: ${opp.probability}%")
+                Text("LOI Signed: ${if (opp.loiSigned) "Yes" else "No"}")
+                if (opp.notes.isNotBlank()) {
+                    Text("Notes: ${opp.notes}")
+                }
+            }
+        }
+    }
+}
+
 private fun buildVersionDiff(current: ProtocolVersion?, previous: ProtocolVersion?): String {
     if (current == null || previous == null) return ""
     val currentLines = current.payload.lines()

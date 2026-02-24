@@ -12,7 +12,8 @@ enum class AppScreen {
     PROTOCOL_DETAIL,
     RUN_CONTROL,
     LIVE_RUN,
-    AUTH
+    AUTH,
+    COMMERCIAL
 }
 
 data class AuthUiState(
@@ -31,6 +32,10 @@ data class RegenOpsUiState(
     val protocolQuery: String = "",
     val runEvents: List<RunEvent> = emptyList(),
     val telemetryFrames: List<TelemetryFrame> = emptyList(),
+    val commercialModeEnabled: Boolean = false,
+    val commercialPipeline: CommercialPipeline = CommercialPipeline(),
+    val selectedOpportunity: CommercialOpportunity? = null,
+    val commercialError: String? = null,
     val auth: AuthUiState = AuthUiState(),
     val statusMessage: String? = null
 )
