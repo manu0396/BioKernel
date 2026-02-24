@@ -43,7 +43,7 @@ class RegenOpsLocalDataSource(
 
     fun observeRuns(limit: Long): Flow<List<Run>> {
         return queries.selectRuns(
-            limit = limit,
+            value = limit,
             mapper = { id, protocolId, protocolVersionId, status, createdAt, updatedAt ->
                 LocalRunRow(id, protocolId, protocolVersionId, status, createdAt, updatedAt)
             }

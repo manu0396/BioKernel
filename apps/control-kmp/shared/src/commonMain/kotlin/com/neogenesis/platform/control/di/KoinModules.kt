@@ -1,5 +1,6 @@
 package com.neogenesis.platform.control.di
 
+import app.cash.sqldelight.ColumnAdapter
 import app.cash.sqldelight.db.SqlDriver
 import com.neogenesis.platform.control.AppConfig
 import com.neogenesis.platform.control.data.RegenOpsRepository
@@ -14,23 +15,24 @@ import com.neogenesis.platform.control.data.stream.DemoStreamClient
 import com.neogenesis.platform.control.data.stream.RegenOpsStreamClient
 import com.neogenesis.platform.control.presentation.RegenOpsViewModel
 import com.neogenesis.platform.control.data.db.RegenOpsDatabase
+import com.neogenesis.platform.control.data.db.Protocol_versions
 import com.neogenesis.platform.shared.network.AppLogger
 import com.neogenesis.platform.shared.network.HttpClientFactory
 import com.neogenesis.platform.shared.network.NetworkConfig
 import com.neogenesis.platform.shared.network.NoOpLogger
 import com.neogenesis.platform.shared.network.TokenStorage
 import com.neogenesis.platform.shared.network.allowCleartextForLocalhost
-import org.koin.core.KoinApplication
+import org.koin.core.Koin
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
-fun initKoin(appConfig: AppConfig, platformModule: Module): KoinApplication {
+fun initKoin(appConfig: AppConfig, platformModule: Module): Koin {
     GlobalContext.getOrNull()?.let { return it }
     return startKoin {
         modules(commonModule(appConfig), platformModule)
-    }
+    }.koin
 }
 
 fun commonModule(appConfig: AppConfig) = module {
@@ -45,7 +47,13 @@ fun commonModule(appConfig: AppConfig) = module {
             tokenStorage = get<TokenStorage>()
         )
     }
-    single { RegenOpsDatabase(get<SqlDriver>()) }
+    single {
+        val booleanAdapter = object : ColumnAdapter<Boolean, Long> {
+            override fun decode(databaseValue: Long): Boolean = databaseValue == 1L
+            override fun encode(value: Boolean): Long = if (value) 1L else 0L
+        }
+        RegenOpsDatabase(get<SqlDriver>(), Protocol_versions.Adapter(publishedAdapter = booleanAdapter))
+    }
     single { RegenOpsLocalDataSource(get()) }
     single { OidcDeviceAuthService(get(), get()) }
     single { OidcRepository(get(), get(), get()) }
