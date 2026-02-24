@@ -10,17 +10,18 @@ import com.neogenesis.platform.shared.domain.RunId
 import com.neogenesis.platform.shared.domain.RunStatus
 import com.neogenesis.platform.shared.network.ApiResult
 import com.neogenesis.platform.shared.network.NetworkError
-import com.neogenesis.platform.proto.v1.AbortRunRequest
-import com.neogenesis.platform.proto.v1.DiffVersionsResponse
-import com.neogenesis.platform.proto.v1.GetRunRequest
-import com.neogenesis.platform.proto.v1.ListProtocolsRequest
-import com.neogenesis.platform.proto.v1.ProtocolServiceGrpcKt
-import com.neogenesis.platform.proto.v1.RunServiceGrpcKt
-import com.neogenesis.platform.proto.v1.StartRunRequest
+import com.neogenesis.grpc.ListProtocolsRequest
+import com.neogenesis.grpc.ProtocolServiceGrpcKt
+import com.neogenesis.grpc.ProtocolSummary
+import com.neogenesis.grpc.ProtocolVersionRecord
+import com.neogenesis.grpc.PublishVersionRequest
+import com.neogenesis.grpc.RunControlRequest
+import com.neogenesis.grpc.RunRecord
+import com.neogenesis.grpc.RunServiceGrpcKt
+import com.neogenesis.grpc.StartRunRequest
 import io.grpc.ManagedChannel
 import io.grpc.okhttp.OkHttpChannelBuilder
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 
 class GrpcControlApi(
     config: AppConfig
@@ -39,63 +40,75 @@ class GrpcControlApi(
 
     override suspend fun publishVersion(protocolId: String, versionId: String): ApiResult<ProtocolVersion> = runCatching {
         val response = protocolStub.publishVersion(
-            com.neogenesis.platform.proto.v1.PublishVersionRequest.newBuilder()
+            PublishVersionRequest.newBuilder()
                 .setProtocolId(protocolId)
-                .setVersionId(versionId)
+                .setChangelog("publish $versionId")
                 .build()
         )
         ApiResult.Success(response.toDomain())
     }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "grpc_error")) }
 
     override suspend fun startRun(protocolId: String, versionId: String): ApiResult<Run> = runCatching {
+        val protocolVersion = versionId.filter(Char::isDigit).toIntOrNull() ?: 1
         val response = runStub.startRun(
-            StartRunRequest.newBuilder().setProtocolId(protocolId).setVersionId(versionId).build()
+            StartRunRequest.newBuilder()
+                .setProtocolId(protocolId)
+                .setProtocolVersion(protocolVersion)
+                .build()
         )
         ApiResult.Success(response.toDomain())
     }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "grpc_error")) }
 
     override suspend fun pauseRun(runId: String): ApiResult<Run> = runCatching {
-        val response = runStub.pauseRun(com.neogenesis.platform.proto.v1.PauseRunRequest.newBuilder().setRunId(runId).build())
+        val response = runStub.pauseRun(RunControlRequest.newBuilder().setRunId(runId).build())
         ApiResult.Success(response.toDomain())
     }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "grpc_error")) }
 
     override suspend fun abortRun(runId: String): ApiResult<Run> = runCatching {
-        val response = runStub.abortRun(com.neogenesis.platform.proto.v1.AbortRunRequest.newBuilder().setRunId(runId).build())
+        val response = runStub.abortRun(RunControlRequest.newBuilder().setRunId(runId).setReason("user_request").build())
         ApiResult.Success(response.toDomain())
     }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "grpc_error")) }
 
     fun close() = channel.shutdownNow()
 }
 
-private fun com.neogenesis.platform.proto.v1.ProtocolSummary.toDomain(): Protocol {
-    val latest = latestVersion.toDomain()
+private fun ProtocolSummary.toDomain(): Protocol {
+    val latest = ProtocolVersion(
+        id = ProtocolVersionId("${protocolId}-v$latestVersion"),
+        protocolId = ProtocolId(protocolId),
+        version = latestVersion.toString(),
+        createdAt = Clock.System.now(),
+        author = "system",
+        payload = "",
+        published = true
+    )
     return Protocol(
         id = ProtocolId(protocolId),
-        name = name,
-        summary = summary,
+        name = title,
+        summary = "",
         latestVersion = latest,
         versions = listOf(latest)
     )
 }
 
-private fun com.neogenesis.platform.proto.v1.ProtocolVersion.toDomain(): ProtocolVersion {
+private fun ProtocolVersionRecord.toDomain(): ProtocolVersion {
     return ProtocolVersion(
-        id = ProtocolVersionId(versionId),
+        id = ProtocolVersionId("${protocolId}-v$version"),
         protocolId = ProtocolId(protocolId),
-        version = version,
-        createdAt = runCatching { Instant.parse(createdAt) }.getOrElse { Clock.System.now() },
-        author = "system",
-        payload = payload,
-        published = published
+        version = version.toString(),
+        createdAt = Clock.System.now(),
+        author = publishedBy.ifBlank { "system" },
+        payload = contentJson,
+        published = true
     )
 }
 
-private fun com.neogenesis.platform.proto.v1.RunRef.toDomain(): Run {
+private fun RunRecord.toDomain(): Run {
     val status = runCatching { RunStatus.valueOf(status) }.getOrElse { RunStatus.PENDING }
     return Run(
         id = RunId(runId),
-        protocolId = ProtocolId(""),
-        protocolVersionId = ProtocolVersionId(""),
+        protocolId = ProtocolId(protocolId),
+        protocolVersionId = ProtocolVersionId(protocolVersion.toString()),
         status = status,
         createdAt = Clock.System.now(),
         updatedAt = Clock.System.now()
