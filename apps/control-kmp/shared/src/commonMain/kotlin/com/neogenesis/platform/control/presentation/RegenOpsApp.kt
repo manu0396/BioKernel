@@ -34,6 +34,8 @@ fun RegenOpsApp(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text("RegenOps Control", style = MaterialTheme.typography.headlineSmall)
+        state.errorBanner?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        state.streamStatus?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         if (!state.auth.isAuthenticated) {
             AuthPanel(
                 state = state.auth,

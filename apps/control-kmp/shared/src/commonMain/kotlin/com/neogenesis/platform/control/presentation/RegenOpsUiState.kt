@@ -36,6 +36,8 @@ data class RegenOpsUiState(
     val commercialPipeline: CommercialPipeline = CommercialPipeline(),
     val selectedOpportunity: CommercialOpportunity? = null,
     val commercialError: String? = null,
+    val errorBanner: String? = null,
+    val streamStatus: String? = null,
     val auth: AuthUiState = AuthUiState(),
     val statusMessage: String? = null
 )
