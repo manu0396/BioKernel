@@ -39,6 +39,9 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
       - name: Gradle Quality Gates + Build
         run: |
           ./gradlew --no-daemon -PstrictQuality=true -PwarningsAsErrors=true \
