@@ -120,7 +120,7 @@ class RegenOpsViewModel(
     }
 
     fun setSimulatedRunEnabled(enabled: Boolean) {
-        if (!_state.value.founderModeEnabled) return
+        if (!_state.value.founderModeEnabled && !_state.value.demoModeEnabled) return
         _state.update { current ->
             current.copy(
                 simulatedRunEnabled = enabled,
@@ -317,7 +317,7 @@ class RegenOpsViewModel(
     }
 
     fun exportRunReport(onExport: (ByteArray, String, String) -> Unit) {
-        if (!_state.value.founderModeEnabled) return
+        if (!_state.value.founderModeEnabled && !_state.value.demoModeEnabled) return
         val runId = resolveExportRunId()
         if (runId == null) {
             _state.update { it.copy(export = it.export.copy(errorMessage = "Select a run ID first")) }
@@ -347,7 +347,7 @@ class RegenOpsViewModel(
     }
 
     fun exportAuditBundle(onExport: (ByteArray, String, String) -> Unit) {
-        if (!_state.value.founderModeEnabled) return
+        if (!_state.value.founderModeEnabled && !_state.value.demoModeEnabled) return
         val runId = resolveExportRunId()
         if (runId == null) {
             _state.update { it.copy(export = it.export.copy(errorMessage = "Select a run ID first")) }
@@ -377,7 +377,7 @@ class RegenOpsViewModel(
     }
 
     fun loadTraceSummary() {
-        if (!_state.value.founderModeEnabled && !_state.value.traceModeEnabled) return
+        if (!_state.value.founderModeEnabled && !_state.value.traceModeEnabled && !_state.value.demoModeEnabled) return
         scope.launch {
             _state.update { current ->
                 current.copy(
