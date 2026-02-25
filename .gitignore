@@ -35,3 +35,4 @@ androidApp/keystore/
 **/.kotlin/
 **/.idea/
 
+run-ktlint.bat
