@@ -58,8 +58,8 @@ fun RegenOpsApp(
             onSelect = { viewModel.setScreen(it) },
             onLogout = { viewModel.logout() },
             showCommercial = state.commercialModeEnabled,
-            showFounder = state.founderModeEnabled,
-            showTrace = state.founderModeEnabled || state.traceModeEnabled
+            showExports = state.founderModeEnabled || state.demoModeEnabled,
+            showTrace = state.founderModeEnabled || state.traceModeEnabled || state.demoModeEnabled
         )
 
         when (state.screen) {
@@ -149,7 +149,7 @@ private fun NavigationRow(
     onSelect: (AppScreen) -> Unit,
     onLogout: () -> Unit,
     showCommercial: Boolean,
-    showFounder: Boolean,
+    showExports: Boolean,
     showTrace: Boolean
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -163,7 +163,7 @@ private fun NavigationRow(
             if (showCommercial) {
                 Button(onClick = { onSelect(AppScreen.COMMERCIAL) }) { Text("Commercial") }
             }
-            if (showFounder) {
+            if (showExports) {
                 Button(onClick = { onSelect(AppScreen.EXPORTS) }) { Text("Exports") }
             }
             if (showTrace) {
