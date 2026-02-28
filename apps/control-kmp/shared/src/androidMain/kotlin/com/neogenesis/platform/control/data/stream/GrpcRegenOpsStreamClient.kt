@@ -15,10 +15,11 @@ import com.neogenesis.platform.shared.telemetry.PressureReading
 import com.neogenesis.platform.shared.telemetry.TelemetryFrame
 import com.neogenesis.platform.shared.telemetry.Temperature
 import com.neogenesis.platform.shared.telemetry.ViscosityEstimation
-import com.neogenesis.platform.proto.v1.GetRunRequest
-import com.neogenesis.platform.proto.v1.RunServiceGrpcKt
-import com.neogenesis.platform.proto.v1.RunEvent as ProtoRunEvent
-import com.neogenesis.platform.proto.v1.TelemetryFrame as ProtoTelemetryFrame
+import com.neogenesis.grpc.RunEventRecord as ProtoRunEvent
+import com.neogenesis.grpc.RunServiceGrpcKt
+import com.neogenesis.grpc.StreamRunEventsRequest
+import com.neogenesis.grpc.StreamTelemetryRequest
+import com.neogenesis.grpc.TelemetryRecord as ProtoTelemetryFrame
 import io.grpc.CallOptions
 import io.grpc.Channel
 import io.grpc.ClientCall
@@ -55,7 +56,7 @@ class GrpcRegenOpsStreamClient(
         while (isActive) {
             val correlationId = CorrelationIds.newId()
             try {
-                val request = GetRunRequest.newBuilder().setRunId(runId).build()
+                val request = StreamRunEventsRequest.newBuilder().setRunId(runId).build()
                 runStub(correlationId).streamRunEvents(request).collect { event ->
                     send(event.toDomain())
                 }
@@ -74,7 +75,7 @@ class GrpcRegenOpsStreamClient(
         while (isActive) {
             val correlationId = CorrelationIds.newId()
             try {
-                val request = GetRunRequest.newBuilder().setRunId(runId).build()
+                val request = StreamTelemetryRequest.newBuilder().setRunId(runId).build()
                 runStub(correlationId).streamTelemetry(request).collect { frame ->
                     send(frame.toDomain())
                 }
@@ -131,20 +132,22 @@ private class AuthMetadataInterceptor(
 
 private fun ProtoRunEvent.toDomain(): RunEvent {
     return RunEvent(
-        id = "${runId}-${createdAt}",
+        id = "${runId}-${createdAtMs}",
         runId = RunId(runId),
         eventType = eventType,
-        message = message,
-        createdAt = runCatching { Instant.parse(createdAt) }.getOrElse { Instant.fromEpochMilliseconds(0) }
+        message = payloadJson,
+        createdAt = Instant.fromEpochMilliseconds(createdAtMs)
     )
 }
 
 private fun ProtoTelemetryFrame.toDomain(): TelemetryFrame {
+    val pressure = if (metricKey == "pressure_kpa") metricValue else 0.0
+    val flow = if (metricKey == "flow_rate") metricValue else 0.0
     return TelemetryFrame(
-        timestamp = runCatching { Instant.parse(timestamp) }.getOrElse { Instant.fromEpochMilliseconds(0) },
-        pressure = PressureReading(pressureKpa),
+        timestamp = Instant.fromEpochMilliseconds(recordedAtMs),
+        pressure = PressureReading(pressure),
         displacement = NozzleDisplacement(0.0),
-        flowRate = FlowRate(flowRate),
+        flowRate = FlowRate(flow),
         temperature = Temperature(0.0),
         viscosity = ViscosityEstimation(0.0),
         pid = PIDState(0.0, 0.0, 0.0),

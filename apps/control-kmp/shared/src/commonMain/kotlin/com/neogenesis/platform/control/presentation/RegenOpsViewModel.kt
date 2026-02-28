@@ -307,7 +307,7 @@ class RegenOpsViewModel(
         return when (error) {
             is NetworkError.ConnectivityError -> "Server unreachable"
             is NetworkError.TimeoutError -> "Request timed out"
-            is NetworkError.HttpError -> if (error.statusCode == 401) "Auth expired. Please login again." else fallback
+            is NetworkError.HttpError -> if (error.status == 401) "Auth expired. Please login again." else fallback
             is NetworkError.SerializationError -> "Invalid response from server"
             is NetworkError.UnknownError -> fallback
         }

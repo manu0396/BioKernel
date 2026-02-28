@@ -92,6 +92,67 @@
 
 ---
 
+# ExecPlan: Fix Test Build (Proto Collision) (2026-02-24)
+
+## Milestones
+1) Remove regenops proto collision from local proto module and consume server contracts artifact.
+2) Update server/gateway dependencies to use contracts artifact.
+3) Align JVM toolchain to contracts compatibility.
+4) Update gateway code to contracts package/API changes.
+5) Align core-server code with contracts package/API changes + missing observability deps.
+6) Re-run `./gradlew.bat test` and address any remaining failures.
+
+## File-by-File Change List
+- `PLANS.md`: Track test-fix plan.
+- `build.gradle.kts`: Ensure `mavenLocal()` is available for contracts resolution.
+- `shared/proto/src/main/proto/regenops/regenops.proto`: Remove local RegenOps proto (use contracts artifact).
+- `services/core-server/build.gradle.kts`: Add contracts artifact dependency.
+- `agents/device-gateway/build.gradle.kts`: Add contracts artifact dependency.
+- `services/core-server/build.gradle.kts`: Align JVM toolchain with contracts artifact.
+- `agents/device-gateway/build.gradle.kts`: Align JVM toolchain with contracts artifact.
+- `agents/device-gateway/src/main/kotlin/com/neogenesis/platform/gateway/DeviceGateway.kt`: Align imports and message fields to contracts package.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/grpc/RegenOpsServices.kt`: Align gRPC service stubs to contracts package/API.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/grpc/RegenOpsStore.kt`: Align in-memory store types to contracts package/API.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/Main.kt`: Fix call logging MDC usage.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/modules/RegenOpsHttpModule.kt`: Align HTTP start run DTO with contracts.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/observability/OpenTelemetryConfig.kt`: Use AttributeKey for service name resource attributes.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/observability/Prometheus.kt`: Update micrometer prometheus import package.
+- `shared/network/src/commonMain/kotlin/com/neogenesis/platform/shared/network/ApiCall.kt`: Expose correlation id helper for inline API calls.
+- `services/core-server/src/test/kotlin/com/neogenesis/platform/core/ProtocolServiceTest.kt`: Update imports for contracts package.
+- `services/core-server/src/test/kotlin/com/neogenesis/platform/core/RunServiceTest.kt`: Update test requests for contracts package.
+- `gradle/libs.versions.toml`: Align protobuf version with contracts artifact.
+- `apps/control-kmp/shared/build.gradle.kts`: Align Android JVM target with Java compile options.
+- `apps/control-kmp/shared/src/commonMain/kotlin/Boolean.kt`: Provide SQLDelight Boolean alias.
+- `apps/control-kmp/shared/src/androidMain/kotlin/com/neogenesis/platform/control/data/remote/GrpcControlApi.kt`: Align gRPC client to contracts package.
+- `apps/control-kmp/shared/src/androidMain/kotlin/com/neogenesis/platform/control/data/stream/GrpcRegenOpsStreamClient.kt`: Align stream client to contracts events/telemetry.
+- `apps/control-kmp/shared/src/androidMain/kotlin/com/neogenesis/platform/control/platform/AndroidPlatformModule.kt`: Update Koin bindings for platform logger.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/local/RegenOpsLocalDataSource.kt`: Fix SQLDelight query parameter naming.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/oidc/OidcModels.kt`: Expose OIDC models for public API.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/oidc/OidcDeviceAuthService.kt`: Fix form post handling and error logging.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/oidc/OidcRepository.kt`: Align HTTP error handling.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/remote/CommercialApi.kt`: Add CommercialApi interface and correlation id helper.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/remote/HttpControlApi.kt`: Align HTTP control API to contracts.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/di/KoinModules.kt`: Fix Koin init return type and SQLDelight adapters.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/RegenOpsViewModel.kt`: Align HTTP error handling.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/Screens.kt`: Fix composable control flow and formatting.
+
+## Verification Commands
+- `./gradlew.bat test`
+
+## Rollback Plan
+- Revert the files listed above.
+- Re-run `./gradlew.bat test`.
+
+## Progress
+- [x] Remove local regenops proto collision.
+- [x] Add contracts artifact dependencies.
+- [x] Align JVM toolchain to contracts compatibility.
+- [x] Update gateway code to contracts package/API changes.
+- [x] Align core-server code with contracts package/API changes + missing observability deps.
+- [x] Re-run tests.
+
+---
+
 # ExecPlan: RegenOps Control KMP Migration (2026-02-24)
 
 ## Milestones
