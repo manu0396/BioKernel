@@ -97,7 +97,8 @@ private fun backoffDelay(attempt: Int): Long {
     val base = 1000L
     val max = 30_000L
     val exp = base * (1 shl attempt.coerceAtMost(5))
-    return exp.coerceAtMost(max)
+    val jitter = (0..250).random()
+    return (exp + jitter).coerceAtMost(max)
 }
 
 private class AuthMetadataInterceptor(

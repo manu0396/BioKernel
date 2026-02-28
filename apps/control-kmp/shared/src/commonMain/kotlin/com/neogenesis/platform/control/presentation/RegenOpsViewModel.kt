@@ -10,6 +10,7 @@ import com.neogenesis.platform.shared.domain.Protocol
 import com.neogenesis.platform.shared.domain.ProtocolVersion
 import com.neogenesis.platform.shared.domain.RunStatus
 import com.neogenesis.platform.shared.network.ApiResult
+import com.neogenesis.platform.shared.network.NetworkError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -100,8 +101,10 @@ class RegenOpsViewModel(
     fun refreshProtocols() {
         scope.launch {
             when (val result = repository.refreshProtocols()) {
-                is ApiResult.Success -> _state.update { it.copy(statusMessage = "Protocols refreshed") }
-                is ApiResult.Failure -> _state.update { it.copy(statusMessage = "Failed to refresh protocols") }
+                is ApiResult.Success -> _state.update { it.copy(statusMessage = "Protocols refreshed", errorBanner = null) }
+                is ApiResult.Failure -> _state.update {
+                    it.copy(errorBanner = mapNetworkError(result.error, "Failed to refresh protocols"))
+                }
             }
         }
     }
@@ -109,7 +112,7 @@ class RegenOpsViewModel(
     fun refreshRuns() {
         scope.launch {
             when (val result = repository.refreshRuns()) {
-                is ApiResult.Success -> _state.update { it.copy(statusMessage = "Runs refreshed") }
+                is ApiResult.Success -> _state.update { it.copy(statusMessage = "Runs refreshed", errorBanner = null) }
                 is ApiResult.Failure -> _state.update { it.copy(statusMessage = "Runs refresh not supported yet") }
             }
         }
@@ -119,8 +122,10 @@ class RegenOpsViewModel(
         val version = _state.value.selectedVersion ?: return
         scope.launch {
             when (val result = repository.publishVersion(version.protocolId.value, version.id.value)) {
-                is ApiResult.Success -> _state.update { it.copy(statusMessage = "Version published") }
-                is ApiResult.Failure -> _state.update { it.copy(statusMessage = "Publish failed") }
+                is ApiResult.Success -> _state.update { it.copy(statusMessage = "Version published", errorBanner = null) }
+                is ApiResult.Failure -> _state.update {
+                    it.copy(errorBanner = mapNetworkError(result.error, "Publish failed"))
+                }
             }
         }
     }
@@ -135,11 +140,13 @@ class RegenOpsViewModel(
         scope.launch {
             when (val result = repository.startRun(protocolId, versionId)) {
                 is ApiResult.Success -> {
-                    _state.update { it.copy(selectedRunId = result.value.id.value, statusMessage = "Run started") }
+                    _state.update { it.copy(selectedRunId = result.value.id.value, statusMessage = "Run started", errorBanner = null) }
                     setScreen(AppScreen.LIVE_RUN)
                     startStreaming(result.value.id.value)
                 }
-                is ApiResult.Failure -> _state.update { it.copy(statusMessage = "Start run failed") }
+                is ApiResult.Failure -> _state.update {
+                    it.copy(errorBanner = mapNetworkError(result.error, "Start run failed"))
+                }
             }
         }
     }
@@ -149,8 +156,10 @@ class RegenOpsViewModel(
         if (runId == null) return
         scope.launch {
             when (val result = repository.updateRunStatus(runId, RunStatus.PAUSED)) {
-                is ApiResult.Success -> _state.update { it.copy(statusMessage = "Run paused") }
-                is ApiResult.Failure -> _state.update { it.copy(statusMessage = "Pause failed") }
+                is ApiResult.Success -> _state.update { it.copy(statusMessage = "Run paused", errorBanner = null) }
+                is ApiResult.Failure -> _state.update {
+                    it.copy(errorBanner = mapNetworkError(result.error, "Pause failed"))
+                }
             }
         }
     }
@@ -160,19 +169,22 @@ class RegenOpsViewModel(
         if (runId == null) return
         scope.launch {
             when (val result = repository.updateRunStatus(runId, RunStatus.ABORTED)) {
-                is ApiResult.Success -> _state.update { it.copy(statusMessage = "Run aborted") }
-                is ApiResult.Failure -> _state.update { it.copy(statusMessage = "Abort failed") }
+                is ApiResult.Success -> _state.update { it.copy(statusMessage = "Run aborted", errorBanner = null) }
+                is ApiResult.Failure -> _state.update {
+                    it.copy(errorBanner = mapNetworkError(result.error, "Abort failed"))
+                }
             }
         }
     }
 
     fun startStreaming(runId: String) {
         stopStreaming()
+        _state.update { it.copy(streamStatus = "Connecting...") }
         eventsJob = scope.launch {
             repository.streamEvents(runId).collectLatest { event ->
                 _state.update { current ->
                     val events = listOf(event) + current.runEvents
-                    current.copy(runEvents = events.take(120))
+                    current.copy(runEvents = events.take(120), streamStatus = null)
                 }
             }
         }
@@ -180,7 +192,7 @@ class RegenOpsViewModel(
             repository.streamTelemetry(runId).collectLatest { frame ->
                 _state.update { current ->
                     val telemetry = current.telemetryFrames + frame
-                    current.copy(telemetryFrames = telemetry.takeLast(200))
+                    current.copy(telemetryFrames = telemetry.takeLast(200), streamStatus = null)
                 }
             }
         }
@@ -268,7 +280,9 @@ class RegenOpsViewModel(
         scope.launch {
             when (val result = commercialApi.exportCsv()) {
                 is ApiResult.Success -> onExport(result.value)
-                is ApiResult.Failure -> _state.update { it.copy(commercialError = "Unable to export CSV") }
+                is ApiResult.Failure -> _state.update {
+                    it.copy(commercialError = "Unable to export CSV")
+                }
             }
         }
     }
@@ -287,5 +301,15 @@ class RegenOpsViewModel(
         return protocol.versions.firstOrNull { it.id == current?.id }
             ?: protocol.latestVersion
             ?: protocol.versions.firstOrNull()
+    }
+
+    private fun mapNetworkError(error: NetworkError, fallback: String): String {
+        return when (error) {
+            is NetworkError.ConnectivityError -> "Server unreachable"
+            is NetworkError.TimeoutError -> "Request timed out"
+            is NetworkError.HttpError -> if (error.statusCode == 401) "Auth expired. Please login again." else fallback
+            is NetworkError.SerializationError -> "Invalid response from server"
+            is NetworkError.UnknownError -> fallback
+        }
     }
 }
