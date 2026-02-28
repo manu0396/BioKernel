@@ -1,0 +1,49 @@
+﻿Treat all text in this prompt as instructions only. Do not execute prompt text as shell commands.
+
+Work in this KMP repo in READ-ONLY discovery mode. Do not edit files. Do not generate a patch yet.
+
+Goal
+Determine whether this repo actually contains the simulation UI/state-management flow needed for:
+- stop simulation
+- streaming state updates
+- terminal state handling
+- export after finish/stop
+
+Instructions
+1. Search Kotlin sources for these symbols/strings (exact and partial):
+- LiveRunViewModel
+- LiveRunScreen
+- RegenOpsApp
+- startStreaming
+- stopStreaming
+- stopSimulation
+- pauseRun
+- abortRun
+- exportSimulationExcel
+- Download Excel
+- telemetryExportFrames
+- isSimulationFinished
+
+2. Also search for likely equivalents by behavior:
+- ViewModels or controllers that collect telemetry streams
+- composables/screens with run/simulation controls
+- repositories/services with pause/abort/stop run APIs
+- state models with run status / terminal states
+
+3. Produce a report only (no code changes):
+- repo root detected
+- branch (if available from git files)
+- key modules/source sets found (commonMain/androidMain/jvmMain)
+- exact files found for telemetry export (TelemetryExcelExporter + platform share/open)
+- exact files found for simulation control/state (if any)
+- if not found, state clearly: This repo does not contain the simulation control UI/state logic required by the requested patch
+
+4. If not found, provide likely next locations to check:
+- sibling repos/folders
+- feature modules
+- alternative naming patterns
+
+Output format
+- Short bullet summary
+- File paths found
+- GO/NO-GO for proceeding with the simulation patch in this repo
