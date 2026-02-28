@@ -1,7 +1,7 @@
 package com.neogenesis.platform.core
 
 import com.neogenesis.platform.core.grpc.RegenOpsProtocolService
-import com.neogenesis.platform.proto.v1.ListProtocolsRequest
+import com.neogenesis.grpc.ListProtocolsRequest
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertTrue

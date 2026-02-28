@@ -61,7 +61,8 @@ suspend inline fun <reified T> safeApiCall(
     }
 }
 
-private fun Map<String, String>.withCorrelationId(correlationId: String?): Map<String, String> {
+@PublishedApi
+internal fun Map<String, String>.withCorrelationId(correlationId: String?): Map<String, String> {
     return if (correlationId.isNullOrBlank()) {
         this
     } else {
