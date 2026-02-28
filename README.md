@@ -38,6 +38,7 @@ Control (KMP):
 - `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_AUDIENCE`
 - Desktop token store: `REGENOPS_TOKENSTORE_PASSWORD`
   - Set `REGENOPS_GRPC_HOST` to empty to force HTTP fallback.
+- Optional commercial screen: `COMMERCIAL_MODE=true`
 
 Gateway:
 - `CORE_GRPC_HOST`, `CORE_GRPC_PORT`, `CORE_GRPC_TLS`
