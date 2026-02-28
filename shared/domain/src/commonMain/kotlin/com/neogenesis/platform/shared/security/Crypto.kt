@@ -8,7 +8,6 @@ interface CryptoProvider {
 }
 
 expect fun platformCryptoProvider(): CryptoProvider
-
 @Suppress("unused")
 object Crypto {
     private var overrideProvider: CryptoProvider? = null

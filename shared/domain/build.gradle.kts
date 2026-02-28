@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -8,16 +7,21 @@ plugins {
 }
 
 kotlin {
+    jvmToolchain(21)
+
     androidTarget {
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+        compilations.configureEach {
+            compileTaskProvider.configure {
+                compilerOptions.jvmTarget.set(JvmTarget.JVM_21)
+            }
         }
     }
+
     jvm("desktop") {
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+        compilations.configureEach {
+            compileTaskProvider.configure {
+                compilerOptions.jvmTarget.set(JvmTarget.JVM_21)
+            }
         }
     }
 
@@ -31,6 +35,7 @@ kotlin {
                 implementation(libs.koin.core)
             }
         }
+
         val commonTest by getting {
             kotlin.setSrcDirs(listOf("src/commonTest/kotlin"))
             dependencies {
@@ -38,15 +43,33 @@ kotlin {
                 implementation(libs.kotlinx.coroutines)
             }
         }
+
         val jvmSharedMain by creating {
             dependsOn(commonMain)
+            kotlin.setSrcDirs(listOf("src/jvmSharedMain/kotlin"))
         }
+
+        val jvmSharedTest by creating {
+            dependsOn(commonTest)
+            kotlin.setSrcDirs(listOf("src/jvmSharedTest/kotlin"))
+        }
+
         val androidMain by getting {
-            kotlin.setSrcDirs(listOf("src/androidMain/kotlin"))
             dependsOn(jvmSharedMain)
+            kotlin.setSrcDirs(listOf("src/androidMain/kotlin"))
         }
+
+        val androidUnitTest by getting {
+            dependsOn(jvmSharedTest)
+        }
+
         val desktopMain by getting {
             dependsOn(jvmSharedMain)
+            kotlin.setSrcDirs(listOf("src/desktopMain/kotlin"))
+        }
+
+        val desktopTest by getting {
+            dependsOn(jvmSharedTest)
         }
     }
 }
@@ -54,13 +77,13 @@ kotlin {
 android {
     namespace = "com.neogenesis.platform.shared"
     compileSdk = 34
-    buildToolsVersion = "35.0.0"
+
     defaultConfig {
         minSdk = 26
     }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 }
-

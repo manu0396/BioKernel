@@ -67,6 +67,7 @@ kotlin {
             kotlin.srcDir("../../../shared/network/src/jvmSharedMain/kotlin")
         }
         val androidMain by getting {
+            dependsOn(jvmSharedMain)
             kotlin.srcDir("../../../shared/domain/src/androidMain/kotlin")
             kotlin.srcDir("../../../shared/data/src/androidMain/kotlin")
             kotlin.srcDir("../../../shared/network/src/androidMain/kotlin")
