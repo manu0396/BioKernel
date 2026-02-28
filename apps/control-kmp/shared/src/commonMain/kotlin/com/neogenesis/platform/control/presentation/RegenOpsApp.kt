@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 fun RegenOpsApp(
     viewModel: RegenOpsViewModel,
     openExternalUrl: (String) -> Unit,
-    shareCsv: (ByteArray) -> Unit
+    shareFile: (ByteArray, String, String) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -34,6 +34,12 @@ fun RegenOpsApp(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text("RegenOps Control", style = MaterialTheme.typography.headlineSmall)
+        if (state.demoModeEnabled) {
+            Text("DEMO mode enabled", color = MaterialTheme.colorScheme.primary)
+        }
+        if (state.simulatedRunEnabled) {
+            Text("Simulated run mode enabled (Digital Twin)", color = MaterialTheme.colorScheme.primary)
+        }
         state.errorBanner?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         state.streamStatus?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         if (!state.auth.isAuthenticated) {
@@ -51,7 +57,9 @@ fun RegenOpsApp(
             screen = state.screen,
             onSelect = { viewModel.setScreen(it) },
             onLogout = { viewModel.logout() },
-            showCommercial = state.commercialModeEnabled
+            showCommercial = state.commercialModeEnabled,
+            showFounder = state.founderModeEnabled,
+            showTrace = state.founderModeEnabled || state.traceModeEnabled
         )
 
         when (state.screen) {
@@ -77,9 +85,13 @@ fun RegenOpsApp(
                 selectedProtocol = state.selectedProtocol,
                 selectedVersion = state.selectedVersion,
                 runs = state.runs,
+                demoModeEnabled = state.demoModeEnabled,
+                simulatedRunEnabled = state.simulatedRunEnabled,
+                onSimulatedRunToggle = viewModel::setSimulatedRunEnabled,
                 onSelectProtocol = viewModel::selectProtocol,
                 onSelectVersion = viewModel::selectVersion,
                 onStartRun = viewModel::startRun,
+                onStartDemoRun = viewModel::startDemoRun,
                 onPauseRun = { viewModel.pauseRun() },
                 onAbortRun = { viewModel.abortRun() },
                 onSelectRun = {
@@ -105,8 +117,25 @@ fun RegenOpsApp(
                 selected = state.selectedOpportunity,
                 error = state.commercialError,
                 onSelect = { viewModel.selectOpportunity(it) },
-                onExport = { viewModel.exportCommercialCsv { bytes -> shareCsv(bytes) } },
+                onExport = { viewModel.exportCommercialCsv { bytes -> shareFile(bytes, "commercial_pipeline.csv", "text/csv") } },
                 onRefresh = { viewModel.loadCommercialPipeline() }
+            )
+            AppScreen.EXPORTS -> ExportsScreen(
+                runId = state.export.runId,
+                onRunIdChange = viewModel::updateExportRunId,
+                isLoading = state.export.isLoading,
+                statusMessage = state.export.statusMessage,
+                errorMessage = state.export.errorMessage,
+                onExportReport = { viewModel.exportRunReport { bytes, name, type -> shareFile(bytes, name, type) } },
+                onExportAudit = { viewModel.exportAuditBundle { bytes, name, type -> shareFile(bytes, name, type) } }
+            )
+            AppScreen.TRACE -> TraceScreen(
+                score = state.trace.score,
+                alerts = state.trace.alerts,
+                isLoading = state.trace.isLoading,
+                statusMessage = state.trace.statusMessage,
+                errorMessage = state.trace.errorMessage,
+                onRefresh = { viewModel.loadTraceSummary() }
             )
         }
 
@@ -119,7 +148,9 @@ private fun NavigationRow(
     screen: AppScreen,
     onSelect: (AppScreen) -> Unit,
     onLogout: () -> Unit,
-    showCommercial: Boolean
+    showCommercial: Boolean,
+    showFounder: Boolean,
+    showTrace: Boolean
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -131,6 +162,12 @@ private fun NavigationRow(
             Button(onClick = { onSelect(AppScreen.LIVE_RUN) }) { Text("Live Run") }
             if (showCommercial) {
                 Button(onClick = { onSelect(AppScreen.COMMERCIAL) }) { Text("Commercial") }
+            }
+            if (showFounder) {
+                Button(onClick = { onSelect(AppScreen.EXPORTS) }) { Text("Exports") }
+            }
+            if (showTrace) {
+                Button(onClick = { onSelect(AppScreen.TRACE) }) { Text("Trace") }
             }
             Button(onClick = onLogout) { Text("Logout") }
         }

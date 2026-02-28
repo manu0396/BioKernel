@@ -135,9 +135,13 @@ fun RunControlScreen(
     selectedProtocol: Protocol?,
     selectedVersion: ProtocolVersion?,
     runs: List<Run>,
+    demoModeEnabled: Boolean,
+    simulatedRunEnabled: Boolean,
+    onSimulatedRunToggle: (Boolean) -> Unit,
     onSelectProtocol: (Protocol) -> Unit,
     onSelectVersion: (ProtocolVersion) -> Unit,
     onStartRun: () -> Unit,
+    onStartDemoRun: () -> Unit,
     onPauseRun: () -> Unit,
     onAbortRun: () -> Unit,
     onSelectRun: (String) -> Unit,
@@ -183,8 +187,18 @@ fun RunControlScreen(
                     }
                 }
             }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Simulated run (Digital Twin)")
+                androidx.compose.material3.Switch(
+                    checked = simulatedRunEnabled,
+                    onCheckedChange = onSimulatedRunToggle
+                )
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = onStartRun) { Text("Start") }
+                if (demoModeEnabled) {
+                    Button(onClick = onStartDemoRun) { Text("Start Demo Run") }
+                }
                 Button(onClick = onPauseRun, enabled = runs.isNotEmpty()) { Text("Pause") }
                 Button(onClick = onAbortRun, enabled = runs.isNotEmpty()) { Text("Abort") }
             }
@@ -283,6 +297,81 @@ fun CommercialPipelineScreen(
                     Text("LOI Signed: $loiLabel")
                     if (opp.notes.isNotBlank()) {
                         Text("Notes: ${'$'}{opp.notes}")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ExportsScreen(
+    runId: String,
+    onRunIdChange: (String) -> Unit,
+    isLoading: Boolean,
+    statusMessage: String?,
+    errorMessage: String?,
+    onExportReport: () -> Unit,
+    onExportAudit: () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Exports", style = MaterialTheme.typography.titleLarge)
+            OutlinedTextField(
+                value = runId,
+                onValueChange = onRunIdChange,
+                label = { Text("Run ID") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onExportReport, enabled = runId.isNotBlank() && !isLoading) {
+                    Text("Export Run Report")
+                }
+                Button(onClick = onExportAudit, enabled = runId.isNotBlank() && !isLoading) {
+                    Text("Export Audit Bundle")
+                }
+            }
+            if (isLoading) {
+                Text("Exporting...", color = MaterialTheme.colorScheme.primary)
+            }
+            statusMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+            errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        }
+    }
+}
+
+@Composable
+fun TraceScreen(
+    score: Int?,
+    alerts: List<DriftAlert>,
+    isLoading: Boolean,
+    statusMessage: String?,
+    errorMessage: String?,
+    onRefresh: () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Trace & Quality", style = MaterialTheme.typography.titleLarge)
+                Button(onClick = onRefresh) { Text("Refresh") }
+            }
+            val scoreLabel = score?.toString() ?: "n/a"
+            Text("Reproducibility Score: $scoreLabel", style = MaterialTheme.typography.titleMedium)
+            if (isLoading) {
+                Text("Loading...", color = MaterialTheme.colorScheme.primary)
+            }
+            statusMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+            errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            Text("Drift Alerts", style = MaterialTheme.typography.titleSmall)
+            if (alerts.isEmpty()) {
+                Text("No drift alerts.")
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxWidth().height(180.dp)) {
+                    items(alerts) { alert ->
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                            Text("${alert.title} (${alert.severity})", fontWeight = FontWeight.SemiBold)
+                            Text(alert.message)
+                        }
                     }
                 }
             }

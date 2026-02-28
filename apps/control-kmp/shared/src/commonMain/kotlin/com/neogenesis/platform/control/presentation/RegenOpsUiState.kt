@@ -13,13 +13,37 @@ enum class AppScreen {
     RUN_CONTROL,
     LIVE_RUN,
     AUTH,
-    COMMERCIAL
+    COMMERCIAL,
+    EXPORTS,
+    TRACE
 }
 
 data class AuthUiState(
     val isAuthenticated: Boolean = false,
     val deviceAuthorization: DeviceAuthorization? = null,
     val statusMessage: String? = null
+)
+
+data class ExportUiState(
+    val runId: String = "",
+    val isLoading: Boolean = false,
+    val statusMessage: String? = null,
+    val errorMessage: String? = null
+)
+
+data class DriftAlert(
+    val id: String,
+    val title: String,
+    val severity: String,
+    val message: String
+)
+
+data class TraceUiState(
+    val score: Int? = null,
+    val alerts: List<DriftAlert> = emptyList(),
+    val isLoading: Boolean = false,
+    val statusMessage: String? = null,
+    val errorMessage: String? = null
 )
 
 data class RegenOpsUiState(
@@ -33,9 +57,15 @@ data class RegenOpsUiState(
     val runEvents: List<RunEvent> = emptyList(),
     val telemetryFrames: List<TelemetryFrame> = emptyList(),
     val commercialModeEnabled: Boolean = false,
+    val founderModeEnabled: Boolean = false,
+    val traceModeEnabled: Boolean = false,
+    val demoModeEnabled: Boolean = false,
     val commercialPipeline: CommercialPipeline = CommercialPipeline(),
     val selectedOpportunity: CommercialOpportunity? = null,
     val commercialError: String? = null,
+    val export: ExportUiState = ExportUiState(),
+    val trace: TraceUiState = TraceUiState(),
+    val simulatedRunEnabled: Boolean = false,
     val errorBanner: String? = null,
     val streamStatus: String? = null,
     val auth: AuthUiState = AuthUiState(),

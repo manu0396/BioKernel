@@ -3,6 +3,8 @@ package com.neogenesis.platform.control.presentation
 import com.neogenesis.platform.control.AppConfig
 import com.neogenesis.platform.control.data.RegenOpsRepository
 import com.neogenesis.platform.control.data.remote.CommercialApi
+import com.neogenesis.platform.control.data.remote.ExportsApi
+import com.neogenesis.platform.control.data.remote.TraceApi
 import com.neogenesis.platform.control.data.oidc.DeviceAuthorization
 import com.neogenesis.platform.control.data.oidc.OidcConfig
 import com.neogenesis.platform.control.data.oidc.OidcRepository
@@ -25,7 +27,9 @@ class RegenOpsViewModel(
     private val config: AppConfig,
     private val repository: RegenOpsRepository,
     private val oidcRepository: OidcRepository,
-    private val commercialApi: CommercialApi
+    private val commercialApi: CommercialApi,
+    private val exportsApi: ExportsApi,
+    private val traceApi: TraceApi
 ) {
     private val scope = CoroutineScope(Dispatchers.Default + Job())
     private var eventsJob: Job? = null
@@ -35,7 +39,10 @@ class RegenOpsViewModel(
         RegenOpsUiState(
             screen = AppScreen.PROTOCOLS,
             auth = AuthUiState(isAuthenticated = oidcRepository.hasTokens()),
-            commercialModeEnabled = System.getenv("COMMERCIAL_MODE") == "true"
+            commercialModeEnabled = System.getenv("COMMERCIAL_MODE") == "true",
+            founderModeEnabled = System.getenv("FOUNDER_MODE") == "true",
+            traceModeEnabled = System.getenv("TRACE_MODE") == "true",
+            demoModeEnabled = System.getenv("DEMO_MODE") == "true"
         )
     )
     val state: StateFlow<RegenOpsUiState> = _state
@@ -73,6 +80,18 @@ class RegenOpsViewModel(
         if (screen == AppScreen.COMMERCIAL) {
             loadCommercialPipeline()
         }
+        if (screen == AppScreen.EXPORTS) {
+            _state.update { current ->
+                if (current.export.runId.isNotBlank()) {
+                    current
+                } else {
+                    current.copy(export = current.export.copy(runId = current.selectedRunId ?: ""))
+                }
+            }
+        }
+        if (screen == AppScreen.TRACE) {
+            loadTraceSummary()
+        }
     }
 
     fun updateQuery(query: String) {
@@ -91,7 +110,23 @@ class RegenOpsViewModel(
     }
 
     fun selectRun(runId: String) {
-        _state.update { it.copy(selectedRunId = runId) }
+        _state.update { current ->
+            current.copy(selectedRunId = runId, export = current.export.copy(runId = runId))
+        }
+    }
+
+    fun updateExportRunId(runId: String) {
+        _state.update { it.copy(export = it.export.copy(runId = runId)) }
+    }
+
+    fun setSimulatedRunEnabled(enabled: Boolean) {
+        if (!_state.value.founderModeEnabled) return
+        _state.update { current ->
+            current.copy(
+                simulatedRunEnabled = enabled,
+                statusMessage = if (enabled) "Simulated run mode enabled" else "Simulated run mode disabled"
+            )
+        }
     }
 
     fun selectOpportunity(opportunity: CommercialOpportunity) {
@@ -140,7 +175,8 @@ class RegenOpsViewModel(
         scope.launch {
             when (val result = repository.startRun(protocolId, versionId)) {
                 is ApiResult.Success -> {
-                    _state.update { it.copy(selectedRunId = result.value.id.value, statusMessage = "Run started", errorBanner = null) }
+                    val message = if (_state.value.simulatedRunEnabled) "Simulated run requested" else "Run started"
+                    _state.update { it.copy(selectedRunId = result.value.id.value, statusMessage = message, errorBanner = null) }
                     setScreen(AppScreen.LIVE_RUN)
                     startStreaming(result.value.id.value)
                 }
@@ -149,6 +185,11 @@ class RegenOpsViewModel(
                 }
             }
         }
+    }
+
+    fun startDemoRun() {
+        if (!_state.value.demoModeEnabled) return
+        startRun()
     }
 
     fun pauseRun() {
@@ -275,6 +316,101 @@ class RegenOpsViewModel(
         }
     }
 
+    fun exportRunReport(onExport: (ByteArray, String, String) -> Unit) {
+        if (!_state.value.founderModeEnabled) return
+        val runId = resolveExportRunId()
+        if (runId == null) {
+            _state.update { it.copy(export = it.export.copy(errorMessage = "Select a run ID first")) }
+            return
+        }
+        scope.launch {
+            _state.update {
+                it.copy(export = it.export.copy(isLoading = true, statusMessage = "Exporting run report...", errorMessage = null))
+            }
+            when (val result = exportsApi.exportRunReport(runId)) {
+                is ApiResult.Success -> {
+                    val safeRun = sanitizeFilePart(runId)
+                    val payload = result.value
+                    val suggested = payload.fileName?.let(::sanitizeFilePart).orEmpty()
+                    val fileName = suggested.ifBlank { "run_report_${safeRun}.json" }
+                    val mimeType = payload.contentType ?: "application/json"
+                    onExport(payload.bytes, fileName, mimeType)
+                    _state.update {
+                        it.copy(export = it.export.copy(isLoading = false, statusMessage = "Run report ready", errorMessage = null))
+                    }
+                }
+                is ApiResult.Failure -> _state.update {
+                    it.copy(export = it.export.copy(isLoading = false, errorMessage = mapNetworkError(result.error, "Export failed")))
+                }
+            }
+        }
+    }
+
+    fun exportAuditBundle(onExport: (ByteArray, String, String) -> Unit) {
+        if (!_state.value.founderModeEnabled) return
+        val runId = resolveExportRunId()
+        if (runId == null) {
+            _state.update { it.copy(export = it.export.copy(errorMessage = "Select a run ID first")) }
+            return
+        }
+        scope.launch {
+            _state.update {
+                it.copy(export = it.export.copy(isLoading = true, statusMessage = "Exporting audit bundle...", errorMessage = null))
+            }
+            when (val result = exportsApi.exportAuditBundle(runId)) {
+                is ApiResult.Success -> {
+                    val safeRun = sanitizeFilePart(runId)
+                    val payload = result.value
+                    val suggested = payload.fileName?.let(::sanitizeFilePart).orEmpty()
+                    val fileName = suggested.ifBlank { "audit_bundle_${safeRun}.zip" }
+                    val mimeType = payload.contentType ?: "application/zip"
+                    onExport(payload.bytes, fileName, mimeType)
+                    _state.update {
+                        it.copy(export = it.export.copy(isLoading = false, statusMessage = "Audit bundle ready", errorMessage = null))
+                    }
+                }
+                is ApiResult.Failure -> _state.update {
+                    it.copy(export = it.export.copy(isLoading = false, errorMessage = mapNetworkError(result.error, "Export failed")))
+                }
+            }
+        }
+    }
+
+    fun loadTraceSummary() {
+        if (!_state.value.founderModeEnabled && !_state.value.traceModeEnabled) return
+        scope.launch {
+            _state.update { current ->
+                current.copy(
+                    trace = current.trace.copy(
+                        isLoading = true,
+                        statusMessage = "Loading trace metrics...",
+                        errorMessage = null
+                    )
+                )
+            }
+            val scoreResult = traceApi.getReproducibilityScore()
+            val alertsResult = traceApi.listDriftAlerts()
+            _state.update { current ->
+                val score = (scoreResult as? ApiResult.Success)?.value ?: current.trace.score
+                val alerts = (alertsResult as? ApiResult.Success)?.value ?: current.trace.alerts
+                val error = when {
+                    scoreResult is ApiResult.Failure -> mapNetworkError(scoreResult.error, "Trace metrics unavailable")
+                    alertsResult is ApiResult.Failure -> mapNetworkError(alertsResult.error, "Trace alerts unavailable")
+                    else -> null
+                }
+                current.copy(
+                    trace = current.trace.copy(
+                        score = score,
+                        alerts = alerts,
+                        isLoading = false,
+                        statusMessage = if (error == null) "Trace metrics updated" else null,
+                        errorMessage = error
+                    )
+                )
+            }
+        }
+    }
+
     fun exportCommercialCsv(onExport: (ByteArray) -> Unit) {
         if (!_state.value.commercialModeEnabled) return
         scope.launch {
@@ -292,6 +428,15 @@ class RegenOpsViewModel(
         scope.cancel()
     }
 
+    private fun resolveExportRunId(): String? {
+        val candidate = _state.value.export.runId.ifBlank { _state.value.selectedRunId.orEmpty() }
+        return candidate.takeIf { it.isNotBlank() }
+    }
+
+    private fun sanitizeFilePart(value: String): String {
+        return value.replace(Regex("[^A-Za-z0-9_.-]"), "_")
+    }
+
     private fun resolveSelectedProtocol(current: Protocol?, protocols: List<Protocol>): Protocol? {
         return protocols.firstOrNull { it.id == current?.id } ?: protocols.firstOrNull()
     }
@@ -307,7 +452,13 @@ class RegenOpsViewModel(
         return when (error) {
             is NetworkError.ConnectivityError -> "Server unreachable"
             is NetworkError.TimeoutError -> "Request timed out"
-            is NetworkError.HttpError -> if (error.status == 401) "Auth expired. Please login again." else fallback
+            is NetworkError.HttpError -> when (error.status) {
+                401 -> "Auth expired. Please login again."
+                403 -> "Access denied for this export."
+                404 -> "Run not found. Verify the run ID."
+                in 500..599 -> "Server error. Try again later."
+                else -> fallback
+            }
             is NetworkError.SerializationError -> "Invalid response from server"
             is NetworkError.UnknownError -> fallback
         }

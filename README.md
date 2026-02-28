@@ -39,6 +39,9 @@ Control (KMP):
 - Desktop token store: `REGENOPS_TOKENSTORE_PASSWORD`
   - Set `REGENOPS_GRPC_HOST` to empty to force HTTP fallback.
 - Optional commercial screen: `COMMERCIAL_MODE=true`
+- Optional founder exports screen: `FOUNDER_MODE=true`
+- Android emulator host mapping: use `REGENOPS_HTTP_BASE_URL=http://10.0.2.2:8080`
+  - Physical device: use your host LAN IP, e.g. `http://192.168.1.10:8080`
 
 Gateway:
 - `CORE_GRPC_HOST`, `CORE_GRPC_PORT`, `CORE_GRPC_TLS`
@@ -73,6 +76,9 @@ Gateway:
 - HTTP fallback endpoints (for iOS compatibility planning):
   - `GET /api/v1/regenops/protocols`
   - `POST /api/v1/regenops/runs/start`
+- Export endpoints (founder mode):
+  - `GET /api/v1/telemetry/{runId}/export`
+  - `GET /api/v1/evidence/{runId}/package`
 
 ## Troubleshooting
 - Streaming resumes automatically with backoff; if telemetry stalls, check gRPC connectivity and gateway heartbeat.

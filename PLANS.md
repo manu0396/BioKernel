@@ -198,6 +198,89 @@
 
 ---
 
+# ExecPlan: Control App Exports UI (2026-02-24)
+
+## Milestones
+1) Add Exports screen gated by `founder_mode`.
+2) Wire minimal Exports API client (HTTP) with loading/success/error states.
+3) Add Android/Desktop share/save handlers and README note.
+
+## File-by-File Change List
+- `PLANS.md`: Track Exports UI patch.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/RegenOpsUiState.kt`: Add Exports screen + state.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/RegenOpsViewModel.kt`: Export actions + founder flag.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/RegenOpsApp.kt`: Route to Exports screen.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/Screens.kt`: Exports UI composable.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/remote/ExportsApi.kt`: HTTP export client.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/di/KoinModules.kt`: Bind ExportsApi.
+- `apps/control-kmp/androidApp/src/main/java/com/neogenesis/platform/control/android/MainActivity.kt`: Share exports on Android.
+- `apps/control-kmp/desktopApp/src/jvmMain/kotlin/com/neogenesis/platform/control/desktop/DesktopApp.kt`: Save/open exports on Desktop.
+- `README.md`: Document `founder_mode` env flag and exports.
+
+## Verification Commands
+- `./gradlew.bat :apps:control-kmp:androidApp:assembleDebug`
+
+## Rollback Plan
+- Revert the files listed above.
+- Re-run the verification command.
+
+## Progress
+- [x] Add Exports UI and wiring.
+
+---
+
+# ExecPlan: Control App Trace UI (2026-02-24)
+
+## Milestones
+1) Add Trace screen gated by `FOUNDER_MODE`.
+2) Wire minimal Trace API client (HTTP + demo) with loading/success/error states.
+3) Add navigation entry for Trace screen.
+
+## File-by-File Change List
+- `PLANS.md`: Track Trace UI patch.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/RegenOpsUiState.kt`: Add Trace screen + state.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/RegenOpsViewModel.kt`: Trace actions + founder flag gating.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/RegenOpsApp.kt`: Route to Trace screen.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/Screens.kt`: Trace UI composable.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/remote/TraceApi.kt`: HTTP trace client.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/di/KoinModules.kt`: Bind TraceApi.
+
+## Verification Commands
+- `./gradlew.bat :apps:control-kmp:androidApp:assembleDebug`
+
+## Rollback Plan
+- Revert the files listed above.
+- Re-run the verification command.
+
+## Progress
+- [x] Add Trace UI and wiring.
+
+---
+
+# ExecPlan: Control App Demo Mode (2026-02-24)
+
+## Milestones
+1) Add simulated run toggle + banner (founder gated).
+2) Wire ViewModel state + Run Control UI.
+
+## File-by-File Change List
+- `PLANS.md`: Track Demo Mode patch.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/RegenOpsUiState.kt`: Add simulated run state.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/RegenOpsViewModel.kt`: Toggle + banner state.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/RegenOpsApp.kt`: Banner rendering.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/Screens.kt`: Run Control toggle UI.
+
+## Verification Commands
+- `./gradlew.bat :apps:control-kmp:androidApp:assembleDebug`
+
+## Rollback Plan
+- Revert the files listed above.
+
+## Progress
+- [x] Add simulated run toggle + banner.
+
+---
+
 # ExecPlan: RegenOps Control App Reconfiguration (2026-02-24)
 
 ## Milestones

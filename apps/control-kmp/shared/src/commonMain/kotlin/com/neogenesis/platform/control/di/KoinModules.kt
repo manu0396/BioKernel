@@ -9,7 +9,13 @@ import com.neogenesis.platform.control.data.oidc.OidcDeviceAuthService
 import com.neogenesis.platform.control.data.remote.ControlApi
 import com.neogenesis.platform.control.data.remote.DemoControlApi
 import com.neogenesis.platform.control.data.remote.CommercialApi
+import com.neogenesis.platform.control.data.remote.DemoExportsApi
+import com.neogenesis.platform.control.data.remote.DemoTraceApi
+import com.neogenesis.platform.control.data.remote.ExportsApi
 import com.neogenesis.platform.control.data.remote.HttpCommercialApi
+import com.neogenesis.platform.control.data.remote.HttpExportsApi
+import com.neogenesis.platform.control.data.remote.HttpTraceApi
+import com.neogenesis.platform.control.data.remote.TraceApi
 import com.neogenesis.platform.control.data.oidc.OidcRepository
 import com.neogenesis.platform.control.data.stream.DemoStreamClient
 import com.neogenesis.platform.control.data.stream.RegenOpsStreamClient
@@ -64,6 +70,20 @@ fun commonModule(appConfig: AppConfig) = module {
             RegenOpsRepository(get<ControlApi>(), get(), get<RegenOpsStreamClient>())
         }
     }
+    single<ExportsApi> {
+        if (System.getenv("DEMO_MODE") == "true") {
+            DemoExportsApi()
+        } else {
+            HttpExportsApi(get())
+        }
+    }
+    single<TraceApi> {
+        if (System.getenv("DEMO_MODE") == "true") {
+            DemoTraceApi()
+        } else {
+            HttpTraceApi(get())
+        }
+    }
     single<CommercialApi> { HttpCommercialApi(get()) }
-    single { RegenOpsViewModel(get(), get(), get(), get()) }
+    single { RegenOpsViewModel(get(), get(), get(), get(), get(), get()) }
 }
