@@ -15,10 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-/**
- * Decoupled Dialog for the Design System.
- * Accepts primitives to avoid dependencies on :domain models.
- */
+
 @Composable
 fun RetinaDetailDialog(
     title: String,
@@ -86,3 +83,6 @@ private fun DetailItem(label: String, value: String) {
         )
     }
 }
+
+
+

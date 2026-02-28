@@ -1,4 +1,4 @@
-﻿package com.neogenesis.domain.di
+package com.neogenesis.domain.di
 
 import com.neogenesis.domain.usecases.GetRetinaAnalysisUseCase
 import com.neogenesis.domain.usecases.LoginUseCase
@@ -13,6 +13,9 @@ val domainModule = module {
     factoryOf(::LoginUseCase)
     factoryOf(::SyncRetinaDataUseCase)
 }
+
+
+
 
 
 

@@ -1,4 +1,4 @@
-﻿<resources>
+<resources>
     <string name="dashboard_title">Retina-on-a-Chip Dashboard</string>
     <string name="dashboard_sample_id_label">Sample ID: %1$s</string>
     <string name="dashboard_patient_id_label">Patient ID: %1$s</string>
@@ -8,6 +8,9 @@
     <string name="no_telemetry_available">No Telemetry Data Available</string>
     <string name="sistem_telemetry">SYSTEM TELEMETRY</string>
 </resources>
+
+
+
 
 
 

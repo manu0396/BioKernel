@@ -1,22 +1,22 @@
-﻿package com.neogenesis.domain.usecases
+package com.neogenesis.domain.usecases
 
+import com.neogenesis.domain.model.SessionMetadata
+import com.neogenesis.domain.model.User
 import com.neogenesis.domain.repository.LoginRepository
+import kotlinx.coroutines.flow.Flow
 
 class LoginUseCase(private val repository: LoginRepository) {
-    /**
-     * Executes the authentication logic for the NeoGenesis platform.
-     * Currently focused on the Spain production environment.
-     */
-    suspend operator fun invoke(user: String, pass: String): Boolean {
-        // Validation logic
+    suspend operator fun invoke(user: String, pass: String): Result<User> {
         if (user.isBlank() || pass.length < 6) {
             throw Exception("Invalid credentials for NeoGenesis access")
         }
-
-        // Delegating to repository for the actual network/data operation
         return repository.login(user, pass)
     }
+    fun getSessionMetadata(): Flow<SessionMetadata?> = repository.getSessionMetadata()
 }
+
+
+
 
 
 
