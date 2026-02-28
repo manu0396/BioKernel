@@ -73,3 +73,8 @@ Gateway:
 - HTTP fallback endpoints (for iOS compatibility planning):
   - `GET /api/v1/regenops/protocols`
   - `POST /api/v1/regenops/runs/start`
+
+## Troubleshooting
+- Streaming resumes automatically with backoff; if telemetry stalls, check gRPC connectivity and gateway heartbeat.
+- If auth fails, verify `OIDC_ISSUER` and `OIDC_CLIENT_ID` are set.
+- Logs are JSON; capture with `docker logs regenops-core-server` or app logcat.
