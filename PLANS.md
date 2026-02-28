@@ -47,6 +47,140 @@
 
 ---
 
+# ExecPlan: RegenOps Monorepo Reconfiguration (2026-02-24)
+
+## Milestones
+1) Repository audit + incremental migration plan with risks.
+2) Monorepo layout + Gradle settings for `apps/`, `services/`, `agents/`, `shared/`, `ops/`.
+3) Protobuf contracts + stub generation for server, gateway, and KMP client (HTTP fallback strategy).
+4) Walking skeleton: core-server + Postgres + gateway sim + control-kmp UI with streaming.
+5) Observability baseline (JSON logs, Prometheus metrics, OTEL tracing) + DevEx + docs.
+
+## File-by-File Change List
+- `PLANS.md`: Track migration plan, risks, and progress.
+- `settings.gradle.kts`: New module includes for monorepo layout.
+- `build.gradle.kts`: Shared configuration for new modules + reproducible builds.
+- `gradle/libs.versions.toml`: Add gRPC, OTEL, Prometheus, SQLDelight, Koin, protobuf tooling.
+- `shared/proto/*`: Protobuf contracts for Protocol/Run/Gateway/Metrics services.
+- `shared/domain/*`: Shared domain models and API contracts for KMP.
+- `services/core-server/*`: Ktor + gRPC modular monolith, Postgres persistence.
+- `agents/device-gateway/*`: JVM agent with gRPC client + simulated telemetry.
+- `apps/control-kmp/*`: KMP app (Android/Desktop) with protocol list + run control + live streaming.
+- `ops/docker-compose.yml`: Core-server + Postgres + gateway run.
+- `ops/Makefile`, `ops/runLocal.ps1`: runLocal/test/lint/format helpers.
+- `docs/*`: Local run + gateway deployment + ops notes.
+- `README.md`: Top-level instructions for running the monorepo.
+
+## Verification Commands
+- `./gradlew.bat :services:core-server:test`
+- `./gradlew.bat :agents:device-gateway:test`
+- `./gradlew.bat :apps:control-kmp:androidApp:assembleDebug`
+- `./gradlew.bat :apps:control-kmp:desktopApp:run`
+- `docker-compose -f ops/docker-compose.yml up --build`
+
+## Rollback Plan
+- Revert files listed above.
+- Remove new modules from `settings.gradle.kts`.
+- Re-run baseline build tasks to confirm stability.
+
+## Progress
+- [x] Repository audit + incremental migration plan with risks.
+- [x] Monorepo layout + Gradle settings.
+- [x] Protobuf contracts + stub generation.
+- [x] Walking skeleton end-to-end.
+- [x] Observability + DevEx + docs.
+
+---
+
+# ExecPlan: RegenOps Control KMP Migration (2026-02-24)
+
+## Milestones
+1) Create `apps/control-kmp` module structure with shared/data/presentation layers and platform apps.
+2) Implement SQLDelight cache + repositories and wire Koin DI across Android/Desktop.
+3) Add OIDC device auth flow + secure token storage (Android encrypted prefs, Desktop keystore file).
+4) Implement gRPC streaming with reconnection/backoff + correlation_id propagation; keep HTTP/JSON fallback wiring.
+5) Deliver core screens + navigation and update README + env config documentation.
+
+## File-by-File Change List
+- `PLANS.md`: Track ExecPlan progress for RegenOps Control KMP migration.
+- `settings.gradle.kts`: Include `apps/control-kmp` modules.
+- `gradle/libs.versions.toml`: Add SQLDelight + Koin + AppAuth versions (if needed).
+- `apps/control-kmp/shared/build.gradle.kts`: KMP shared module with SQLDelight + Koin + Compose Multiplatform.
+- `apps/control-kmp/shared/src/commonMain/sqldelight/.../RegenOpsDatabase.sq`: Protocols + runs cache schema + queries.
+- `apps/control-kmp/shared/src/commonMain/kotlin/...`: Domain/use cases, data repositories, OIDC device auth flow, shared UI.
+- `apps/control-kmp/shared/src/androidMain/kotlin/...`: Android SQLDelight driver + Android token storage + gRPC stream client.
+- `apps/control-kmp/shared/src/jvmMain/kotlin/...`: Desktop SQLDelight driver + keystore token storage + gRPC stream client.
+- `apps/control-kmp/androidApp/build.gradle.kts`: Android app wiring + BuildConfig env config.
+- `apps/control-kmp/androidApp/src/main/AndroidManifest.xml`: App manifest + cleartext policy (debug) + launcher.
+- `apps/control-kmp/androidApp/src/main/java/.../MainActivity.kt`: Compose entrypoint.
+- `apps/control-kmp/desktopApp/build.gradle.kts`: Desktop app wiring.
+- `apps/control-kmp/desktopApp/src/jvmMain/kotlin/.../DesktopApp.kt`: Compose entrypoint.
+- `.env.example`: Add RegenOps Control OIDC + gRPC/HTTP env hints.
+- `README.md`: Add run steps for `apps/control-kmp` Android/Desktop.
+
+## Verification Commands
+- `./gradlew.bat :apps:control-kmp:androidApp:assembleDebug`
+- `./gradlew.bat :apps:control-kmp:desktopApp:run`
+- `./gradlew.bat :apps:control-kmp:shared:compileKotlinMetadata`
+
+## Rollback Plan
+- Revert files listed above.
+- Remove `apps/control-kmp` modules from `settings.gradle.kts`.
+- Re-run `./gradlew.bat :apps:control-kmp:androidApp:assembleDebug` to confirm baseline restoration.
+
+## Progress
+- [x] Module structure + Gradle wiring created.
+- [x] SQLDelight cache + repositories + Koin DI implemented.
+- [x] OIDC device auth flow + secure token storage implemented.
+- [x] gRPC streaming reconnection/backoff + correlation ID propagation implemented.
+- [x] UI + navigation + README/env updates completed.
+
+---
+
+# ExecPlan: RegenOps Control App Reconfiguration (2026-02-24)
+
+## Milestones
+1) Confirm current Android app architecture + networking/logging hooks and define RegenOps screen flow + data contracts.
+2) Add shared-network models/APIs + correlation ID propagation + structured logging metadata.
+3) Add Android offline cache for protocols + last runs and wire repository to UI.
+4) Implement RegenOps Control screens + navigation and feature-flag gating while preserving auth/billing/observability flows.
+5) Add streaming stub + instrumentation test (“StartRun -> see first event”) and verify build targets.
+
+## File-by-File Change List
+- `PLANS.md`: Track ExecPlan progress for RegenOps Control.
+- `shared-network/src/commonMain/kotlin/com/neogenesis/platform/shared/network/HttpClientFactory.kt`: Add correlation ID header propagation and logging metadata hook.
+- `shared-network/src/commonMain/kotlin/com/neogenesis/platform/shared/network/AppLogger.kt`: Extend logger metadata usage for structured logs (if needed).
+- `shared-network/src/commonMain/kotlin/com/neogenesis/platform/shared/network/ProtocolsApi.kt`: New API contract + Ktor implementation for protocols/versions.
+- `shared-network/src/commonMain/kotlin/com/neogenesis/platform/shared/network/RunsApi.kt`: New API contract + Ktor implementation for runs/events.
+- `shared-network/src/commonMain/kotlin/com/neogenesis/platform/shared/network/RegenOpsModels.kt`: Protocol/run/event/telemetry models.
+- `androidApp/build.gradle.kts`: Add Room + test dependencies (if required).
+- `androidApp/src/main/java/com/neogenesis/platform/android/data/RegenOpsDatabase.kt`: Room database for protocols + last runs cache.
+- `androidApp/src/main/java/com/neogenesis/platform/android/data/RegenOpsDao.kt`: DAO for protocols/runs cache.
+- `androidApp/src/main/java/com/neogenesis/platform/android/data/RegenOpsRepository.kt`: Repository bridging network + cache.
+- `androidApp/src/main/java/com/neogenesis/platform/android/ui/RootScreen.kt`: Replace dashboard with RegenOps Control screens + navigation and feature flag gating.
+- `androidApp/src/main/java/com/neogenesis/platform/android/ui/RegenOpsScreens.kt`: Protocols list/detail, run control, live run UI components.
+- `androidApp/src/main/java/com/neogenesis/platform/android/ui/TelemetryChart.kt`: Basic telemetry chart placeholder.
+- `androidApp/src/androidTest/java/com/neogenesis/platform/android/RegenOpsRunInstrumentationTest.kt`: “StartRun -> see first event” test.
+
+## Verification Commands
+- `./gradlew.bat :androidApp:assembleDebug`
+- `./gradlew.bat :shared-network:test`
+- `./gradlew.bat :domain:test`
+
+## Rollback Plan
+- Revert updated files listed above.
+- Remove new Room database files and dependencies.
+- Re-run `./gradlew.bat :androidApp:assembleDebug` to confirm baseline stability.
+
+## Progress
+- [x] Added RegenOps models, APIs, and correlation ID propagation + logging hooks.
+- [x] Implemented Android Room cache for protocols + runs with repository integration.
+- [x] Rebuilt Android UI into RegenOps Control screens with stub backend flow.
+- [x] Added gRPC stream client + stub stream client wiring for live telemetry/events.
+- [x] Added instrumentation test for “StartRun -> see first event”.
+
+---
+
 # ExecPlan: Quality Noise Cleanup (2026-02-23)
 
 ## Milestones

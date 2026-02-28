@@ -1,0 +1,56 @@
+CREATE TABLE protocols (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    latestVersionId TEXT,
+    updatedAt INTEGER NOT NULL
+);
+
+CREATE TABLE protocol_versions (
+    id TEXT NOT NULL PRIMARY KEY,
+    protocolId TEXT NOT NULL,
+    version TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    author TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    published INTEGER AS Boolean NOT NULL
+);
+
+CREATE TABLE runs (
+    id TEXT NOT NULL PRIMARY KEY,
+    protocolId TEXT NOT NULL,
+    protocolVersionId TEXT NOT NULL,
+    status TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER
+);
+
+selectProtocols:
+SELECT * FROM protocols ORDER BY name;
+
+selectProtocolVersionsByProtocolId:
+SELECT * FROM protocol_versions WHERE protocolId = ? ORDER BY createdAt DESC;
+
+selectRuns:
+SELECT * FROM runs ORDER BY COALESCE(updatedAt, createdAt) DESC LIMIT ?;
+
+insertProtocol:
+INSERT OR REPLACE INTO protocols(id, name, summary, latestVersionId, updatedAt)
+VALUES (?, ?, ?, ?, ?);
+
+insertProtocolVersion:
+INSERT OR REPLACE INTO protocol_versions(id, protocolId, version, createdAt, author, payload, published)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+insertRun:
+INSERT OR REPLACE INTO runs(id, protocolId, protocolVersionId, status, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?);
+
+clearProtocols:
+DELETE FROM protocols;
+
+clearProtocolVersions:
+DELETE FROM protocol_versions;
+
+clearRuns:
+DELETE FROM runs;

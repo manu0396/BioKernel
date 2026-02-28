@@ -15,10 +15,13 @@ dependencyResolutionManagement {
 
 rootProject.name = "NeoGenesisPlatform"
 
-include(":domain")
-include(":data")
-include(":shared-network")
-include(":androidApp")
-include(":desktopApp")
-include(":backend")
-include(":firmware-protocol")
+include(":shared:domain")
+include(":shared:data")
+include(":shared:network")
+include(":shared:proto")
+include(":services:core-server")
+include(":agents:device-gateway")
+
+include(":apps:control-kmp:shared")
+include(":apps:control-kmp:androidApp")
+include(":apps:control-kmp:desktopApp")
