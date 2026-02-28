@@ -1,0 +1,43 @@
+Subject: [PATCH] feat(kmp): implement BioKernel Control 1.0.0 platform
+fix(android): Resolve Koin dependency and build config errors
+fix(android): Resolve Koin dependency and build config errors
+ignore local ktlint helper
+exclude generated proto from ktlint
+ci: fix gradlew permissions on runners
+chore(control): add demo env and surface demo UI
+feat(control): add exports, trace, and demo UI wiring
+Align KMP gRPC clients and screens
+Fix KMP OIDC and HTTP control
+Fix KMP build wiring and SQLDelight
+Align gateway and build deps
+Fix core observability and tests
+Align core-server RegenOps contracts
+docs: add troubleshooting and commercial tests
+test: add demo mode and smoke test
+feat: improve stream UX and error banners
+chore: update docs env and ci for kmp
+feat: commercial pipeline api + csv export
+feat: add commercial pipeline UI (flagged)
+chore: use contracts artifact from mavenLocal
+refactor: reconfigure regenops monorepo layout
+chore: commit remaining branch changes
+feat(kmp): add billing UX gating and stabilize telemetry stream test
+Add backend
+complete Phase 5 integrity audit and prepare Phase 6 release
+resolve serialization conflicts and session persistence logic
+feat(dashboard): implement secure session sync and fix data mapping
+Update README.md
+Update readme
+Update .gitignore
+Update README.md
+Fix png
+docs: add professional enterprise header image and update README.md
+Update README.md
+Update README.md
+feat: implement session management and koin module integration
+feat: implement clean architecture core, SQLDelight persistence, and Koin DI synchronization
+refactor: Fix data mapping, polish UI/UX animations, and update project config
+feat(dashboard): implement BioKernel design system and scientific telemetry UI
+feat: initialize multi-module architecture and upgrade core dependencies
+Innitial commit
+---
