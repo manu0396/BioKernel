@@ -23,3 +23,15 @@ jdk-command.txt
 .cxx
 local.properties
 app/google-services.json
+
+# NeoGenesis Android signing
+androidApp/keystore/
+
+.env
+
+# Build outputs
+**/build/
+**/.gradle/
+**/.kotlin/
+**/.idea/
+
