@@ -1,6 +1,6 @@
 # BioKernel: Enterprise Ocular Telemetry Platform
 
-![BioKernel Header](assets/header_glassmorphism.png)
+<img src="assets/header_glassmorphism.png" width="525" alt="BioKernel Header">
 
 **BioKernel** is a high-performance, modular Android ecosystem designed for real-time retinal
 analysis and bio-implant telemetry. Developed by **NeoGenesis**, the platform bridges the gap
