@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Monochrome variant for Android themed icons (system tints this). -->
+
+    <path
+        android:pathData="M54,14 A40,40 0 1,1 54,94 A40,40 0 1,1 54,14"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+    <path android:pathData="M54,18 a4,4 0 1,1 0,-8 a4,4 0 1,1 0,8" android:fillColor="#FF000000" />
+    <path android:pathData="M82,56 a4,4 0 1,1 0,-8 a4,4 0 1,1 0,8" android:fillColor="#FF000000" />
+    <path android:pathData="M30,78 a4,4 0 1,1 0,-8 a4,4 0 1,1 0,8" android:fillColor="#FF000000" />
+
+    <path android:pathData="M34,30 h10 v48 h-10 z" android:fillColor="#FF000000" />
+    <path android:pathData="M64,30 h10 v48 h-10 z" android:fillColor="#FF000000" />
+    <path android:pathData="M44,78 L54,78 L74,30 L64,30 Z" android:fillColor="#FF000000" />
+
+    <path android:pathData="M54,60 a5,5 0 1,1 0,-10 a5,5 0 1,1 0,10" android:fillColor="#FF000000" />
+</vector>

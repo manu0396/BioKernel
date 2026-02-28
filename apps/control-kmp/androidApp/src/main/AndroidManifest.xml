@@ -2,7 +2,9 @@
     <application
         android:label="RegenOps Control"
         android:allowBackup="false"
-        android:usesCleartextTraffic="@bool/allow_cleartext">
+        android:usesCleartextTraffic="@bool/allow_cleartext"
+        android:icon="@mipmap/ng_launcher"
+        android:roundIcon="@mipmap/ng_launcher_round">
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- NeoGenesis Control System S.L.U. launcher icon palette -->
+    <color name="ng_launcher_background">#070C1A</color>
+    <color name="ng_launcher_accent">#2AD4FF</color>
+    <color name="ng_launcher_foreground">#FFFFFF</color>
+</resources>

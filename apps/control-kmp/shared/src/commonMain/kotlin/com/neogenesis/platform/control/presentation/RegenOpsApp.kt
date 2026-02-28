@@ -1,23 +1,62 @@
 package com.neogenesis.platform.control.presentation
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.*
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.neogenesis.platform.control.presentation.design.*
+import com.neogenesis.platform.control.presentation.design.NgCard
+import com.neogenesis.platform.control.presentation.design.NgColors
+import com.neogenesis.platform.control.presentation.design.NgMotion
+import com.neogenesis.platform.control.presentation.design.NgPrimaryButton
+import com.neogenesis.platform.control.presentation.design.NgScaffold
+import com.neogenesis.platform.control.presentation.design.NgSpacing
+import com.neogenesis.platform.control.presentation.design.NgStatus
+import com.neogenesis.platform.control.presentation.design.NgStatusChip
+import com.neogenesis.platform.control.presentation.design.NgTheme
 
 @Composable
 fun RegenOpsApp(
     viewModel: RegenOpsViewModel,
     openExternalUrl: (String) -> Unit,
-    shareFile: (ByteArray, String, String) -> Unit
+    shareFile: (ByteArray, String, String) -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -27,7 +66,8 @@ fun RegenOpsApp(
 
     NgTheme {
         val isDesktop = WindowSize.isDesktop()
-        
+        val canGoBack = viewModel.canGoBack()
+
         NgScaffold(
             title = "BioKernel Control",
             actions = {
@@ -44,7 +84,7 @@ fun RegenOpsApp(
                 if (!isDesktop && state.auth.isAuthenticated) {
                     NgBottomNavigation(state.screen, viewModel::setScreen, state)
                 }
-            }
+            },
         ) { paddingValues ->
             Row(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
                 if (isDesktop && state.auth.isAuthenticated) {
@@ -55,23 +95,21 @@ fun RegenOpsApp(
                     AnimatedContent(
                         targetState = state.screen,
                         transitionSpec = {
-                            (fadeIn(animationSpec = tween(NgMotion.Medium)) + 
-                             slideInHorizontally(animationSpec = tween(NgMotion.Medium)) { it / 2 })
-                            .togetherWith(fadeOut(animationSpec = tween(NgMotion.Fast)))
-                        }
+                            (fadeIn(animationSpec = tween(NgMotion.Medium)) +
+                                    slideInHorizontally(animationSpec = tween(NgMotion.Medium)) { it / 2 })
+                                .togetherWith(fadeOut(animationSpec = tween(NgMotion.Fast)))
+                        },
                     ) { screen ->
                         Column(
                             modifier = Modifier.fillMaxSize().padding(NgSpacing.Medium),
-                            verticalArrangement = Arrangement.spacedBy(NgSpacing.Medium)
+                            verticalArrangement = Arrangement.spacedBy(NgSpacing.Medium),
                         ) {
-                            if (state.errorBanner != null) {
-                                NgStatusChip(text = state.errorBanner!!, status = NgStatus.Error)
-                            }
+                            state.errorBanner?.let { NgStatusChip(text = it, status = NgStatus.Error) }
 
-                            // Feature Badges
                             Row(horizontalArrangement = Arrangement.spacedBy(NgSpacing.Small)) {
-                                if (state.traceModeEnabled) NgStatusChip("TRACE ENABLED", NgStatus.Success)
-                                if (state.demoModeEnabled) NgStatusChip("DEMO MODE", NgStatus.Info)
+                                if (state.traceModeEnabled) NgStatusChip(text = "TRACE ENABLED", status = NgStatus.Success)
+                                if (state.demoModeEnabled) NgStatusChip(text = "DEMO MODE", status = NgStatus.Info)
+                                if (state.simulatedRunEnabled) NgStatusChip(text = "SIMULATION", status = NgStatus.Warning)
                             }
 
                             if (!state.auth.isAuthenticated) {
@@ -79,93 +117,137 @@ fun RegenOpsApp(
                                     state = state.auth,
                                     onStart = { viewModel.beginDeviceAuth { } },
                                     onOpen = openExternalUrl,
-                                    onPoll = { viewModel.pollDeviceAuth() }
+                                    onPoll = { viewModel.pollDeviceAuth() },
                                 )
                             } else {
                                 when (screen) {
-                                    AppScreen.PROTOCOLS -> ProtocolsScreen(
-                                        protocols = state.protocols,
-                                        query = state.protocolQuery,
-                                        onQueryChange = viewModel::updateQuery,
-                                        onSelect = {
-                                            viewModel.selectProtocol(it)
-                                            viewModel.setScreen(AppScreen.PROTOCOL_DETAIL)
-                                        },
-                                        onRefresh = { viewModel.refreshProtocols() }
-                                    )
-                                    AppScreen.PROTOCOL_DETAIL -> ProtocolDetailScreen(
-                                        protocol = state.selectedProtocol,
-                                        selectedVersion = state.selectedVersion,
-                                        onBack = { viewModel.setScreen(AppScreen.PROTOCOLS) },
-                                        onSelectVersion = viewModel::selectVersion,
-                                        onPublish = { viewModel.publishSelectedVersion() }
-                                    )
-                                    AppScreen.RUN_CONTROL -> RunControlScreen(
-                                        protocols = state.protocols,
-                                        selectedProtocol = state.selectedProtocol,
-                                        selectedVersion = state.selectedVersion,
-                                        runs = state.runs,
-                                        demoModeEnabled = state.demoModeEnabled,
-                                        simulatedRunEnabled = state.simulatedRunEnabled,
-                                        onSimulatedRunToggle = viewModel::setSimulatedRunEnabled,
-                                        onSelectProtocol = viewModel::selectProtocol,
-                                        onSelectVersion = viewModel::selectVersion,
-                                        onStartRun = viewModel::startRun,
-                                        onStartDemoRun = viewModel::startDemoRun,
-                                        onPauseRun = { viewModel.pauseRun() },
-                                        onAbortRun = { viewModel.abortRun() },
-                                        onSelectRun = {
-                                            viewModel.selectRun(it)
-                                            viewModel.setScreen(AppScreen.LIVE_RUN)
-                                            viewModel.startStreaming(it)
-                                        },
-                                        onRefreshRuns = viewModel::refreshRuns
-                                    )
-                                    AppScreen.LIVE_RUN -> LiveRunScreen(
-                                        runId = state.selectedRunId,
-                                        runEvents = state.runEvents,
-                                        telemetryFrames = state.telemetryFrames
-                                    )
-                                    AppScreen.COMMERCIAL -> CommercialPipelineScreen(
-                                        pipeline = state.commercialPipeline,
-                                        selected = state.selectedOpportunity,
-                                        error = state.commercialError,
-                                        onSelect = { viewModel.selectOpportunity(it) },
-                                        onExport = { viewModel.exportCommercialCsv { bytes -> shareFile(bytes, "commercial_pipeline.csv", "text/csv") } },
-                                        onRefresh = { viewModel.loadCommercialPipeline() }
-                                    )
-                                    AppScreen.EXPORTS -> ExportsScreen(
-                                        runId = state.export.runId,
-                                        onRunIdChange = viewModel::updateExportRunId,
-                                        isLoading = state.export.isLoading,
-                                        statusMessage = state.export.statusMessage,
-                                        errorMessage = state.export.errorMessage,
-                                        onExportReport = { viewModel.exportRunReport(shareFile) },
-                                        onExportAudit = { viewModel.exportAuditBundle(shareFile) }
-                                    )
-                                    AppScreen.TRACE -> TraceScreen(
-                                        score = state.trace.score,
-                                        alerts = state.trace.alerts,
-                                        isLoading = state.trace.isLoading,
-                                        statusMessage = state.trace.statusMessage,
-                                        errorMessage = state.trace.errorMessage,
-                                        onRefresh = { viewModel.loadTraceSummary() }
-                                    )
-                                    else -> {}
+                                    AppScreen.PROTOCOLS ->
+                                        ProtocolsScreen(
+                                            protocols = state.protocols,
+                                            query = state.protocolQuery,
+                                            onQueryChange = viewModel::updateQuery,
+                                            canGoBack = canGoBack,
+                                            onBack = viewModel::navigateBack,
+                                            onSelect = {
+                                                viewModel.selectProtocol(it)
+                                                viewModel.navigateTo(AppScreen.PROTOCOL_DETAIL)
+                                            },
+                                            onRefresh = viewModel::refreshProtocols,
+                                        )
+
+                                    AppScreen.PROTOCOL_DETAIL ->
+                                        ProtocolDetailScreen(
+                                            protocol = state.selectedProtocol,
+                                            selectedVersion = state.selectedVersion,
+                                            canGoBack = canGoBack,
+                                            onBack = viewModel::navigateBack,
+                                            onSelectVersion = viewModel::selectVersion,
+                                            onPublish = viewModel::publishSelectedVersion,
+                                        )
+
+                                    AppScreen.RUN_CONTROL ->
+                                        RunControlScreen(
+                                            protocols = state.protocols,
+                                            selectedProtocol = state.selectedProtocol,
+                                            selectedVersion = state.selectedVersion,
+                                            runs = state.runs,
+                                            demoModeEnabled = state.demoModeEnabled,
+                                            simulatedRunEnabled = state.simulatedRunEnabled,
+                                            onSimulatedRunToggle = viewModel::setSimulatedRunEnabled,
+                                            onSelectProtocol = viewModel::selectProtocol,
+                                            onSelectVersion = viewModel::selectVersion,
+                                            onStartRun = viewModel::startRun,
+                                            onStartSimulatedRun = viewModel::startSimulatedRun,
+                                            onStartDemoRun = viewModel::startDemoRun,
+                                            onPauseRun = viewModel::pauseRun,
+                                            onAbortRun = viewModel::abortRun,
+                                            canGoBack = canGoBack,
+                                            onBack = viewModel::navigateBack,
+                                            onSelectRun = {
+                                                viewModel.selectRun(it)
+                                                viewModel.navigateTo(AppScreen.LIVE_RUN)
+                                                viewModel.startStreaming(it)
+                                            },
+                                            onRefreshRuns = viewModel::refreshRuns,
+                                        )
+
+                                    AppScreen.LIVE_RUN ->
+                                        LiveRunScreen(
+                                            runId = state.selectedRunId,
+                                            runEvents = state.runEvents,
+                                            telemetryFrames = state.telemetryFrames,
+                                            streamStatus = state.streamStatus,
+                                            onPause = viewModel::pauseRun,
+                                            onStop = viewModel::abortRun,
+                                            onDownloadReport = {
+                                                state.selectedRunId?.let { runId ->
+                                                    viewModel.updateExportRunId(runId)
+                                                    viewModel.exportRunReport(shareFile)
+                                                }
+                                            },
+                                            canGoBack = canGoBack,
+                                            onBack = viewModel::navigateBack,
+                                        )
+
+                                    AppScreen.COMMERCIAL ->
+                                        CommercialPipelineScreen(
+                                            pipeline = state.commercialPipeline,
+                                            selected = state.selectedOpportunity,
+                                            error = state.commercialError,
+                                            canGoBack = canGoBack,
+                                            onBack = viewModel::navigateBack,
+                                            onSelect = viewModel::selectOpportunity,
+                                            onExport = {
+                                                viewModel.exportCommercialCsv { bytes ->
+                                                    shareFile(bytes, "commercial_pipeline.csv", "text/csv")
+                                                }
+                                            },
+                                            onRefresh = viewModel::loadCommercialPipeline,
+                                        )
+
+                                    AppScreen.EXPORTS ->
+                                        ExportsScreen(
+                                            runId = state.export.runId,
+                                            onRunIdChange = viewModel::updateExportRunId,
+                                            isLoading = state.export.isLoading,
+                                            statusMessage = state.export.statusMessage,
+                                            errorMessage = state.export.errorMessage,
+                                            canGoBack = canGoBack,
+                                            onBack = viewModel::navigateBack,
+                                            onExportReport = { viewModel.exportRunReport(shareFile) },
+                                            onExportAudit = { viewModel.exportAuditBundle(shareFile) },
+                                        )
+
+                                    AppScreen.TRACE ->
+                                        TraceScreen(
+                                            score = state.trace.score,
+                                            alerts = state.trace.alerts,
+                                            isLoading = state.trace.isLoading,
+                                            statusMessage = state.trace.statusMessage,
+                                            errorMessage = state.trace.errorMessage,
+                                            canGoBack = canGoBack,
+                                            onBack = viewModel::navigateBack,
+                                            onRefresh = viewModel::loadTraceSummary,
+                                        )
+
+                                    else -> Unit
                                 }
                             }
                         }
                     }
 
-                    // Global Status Overlay
-                    state.statusMessage?.let {
+                    state.statusMessage?.let { msg ->
                         Surface(
                             modifier = Modifier.align(Alignment.BottomCenter).padding(NgSpacing.Large),
                             shape = MaterialTheme.shapes.medium,
                             color = MaterialTheme.colorScheme.inverseSurface,
-                            tonalElevation = 4.dp
+                            tonalElevation = 4.dp,
                         ) {
-                            Text(it, modifier = Modifier.padding(NgSpacing.Medium), color = MaterialTheme.colorScheme.inverseOnSurface)
+                            Text(
+                                msg,
+                                modifier = Modifier.padding(NgSpacing.Medium),
+                                color = MaterialTheme.colorScheme.inverseOnSurface,
+                            )
                         }
                     }
                 }
@@ -179,23 +261,29 @@ fun AuthScreen(
     state: AuthUiState,
     onStart: () -> Unit,
     onOpen: (String) -> Unit,
-    onPoll: () -> Unit
+    onPoll: () -> Unit,
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(NgSpacing.Large),
+        modifier = Modifier.fillMaxSize().padding(NgSpacing.Large),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(NgSpacing.Large)
+        verticalArrangement = Arrangement.spacedBy(NgSpacing.Large),
     ) {
         Text("Precision Control Access", style = MaterialTheme.typography.displaySmall)
-        
+
         NgCard {
-            Column(modifier = Modifier.padding(NgSpacing.Medium), verticalArrangement = Arrangement.spacedBy(NgSpacing.Medium)) {
+            Column(
+                modifier = Modifier.padding(NgSpacing.Medium),
+                verticalArrangement = Arrangement.spacedBy(NgSpacing.Medium),
+            ) {
                 if (state.deviceAuthorization == null) {
                     Text("Authorize this terminal to begin operational control.")
-                    
+
                     if (state.statusMessage == "OIDC config missing") {
-                        NgStatusChip("Configuration Error", NgStatus.Error)
-                        Text("OIDC_ISSUER or OIDC_CLIENT_ID is not set in build configuration.", style = MaterialTheme.typography.bodySmall)
+                        NgStatusChip(text = "Configuration Error", status = NgStatus.Error)
+                        Text(
+                            "OIDC_ISSUER or OIDC_CLIENT_ID is not set in build configuration.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
                     } else {
                         NgPrimaryButton(text = "Begin Authorization", onClick = onStart)
                     }
@@ -203,27 +291,39 @@ fun AuthScreen(
                     val device = state.deviceAuthorization
                     Text("User Code", style = MaterialTheme.typography.labelLarge)
                     Text(
-                        device.userCode, 
-                        style = MaterialTheme.typography.displayMedium, 
-                        color = NgColors.Primary
+                        device.userCode,
+                        style = MaterialTheme.typography.displayMedium,
+                        color = NgColors.Primary,
                     )
-                    
-                    Text("1. Open the verification URL on another device.\n2. Enter the code shown above.\n3. Click 'Confirm Authorization' here.", style = MaterialTheme.typography.bodyMedium)
 
-                    NgPrimaryButton(text = "Open Verification URL", onClick = { onOpen(device.verificationUriComplete ?: device.verificationUri) })
-                    
-                    OutlinedButton(onClick = onPoll, modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "1. Open the verification URL on another device.\n" +
+                                "2. Enter the code shown above.\n" +
+                                "3. Click 'Confirm Authorization' here.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+
+                    NgPrimaryButton(
+                        text = "Open Verification URL",
+                        onClick = { onOpen(device.verificationUriComplete ?: device.verificationUri) },
+                    )
+
+                    OutlinedButton(onClick = onPoll, modifier = Modifier.fillMaxSize()) {
                         Text("Confirm Authorization")
                     }
-                    
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(2.dp))
-                    Text("Polling for authorization...", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                    LinearProgressIndicator(modifier = Modifier.fillMaxSize().height(2.dp))
+                    Text(
+                        "Polling for authorization...",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
-        
+
         if (state.statusMessage != null && state.statusMessage != "OIDC config missing") {
-            NgStatusChip(state.statusMessage, NgStatus.Warning)
+            NgStatusChip(text = state.statusMessage!!, status = NgStatus.Warning)
         }
     }
 }
@@ -232,7 +332,7 @@ fun AuthScreen(
 private fun NgNavigationRail(
     currentScreen: AppScreen,
     onNavigate: (AppScreen) -> Unit,
-    state: RegenOpsUiState
+    state: RegenOpsUiState,
 ) {
     NavigationRail(
         containerColor = MaterialTheme.colorScheme.surface,
@@ -241,16 +341,16 @@ private fun NgNavigationRail(
                 Icons.Default.Build,
                 contentDescription = null,
                 modifier = Modifier.padding(vertical = NgSpacing.Large),
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.primary,
             )
-        }
+        },
     ) {
         navItems(state).forEach { item ->
             NavigationRailItem(
                 selected = currentScreen == item.screen,
                 onClick = { onNavigate(item.screen) },
                 icon = { Icon(item.icon, contentDescription = item.label) },
-                label = { Text(item.label) }
+                label = { Text(item.label) },
             )
         }
     }
@@ -260,7 +360,7 @@ private fun NgNavigationRail(
 private fun NgBottomNavigation(
     currentScreen: AppScreen,
     onNavigate: (AppScreen) -> Unit,
-    state: RegenOpsUiState
+    state: RegenOpsUiState,
 ) {
     NavigationBar {
         navItems(state).forEach { item ->
@@ -268,7 +368,7 @@ private fun NgBottomNavigation(
                 selected = currentScreen == item.screen,
                 onClick = { onNavigate(item.screen) },
                 icon = { Icon(item.icon, contentDescription = item.label) },
-                label = { Text(item.label) }
+                label = { Text(item.label) },
             )
         }
     }
@@ -280,22 +380,13 @@ private data class NavItem(val screen: AppScreen, val label: String, val icon: I
 private fun navItems(state: RegenOpsUiState) = buildList {
     add(NavItem(AppScreen.PROTOCOLS, "Protocols", Icons.Default.List))
     add(NavItem(AppScreen.RUN_CONTROL, "Control", Icons.Default.PlayArrow))
-    if (state.selectedRunId != null || state.screen == AppScreen.LIVE_RUN) {
-        add(NavItem(AppScreen.LIVE_RUN, "Live", Icons.Default.Info))
-    }
-    if (state.traceModeEnabled) {
-        add(NavItem(AppScreen.TRACE, "Trace", Icons.Default.CheckCircle))
-    }
+    if (state.selectedRunId != null || state.screen == AppScreen.LIVE_RUN) add(NavItem(AppScreen.LIVE_RUN, "Live", Icons.Default.Info))
+    if (state.traceModeEnabled) add(NavItem(AppScreen.TRACE, "Trace", Icons.Default.CheckCircle))
     add(NavItem(AppScreen.EXPORTS, "Exports", Icons.Default.KeyboardArrowDown))
-    if (state.commercialModeEnabled) {
-        add(NavItem(AppScreen.COMMERCIAL, "Pipeline", Icons.Default.Star))
-    }
+    if (state.commercialModeEnabled) add(NavItem(AppScreen.COMMERCIAL, "Pipeline", Icons.Default.Star))
 }
 
-// Simple helper for responsive layout
 object WindowSize {
     @Composable
-    fun isDesktop(): Boolean {
-        return !isAndroid()
-    }
+    fun isDesktop(): Boolean = !isAndroid()
 }

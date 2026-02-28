@@ -29,71 +29,107 @@ class RegenOpsViewModel(
     private val oidcRepository: OidcRepository,
     private val commercialApi: CommercialApi,
     private val exportsApi: ExportsApi,
-    private val traceApi: TraceApi
+    private val traceApi: TraceApi,
 ) {
     private val scope = CoroutineScope(Dispatchers.Default + Job())
     private var eventsJob: Job? = null
     private var telemetryJob: Job? = null
 
-    private val _state = MutableStateFlow(
-        RegenOpsUiState(
-            screen = AppScreen.PROTOCOLS,
-            auth = AuthUiState(isAuthenticated = oidcRepository.hasTokens()),
-            commercialModeEnabled = config.commercialModeEnabled,
-            founderModeEnabled = config.founderModeEnabled,
-            traceModeEnabled = config.traceModeEnabled,
-            demoModeEnabled = config.demoModeEnabled
+    /** Simple back stack for “detail” navigation (not the bottom tabs). */
+    private val backStack: ArrayDeque<AppScreen> = ArrayDeque()
+
+    private val _state =
+        MutableStateFlow(
+            RegenOpsUiState(
+                screen = AppScreen.PROTOCOLS,
+                auth = AuthUiState(isAuthenticated = oidcRepository.hasTokens()),
+                commercialModeEnabled = config.commercialModeEnabled,
+                founderModeEnabled = config.founderModeEnabled,
+                traceModeEnabled = config.traceModeEnabled,
+                demoModeEnabled = config.demoModeEnabled,
+            ),
         )
-    )
     val state: StateFlow<RegenOpsUiState> = _state
 
     init {
         scope.launch {
             repository.protocols.collectLatest { protocols ->
                 _state.update { current ->
-                    val selected = resolveSelectedProtocol(current.selectedProtocol, protocols)
+                    val effectiveProtocols =
+                        if (protocols.isEmpty()) {
+                            // Keep the UI usable when backend returns empty.
+                            MockProtocols.sample()
+                        } else {
+                            protocols
+                        }
+
+                    val selected = resolveSelectedProtocol(current.selectedProtocol, effectiveProtocols)
                     val selectedVersion = resolveSelectedVersion(current.selectedVersion, selected)
+
                     current.copy(
-                        protocols = protocols,
+                        protocols = effectiveProtocols,
                         selectedProtocol = selected,
-                        selectedVersion = selectedVersion
+                        selectedVersion = selectedVersion,
                     )
                 }
             }
         }
+
         scope.launch {
             repository.runs.collectLatest { runs ->
                 _state.update { current -> current.copy(runs = runs) }
             }
         }
+
         if (oidcRepository.hasTokens()) {
             refreshProtocols()
             refreshRuns()
         }
     }
 
-    fun setScreen(screen: AppScreen) {
-        _state.update { it.copy(screen = screen) }
-        if (screen != AppScreen.LIVE_RUN) {
-            stopStreaming()
-        }
-        if (screen == AppScreen.COMMERCIAL) {
-            loadCommercialPipeline()
-        }
-        if (screen == AppScreen.EXPORTS) {
-            _state.update { current ->
-                if (current.export.runId.isNotBlank()) {
-                    current
-                } else {
-                    current.copy(export = current.export.copy(runId = current.selectedRunId ?: ""))
-                }
-            }
-        }
-        if (screen == AppScreen.TRACE) {
-            loadTraceSummary()
-        }
+    // -----------------------------------------------------------------------------
+    // Navigation (Back)
+    // -----------------------------------------------------------------------------
+    fun canGoBack(): Boolean = backStack.isNotEmpty()
+
+    fun navigateTo(screen: AppScreen) {
+        val current = _state.value.screen
+        if (current != screen) backStack.addLast(current)
+        setScreenInternal(screen)
     }
 
+    fun navigateBack() {
+        val prev = backStack.removeLastOrNull() ?: return
+        setScreenInternal(prev)
+    }
+
+    /** Used by bottom nav / rail (treat as “top level” -> clears back stack). */
+    fun setScreen(screen: AppScreen) {
+        backStack.clear()
+        setScreenInternal(screen)
+    }
+
+    private fun setScreenInternal(screen: AppScreen) {
+        _state.update { it.copy(screen = screen) }
+
+        // Leaving live stream screen stops streaming
+        if (screen != AppScreen.LIVE_RUN) stopStreaming()
+
+        if (screen == AppScreen.COMMERCIAL) loadCommercialPipeline()
+
+        if (screen == AppScreen.EXPORTS) {
+            _state.update { current ->
+                if (current.export.runId.isNotBlank()) current
+                else current.copy(export = current.export.copy(runId = current.selectedRunId ?: ""))
+            }
+        }
+
+        if (screen == AppScreen.TRACE) loadTraceSummary()
+    }
+
+    // -----------------------------------------------------------------------------
+    // UI state edits
+    // -----------------------------------------------------------------------------
     fun updateQuery(query: String) {
         _state.update { it.copy(protocolQuery = query) }
     }
@@ -124,7 +160,7 @@ class RegenOpsViewModel(
         _state.update { current ->
             current.copy(
                 simulatedRunEnabled = enabled,
-                statusMessage = if (enabled) "Simulated run mode enabled" else "Simulated run mode disabled"
+                statusMessage = if (enabled) "Simulated run mode enabled" else "Simulated run mode disabled",
             )
         }
     }
@@ -133,13 +169,16 @@ class RegenOpsViewModel(
         _state.update { it.copy(selectedOpportunity = opportunity) }
     }
 
+    // -----------------------------------------------------------------------------
+    // Protocols / Runs
+    // -----------------------------------------------------------------------------
     fun refreshProtocols() {
         scope.launch {
             when (val result = repository.refreshProtocols()) {
-                is ApiResult.Success -> _state.update { it.copy(statusMessage = "Protocols refreshed", errorBanner = null) }
-                is ApiResult.Failure -> _state.update {
-                    it.copy(errorBanner = mapNetworkError(result.error, "Failed to refresh protocols"))
-                }
+                is ApiResult.Success ->
+                    _state.update { it.copy(statusMessage = "Protocols refreshed", errorBanner = null) }
+                is ApiResult.Failure ->
+                    _state.update { it.copy(errorBanner = mapNetworkError(result.error, "Failed to refresh protocols")) }
             }
         }
     }
@@ -147,8 +186,10 @@ class RegenOpsViewModel(
     fun refreshRuns() {
         scope.launch {
             when (val result = repository.refreshRuns()) {
-                is ApiResult.Success -> _state.update { it.copy(statusMessage = "Runs refreshed", errorBanner = null) }
-                is ApiResult.Failure -> _state.update { it.copy(statusMessage = "Runs refresh not supported yet") }
+                is ApiResult.Success ->
+                    _state.update { it.copy(statusMessage = "Runs refreshed", errorBanner = null) }
+                is ApiResult.Failure ->
+                    _state.update { it.copy(statusMessage = "Runs refresh not supported yet") }
             }
         }
     }
@@ -157,10 +198,10 @@ class RegenOpsViewModel(
         val version = _state.value.selectedVersion ?: return
         scope.launch {
             when (val result = repository.publishVersion(version.protocolId.value, version.id.value)) {
-                is ApiResult.Success -> _state.update { it.copy(statusMessage = "Version published", errorBanner = null) }
-                is ApiResult.Failure -> _state.update {
-                    it.copy(errorBanner = mapNetworkError(result.error, "Publish failed"))
-                }
+                is ApiResult.Success ->
+                    _state.update { it.copy(statusMessage = "Version published", errorBanner = null) }
+                is ApiResult.Failure ->
+                    _state.update { it.copy(errorBanner = mapNetworkError(result.error, "Publish failed")) }
             }
         }
     }
@@ -172,17 +213,21 @@ class RegenOpsViewModel(
             _state.update { it.copy(statusMessage = "Select a protocol version first") }
             return
         }
+
         scope.launch {
             when (val result = repository.startRun(protocolId, versionId)) {
                 is ApiResult.Success -> {
-                    val message = if (_state.value.simulatedRunEnabled) "Simulated run requested" else "Run started"
-                    _state.update { it.copy(selectedRunId = result.value.id.value, statusMessage = message, errorBanner = null) }
-                    setScreen(AppScreen.LIVE_RUN)
-                    startStreaming(result.value.id.value)
+                    val runId = result.value.id.value
+                    val message =
+                        if (_state.value.simulatedRunEnabled) "Simulated run requested" else "Run started"
+                    _state.update { it.copy(selectedRunId = runId, statusMessage = message, errorBanner = null) }
+
+                    navigateTo(AppScreen.LIVE_RUN)
+                    startStreaming(runId)
                 }
-                is ApiResult.Failure -> _state.update {
-                    it.copy(errorBanner = mapNetworkError(result.error, "Start run failed"))
-                }
+
+                is ApiResult.Failure ->
+                    _state.update { it.copy(errorBanner = mapNetworkError(result.error, "Start run failed")) }
             }
         }
     }
@@ -192,51 +237,69 @@ class RegenOpsViewModel(
         startRun()
     }
 
+    fun startSimulatedRun(config: SimulationConfig) {
+        if (!_state.value.founderModeEnabled && !_state.value.demoModeEnabled) return
+        if (!_state.value.simulatedRunEnabled) setSimulatedRunEnabled(true)
+
+        _state.update {
+            it.copy(
+                statusMessage =
+                    "Starting simulation: ${config.durationMinutes}m @${config.speedFactor}x (${config.tickMillis}ms tick)",
+            )
+        }
+        startRun()
+    }
+
     fun pauseRun() {
-        val runId = _state.value.selectedRunId ?: _state.value.runs.firstOrNull()?.id?.value
-        if (runId == null) return
+        val runId = _state.value.selectedRunId ?: _state.value.runs.firstOrNull()?.id?.value ?: return
         scope.launch {
             when (val result = repository.updateRunStatus(runId, RunStatus.PAUSED)) {
-                is ApiResult.Success -> _state.update { it.copy(statusMessage = "Run paused", errorBanner = null) }
-                is ApiResult.Failure -> _state.update {
-                    it.copy(errorBanner = mapNetworkError(result.error, "Pause failed"))
-                }
+                is ApiResult.Success ->
+                    _state.update { it.copy(statusMessage = "Run paused", errorBanner = null) }
+                is ApiResult.Failure ->
+                    _state.update { it.copy(errorBanner = mapNetworkError(result.error, "Pause failed")) }
             }
         }
     }
 
     fun abortRun() {
-        val runId = _state.value.selectedRunId ?: _state.value.runs.firstOrNull()?.id?.value
-        if (runId == null) return
+        val runId = _state.value.selectedRunId ?: _state.value.runs.firstOrNull()?.id?.value ?: return
         scope.launch {
             when (val result = repository.updateRunStatus(runId, RunStatus.ABORTED)) {
-                is ApiResult.Success -> _state.update { it.copy(statusMessage = "Run aborted", errorBanner = null) }
-                is ApiResult.Failure -> _state.update {
-                    it.copy(errorBanner = mapNetworkError(result.error, "Abort failed"))
-                }
+                is ApiResult.Success ->
+                    _state.update { it.copy(statusMessage = "Run stopped", errorBanner = null) }
+                is ApiResult.Failure ->
+                    _state.update { it.copy(errorBanner = mapNetworkError(result.error, "Stop failed")) }
             }
         }
     }
 
+    // -----------------------------------------------------------------------------
+    // Streaming
+    // -----------------------------------------------------------------------------
     fun startStreaming(runId: String) {
         stopStreaming()
         _state.update { it.copy(streamStatus = "Connecting...") }
-        eventsJob = scope.launch {
-            repository.streamEvents(runId).collectLatest { event ->
-                _state.update { current ->
-                    val events = listOf(event) + current.runEvents
-                    current.copy(runEvents = events.take(120), streamStatus = null)
+
+        eventsJob =
+            scope.launch {
+                repository.streamEvents(runId).collectLatest { event ->
+                    _state.update { current ->
+                        val events = listOf(event) + current.runEvents
+                        current.copy(runEvents = events.take(120), streamStatus = null)
+                    }
                 }
             }
-        }
-        telemetryJob = scope.launch {
-            repository.streamTelemetry(runId).collectLatest { frame ->
-                _state.update { current ->
-                    val telemetry = current.telemetryFrames + frame
-                    current.copy(telemetryFrames = telemetry.takeLast(200), streamStatus = null)
+
+        telemetryJob =
+            scope.launch {
+                repository.streamTelemetry(runId).collectLatest { frame ->
+                    _state.update { current ->
+                        val telemetry = current.telemetryFrames + frame
+                        current.copy(telemetryFrames = telemetry.takeLast(200), streamStatus = null)
+                    }
                 }
             }
-        }
     }
 
     fun stopStreaming() {
@@ -246,6 +309,9 @@ class RegenOpsViewModel(
         telemetryJob = null
     }
 
+    // -----------------------------------------------------------------------------
+    // Auth
+    // -----------------------------------------------------------------------------
     fun beginDeviceAuth(onDeviceCode: (DeviceAuthorization) -> Unit) {
         val issuer = config.oidcIssuer
         val clientId = config.oidcClientId
@@ -253,6 +319,7 @@ class RegenOpsViewModel(
             _state.update { it.copy(auth = it.auth.copy(statusMessage = "OIDC config missing")) }
             return
         }
+
         scope.launch {
             val result = oidcRepository.startDeviceAuthorization(OidcConfig(issuer, clientId, config.oidcAudience))
             when (result) {
@@ -262,9 +329,8 @@ class RegenOpsViewModel(
                     }
                     onDeviceCode(result.value)
                 }
-                is ApiResult.Failure -> _state.update { current ->
-                    current.copy(auth = current.auth.copy(statusMessage = "OIDC device auth failed"))
-                }
+                is ApiResult.Failure ->
+                    _state.update { current -> current.copy(auth = current.auth.copy(statusMessage = "OIDC device auth failed")) }
             }
         }
     }
@@ -274,12 +340,15 @@ class RegenOpsViewModel(
         val issuer = config.oidcIssuer
         val clientId = config.oidcClientId
         if (issuer.isBlank() || clientId.isBlank()) return
+
         scope.launch {
-            val result = oidcRepository.pollForTokens(
-                OidcConfig(issuer, clientId, config.oidcAudience),
-                device.deviceCode,
-                device.intervalSeconds
-            )
+            val result =
+                oidcRepository.pollForTokens(
+                    OidcConfig(issuer, clientId, config.oidcAudience),
+                    device.deviceCode,
+                    device.intervalSeconds,
+                )
+
             when (result) {
                 is ApiResult.Success -> {
                     _state.update { current ->
@@ -287,25 +356,30 @@ class RegenOpsViewModel(
                             auth = current.auth.copy(
                                 isAuthenticated = true,
                                 deviceAuthorization = null,
-                                statusMessage = "Authenticated"
-                            )
+                                statusMessage = "Authenticated",
+                            ),
                         )
                     }
                     refreshProtocols()
                     refreshRuns()
                 }
-                is ApiResult.Failure -> _state.update { current ->
-                    current.copy(auth = current.auth.copy(statusMessage = "Authentication failed"))
-                }
+
+                is ApiResult.Failure ->
+                    _state.update { current -> current.copy(auth = current.auth.copy(statusMessage = "Authentication failed")) }
             }
         }
     }
 
     fun logout() {
         oidcRepository.clearTokens()
+        backStack.clear()
+        stopStreaming()
         _state.update { it.copy(auth = AuthUiState(isAuthenticated = false), statusMessage = "Logged out") }
     }
 
+    // -----------------------------------------------------------------------------
+    // Commercial / Trace
+    // -----------------------------------------------------------------------------
     fun loadCommercialPipeline() {
         if (!_state.value.commercialModeEnabled) return
         scope.launch {
@@ -316,47 +390,93 @@ class RegenOpsViewModel(
         }
     }
 
+    fun loadTraceSummary() {
+        if (!_state.value.founderModeEnabled && !_state.value.traceModeEnabled && !_state.value.demoModeEnabled) return
+
+        scope.launch {
+            _state.update { current ->
+                current.copy(trace = current.trace.copy(isLoading = true, statusMessage = "Loading trace metrics...", errorMessage = null))
+            }
+
+            val scoreResult = traceApi.getReproducibilityScore()
+            val alertsResult = traceApi.listDriftAlerts()
+
+            _state.update { current ->
+                val score = (scoreResult as? ApiResult.Success)?.value ?: current.trace.score
+                val alerts = (alertsResult as? ApiResult.Success)?.value ?: current.trace.alerts
+                val error =
+                    when {
+                        scoreResult is ApiResult.Failure -> mapNetworkError(scoreResult.error, "Trace metrics unavailable")
+                        alertsResult is ApiResult.Failure -> mapNetworkError(alertsResult.error, "Trace alerts unavailable")
+                        else -> null
+                    }
+
+                current.copy(
+                    trace = current.trace.copy(
+                        score = score,
+                        alerts = alerts,
+                        isLoading = false,
+                        statusMessage = if (error == null) "Trace metrics updated" else null,
+                        errorMessage = error,
+                    ),
+                )
+            }
+        }
+    }
+
+    // -----------------------------------------------------------------------------
+    // Exports (Report / PDF)
+    // -----------------------------------------------------------------------------
     fun exportRunReport(onExport: (ByteArray, String, String) -> Unit) {
         if (!_state.value.founderModeEnabled && !_state.value.demoModeEnabled) return
+
         val runId = resolveExportRunId()
         if (runId == null) {
             _state.update { it.copy(export = it.export.copy(errorMessage = "Select a run ID first")) }
             return
         }
+
         scope.launch {
-            _state.update {
-                it.copy(export = it.export.copy(isLoading = true, statusMessage = "Exporting run report...", errorMessage = null))
-            }
+            _state.update { it.copy(export = it.export.copy(isLoading = true, statusMessage = "Exporting run report...", errorMessage = null)) }
+
             when (val result = exportsApi.exportRunReport(runId)) {
                 is ApiResult.Success -> {
                     val safeRun = sanitizeFilePart(runId)
                     val payload = result.value
                     val suggested = payload.fileName?.let(::sanitizeFilePart).orEmpty()
-                    val fileName = suggested.ifBlank { "run_report_${safeRun}.json" }
-                    val mimeType = payload.contentType ?: "application/json"
+
+                    val mimeType = payload.contentType ?: "application/octet-stream"
+                    val defaultName =
+                        when {
+                            mimeType.contains("pdf", ignoreCase = true) -> "run_report_${safeRun}.pdf"
+                            mimeType.contains("zip", ignoreCase = true) -> "run_report_${safeRun}.zip"
+                            mimeType.contains("json", ignoreCase = true) -> "run_report_${safeRun}.json"
+                            else -> "run_report_${safeRun}.bin"
+                        }
+                    val fileName = suggested.ifBlank { defaultName }
+
                     onExport(payload.bytes, fileName, mimeType)
-                    _state.update {
-                        it.copy(export = it.export.copy(isLoading = false, statusMessage = "Run report ready", errorMessage = null))
-                    }
+                    _state.update { it.copy(export = it.export.copy(isLoading = false, statusMessage = "Run report ready", errorMessage = null)) }
                 }
-                is ApiResult.Failure -> _state.update {
-                    it.copy(export = it.export.copy(isLoading = false, errorMessage = mapNetworkError(result.error, "Export failed")))
-                }
+
+                is ApiResult.Failure ->
+                    _state.update { it.copy(export = it.export.copy(isLoading = false, errorMessage = mapNetworkError(result.error, "Export failed"))) }
             }
         }
     }
 
     fun exportAuditBundle(onExport: (ByteArray, String, String) -> Unit) {
         if (!_state.value.founderModeEnabled && !_state.value.demoModeEnabled) return
+
         val runId = resolveExportRunId()
         if (runId == null) {
             _state.update { it.copy(export = it.export.copy(errorMessage = "Select a run ID first")) }
             return
         }
+
         scope.launch {
-            _state.update {
-                it.copy(export = it.export.copy(isLoading = true, statusMessage = "Exporting audit bundle...", errorMessage = null))
-            }
+            _state.update { it.copy(export = it.export.copy(isLoading = true, statusMessage = "Exporting audit bundle...", errorMessage = null)) }
+
             when (val result = exportsApi.exportAuditBundle(runId)) {
                 is ApiResult.Success -> {
                     val safeRun = sanitizeFilePart(runId)
@@ -364,49 +484,13 @@ class RegenOpsViewModel(
                     val suggested = payload.fileName?.let(::sanitizeFilePart).orEmpty()
                     val fileName = suggested.ifBlank { "audit_bundle_${safeRun}.zip" }
                     val mimeType = payload.contentType ?: "application/zip"
-                    onExport(payload.bytes, fileName, mimeType)
-                    _state.update {
-                        it.copy(export = it.export.copy(isLoading = false, statusMessage = "Audit bundle ready", errorMessage = null))
-                    }
-                }
-                is ApiResult.Failure -> _state.update {
-                    it.copy(export = it.export.copy(isLoading = false, errorMessage = mapNetworkError(result.error, "Export failed")))
-                }
-            }
-        }
-    }
 
-    fun loadTraceSummary() {
-        if (!_state.value.founderModeEnabled && !_state.value.traceModeEnabled && !_state.value.demoModeEnabled) return
-        scope.launch {
-            _state.update { current ->
-                current.copy(
-                    trace = current.trace.copy(
-                        isLoading = true,
-                        statusMessage = "Loading trace metrics...",
-                        errorMessage = null
-                    )
-                )
-            }
-            val scoreResult = traceApi.getReproducibilityScore()
-            val alertsResult = traceApi.listDriftAlerts()
-            _state.update { current ->
-                val score = (scoreResult as? ApiResult.Success)?.value ?: current.trace.score
-                val alerts = (alertsResult as? ApiResult.Success)?.value ?: current.trace.alerts
-                val error = when {
-                    scoreResult is ApiResult.Failure -> mapNetworkError(scoreResult.error, "Trace metrics unavailable")
-                    alertsResult is ApiResult.Failure -> mapNetworkError(alertsResult.error, "Trace alerts unavailable")
-                    else -> null
+                    onExport(payload.bytes, fileName, mimeType)
+                    _state.update { it.copy(export = it.export.copy(isLoading = false, statusMessage = "Audit bundle ready", errorMessage = null)) }
                 }
-                current.copy(
-                    trace = current.trace.copy(
-                        score = score,
-                        alerts = alerts,
-                        isLoading = false,
-                        statusMessage = if (error == null) "Trace metrics updated" else null,
-                        errorMessage = error
-                    )
-                )
+
+                is ApiResult.Failure ->
+                    _state.update { it.copy(export = it.export.copy(isLoading = false, errorMessage = mapNetworkError(result.error, "Export failed"))) }
             }
         }
     }
@@ -416,30 +500,32 @@ class RegenOpsViewModel(
         scope.launch {
             when (val result = commercialApi.exportCsv()) {
                 is ApiResult.Success -> onExport(result.value)
-                is ApiResult.Failure -> _state.update {
-                    it.copy(commercialError = "Unable to export CSV")
-                }
+                is ApiResult.Failure -> _state.update { it.copy(commercialError = "Unable to export CSV") }
             }
         }
     }
 
+    // -----------------------------------------------------------------------------
+    // Close
+    // -----------------------------------------------------------------------------
     fun close() {
         repository.close()
         scope.cancel()
     }
 
+    // -----------------------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------------------
     private fun resolveExportRunId(): String? {
         val candidate = _state.value.export.runId.ifBlank { _state.value.selectedRunId.orEmpty() }
         return candidate.takeIf { it.isNotBlank() }
     }
 
-    private fun sanitizeFilePart(value: String): String {
-        return value.replace(Regex("[^A-Za-z0-9_.-]"), "_")
-    }
+    private fun sanitizeFilePart(value: String): String =
+        value.replace(Regex("[^A-Za-z0-9_.-]"), "_")
 
-    private fun resolveSelectedProtocol(current: Protocol?, protocols: List<Protocol>): Protocol? {
-        return protocols.firstOrNull { it.id == current?.id } ?: protocols.firstOrNull()
-    }
+    private fun resolveSelectedProtocol(current: Protocol?, protocols: List<Protocol>): Protocol? =
+        protocols.firstOrNull { it.id == current?.id } ?: protocols.firstOrNull()
 
     private fun resolveSelectedVersion(current: ProtocolVersion?, protocol: Protocol?): ProtocolVersion? {
         if (protocol == null) return null
@@ -448,19 +534,19 @@ class RegenOpsViewModel(
             ?: protocol.versions.firstOrNull()
     }
 
-    private fun mapNetworkError(error: NetworkError, fallback: String): String {
-        return when (error) {
+    private fun mapNetworkError(error: NetworkError, fallback: String): String =
+        when (error) {
             is NetworkError.ConnectivityError -> "Server unreachable"
             is NetworkError.TimeoutError -> "Request timed out"
-            is NetworkError.HttpError -> when (error.status) {
-                401 -> "Auth expired. Please login again."
-                403 -> "Access denied for this export."
-                404 -> "Run not found. Verify the run ID."
-                in 500..599 -> "Server error. Try again later."
-                else -> fallback
-            }
+            is NetworkError.HttpError ->
+                when (error.status) {
+                    401 -> "Auth expired. Please login again."
+                    403 -> "Access denied."
+                    404 -> "Not found."
+                    in 500..599 -> "Server error. Try again later."
+                    else -> fallback
+                }
             is NetworkError.SerializationError -> "Invalid response from server"
             is NetworkError.UnknownError -> fallback
         }
-    }
 }
