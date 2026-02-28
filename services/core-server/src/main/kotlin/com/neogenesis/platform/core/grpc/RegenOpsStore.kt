@@ -1,88 +1,225 @@
 package com.neogenesis.platform.core.grpc
 
-import com.neogenesis.platform.proto.v1.ListProtocolsResponse
-import com.neogenesis.platform.proto.v1.ProtocolSummary
-import com.neogenesis.platform.proto.v1.ProtocolVersion
-import com.neogenesis.platform.proto.v1.RunEvent
-import com.neogenesis.platform.proto.v1.RunRef
-import com.neogenesis.platform.proto.v1.TelemetryFrame
+import com.neogenesis.grpc.GatewayRunEvent
+import com.neogenesis.grpc.GatewayTelemetry
+import com.neogenesis.grpc.ListProtocolsResponse
+import com.neogenesis.grpc.ProtocolDraftRecord
+import com.neogenesis.grpc.ProtocolSummary
+import com.neogenesis.grpc.ProtocolVersionRecord
+import com.neogenesis.grpc.RunEventRecord
+import com.neogenesis.grpc.RunRecord
+import com.neogenesis.grpc.TelemetryRecord
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filter
-import java.time.Instant
 import java.util.UUID
 
 internal object RegenOpsInMemoryStore {
     private val protocols = mutableListOf(
         ProtocolSummary.newBuilder()
             .setProtocolId("proto-1")
-            .setName("RegenOps Alpha")
-            .setSummary("Baseline scaffold protocol")
-            .setLatestVersion(
-                ProtocolVersion.newBuilder()
-                    .setProtocolId("proto-1")
-                    .setVersionId("v1")
-                    .setVersion("1.0")
-                    .setPayload("{\"pressure\":110}")
-                    .setPublished(true)
-                    .setCreatedAt(Instant.now().toString())
-            )
+            .setTitle("RegenOps Alpha")
+            .setLatestVersion(1)
+            .setHasDraft(false)
+            .setUpdatedAtMs(System.currentTimeMillis())
             .build()
     )
-    private val runs = mutableMapOf<String, RunRef>()
-    private val runEvents = MutableSharedFlow<RunEvent>(extraBufferCapacity = 32)
-    private val telemetry = MutableSharedFlow<TelemetryFrame>(extraBufferCapacity = 32)
+    private val protocolVersions = mutableMapOf<Pair<String, Int>, ProtocolVersionRecord>(
+        ("proto-1" to 1) to ProtocolVersionRecord.newBuilder()
+            .setProtocolId("proto-1")
+            .setVersion(1)
+            .setTitle("RegenOps Alpha")
+            .setContentJson("{\"pressure\":110}")
+            .setCreatedAtMs(System.currentTimeMillis())
+            .build()
+    )
+
+    private val runs = mutableMapOf<String, RunRecord>()
+    private val runEvents = MutableSharedFlow<RunEventRecord>(extraBufferCapacity = 32)
+    private val telemetry = MutableSharedFlow<TelemetryRecord>(extraBufferCapacity = 32)
+    private var seqCounter = 0L
 
     fun listProtocols(): ListProtocolsResponse = ListProtocolsResponse.newBuilder()
         .addAllProtocols(protocols)
         .build()
 
-    fun getVersion(protocolId: String, versionId: String): ProtocolVersion? {
-        return protocols.firstOrNull { it.protocolId == protocolId }?.latestVersion
-            ?.takeIf { it.versionId == versionId }
+    fun getVersion(protocolId: String, version: Int): ProtocolVersionRecord? =
+        protocolVersions[protocolId to version]
+
+    fun createDraft(protocolId: String, title: String, contentJson: String, actorId: String): ProtocolDraftRecord {
+        upsertProtocolSummary(protocolId, title, hasDraft = true)
+        val now = System.currentTimeMillis()
+        return ProtocolDraftRecord.newBuilder()
+            .setProtocolId(protocolId)
+            .setTitle(title)
+            .setContentJson(contentJson)
+            .setUpdatedBy(actorId)
+            .setCreatedAtMs(now)
+            .setUpdatedAtMs(now)
+            .build()
     }
 
-    fun startRun(protocolId: String, versionId: String): RunRef {
-        val runId = "run-${UUID.randomUUID()}"
-        val run = RunRef.newBuilder().setRunId(runId).setStatus("RUNNING").build()
+    fun updateDraft(protocolId: String, title: String, contentJson: String, actorId: String): ProtocolDraftRecord {
+        upsertProtocolSummary(protocolId, title, hasDraft = true)
+        val now = System.currentTimeMillis()
+        return ProtocolDraftRecord.newBuilder()
+            .setProtocolId(protocolId)
+            .setTitle(title)
+            .setContentJson(contentJson)
+            .setUpdatedBy(actorId)
+            .setUpdatedAtMs(now)
+            .build()
+    }
+
+    fun publishVersion(protocolId: String, changelog: String): ProtocolVersionRecord {
+        val nextVersion = (protocols.firstOrNull { it.protocolId == protocolId }?.latestVersion ?: 0) + 1
+        val record = ProtocolVersionRecord.newBuilder()
+            .setProtocolId(protocolId)
+            .setVersion(nextVersion)
+            .setTitle("RegenOps ${protocolId.uppercase()}")
+            .setContentJson("{\"changelog\":\"$changelog\"}")
+            .setCreatedAtMs(System.currentTimeMillis())
+            .build()
+        protocolVersions[protocolId to nextVersion] = record
+        upsertProtocolSummary(protocolId, record.title, hasDraft = false, latestVersion = nextVersion)
+        return record
+    }
+
+    fun startRun(protocolId: String, version: Int, requestedRunId: String, gatewayId: String): RunRecord {
+        val runId = if (requestedRunId.isNotBlank()) requestedRunId else "run-${UUID.randomUUID()}"
+        val now = System.currentTimeMillis()
+        val run = RunRecord.newBuilder()
+            .setRunId(runId)
+            .setProtocolId(protocolId)
+            .setProtocolVersion(version)
+            .setGatewayId(gatewayId)
+            .setStatus("RUNNING")
+            .setStartedAtMs(now)
+            .setUpdatedAtMs(now)
+            .build()
         runs[runId] = run
         runEvents.tryEmit(
-            RunEvent.newBuilder()
+            RunEventRecord.newBuilder()
                 .setRunId(runId)
                 .setEventType("RUN_STARTED")
-                .setMessage("Run started for protocol $protocolId/$versionId")
-                .setCreatedAt(Instant.now().toString())
+                .setSource("core")
+                .setPayloadJson("{\"message\":\"Run started for protocol $protocolId/$version\"}")
+                .setCreatedAtMs(now)
+                .setSeq(nextSeq())
                 .build()
         )
         return run
     }
 
-    fun updateRun(runId: String, status: String): RunRef {
-        val run = RunRef.newBuilder().setRunId(runId).setStatus(status).build()
+    fun updateRun(runId: String, status: String): RunRecord {
+        val now = System.currentTimeMillis()
+        val existing = runs[runId]
+        val builder = (existing?.toBuilder() ?: RunRecord.newBuilder().setRunId(runId))
+            .setStatus(status)
+            .setUpdatedAtMs(now)
+        if (status == "PAUSED") {
+            builder.setPausedAtMs(now)
+        }
+        if (status == "ABORTED") {
+            builder.setAbortedAtMs(now)
+            builder.setAbortReason("requested")
+        }
+        val run = builder.build()
         runs[runId] = run
         runEvents.tryEmit(
-            RunEvent.newBuilder()
+            RunEventRecord.newBuilder()
                 .setRunId(runId)
-                .setEventType("RUN_${status}")
-                .setMessage("Run status changed to $status")
-                .setCreatedAt(Instant.now().toString())
+                .setEventType("RUN_$status")
+                .setSource("core")
+                .setPayloadJson("{\"message\":\"Run status changed to $status\"}")
+                .setCreatedAtMs(now)
+                .setSeq(nextSeq())
                 .build()
         )
         return run
     }
 
-    fun getRun(runId: String): RunRef? = runs[runId]
+    fun getRun(runId: String): RunRecord? = runs[runId]
 
-    fun events(runId: String): Flow<RunEvent> = runEvents.asSharedFlow().filter { it.runId == runId }
+    fun events(runId: String): Flow<RunEventRecord> = runEvents.asSharedFlow().filter { it.runId == runId }
 
-    fun telemetry(runId: String): Flow<TelemetryFrame> = telemetry.asSharedFlow().filter { it.runId == runId }
+    fun telemetry(runId: String): Flow<TelemetryRecord> = telemetry.asSharedFlow().filter { it.runId == runId }
 
-    fun pushTelemetry(runId: String, frames: List<TelemetryFrame>) {
-        frames.forEach { telemetry.tryEmit(it.toBuilder().setRunId(runId).build()) }
+    fun pushGatewayTelemetry(gatewayId: String, frames: List<GatewayTelemetry>) {
+        frames.forEach { frame ->
+            telemetry.tryEmit(
+                TelemetryRecord.newBuilder()
+                    .setRunId(frame.runId)
+                    .setGatewayId(gatewayId)
+                    .setMetricKey(frame.metricKey)
+                    .setMetricValue(frame.metricValue)
+                    .setUnit(frame.unit)
+                    .setDriftScore(frame.driftScore)
+                    .setRecordedAtMs(frame.recordedAtMs)
+                    .setSeq(frame.seq)
+                    .build()
+            )
+        }
     }
 
-    fun pushEvents(events: List<RunEvent>) {
-        events.forEach { runEvents.tryEmit(it) }
+    fun pushGatewayEvents(events: List<GatewayRunEvent>) {
+        events.forEach { event ->
+            runEvents.tryEmit(
+                RunEventRecord.newBuilder()
+                    .setRunId(event.runId)
+                    .setEventType(event.eventType)
+                    .setSource("gateway")
+                    .setPayloadJson(event.payloadJson)
+                    .setCreatedAtMs(event.createdAtMs)
+                    .setSeq(event.seq)
+                    .build()
+            )
+        }
+    }
+
+    fun registerGateway(gatewayId: String, displayName: String): com.neogenesis.grpc.GatewayRecord =
+        com.neogenesis.grpc.GatewayRecord.newBuilder()
+            .setGatewayId(gatewayId)
+            .setDisplayName(displayName.ifBlank { gatewayId })
+            .setStatus("REGISTERED")
+            .setLastHeartbeatAtMs(System.currentTimeMillis())
+            .setUpdatedAtMs(System.currentTimeMillis())
+            .build()
+
+    fun heartbeatGateway(gatewayId: String): com.neogenesis.grpc.GatewayRecord =
+        com.neogenesis.grpc.GatewayRecord.newBuilder()
+            .setGatewayId(gatewayId)
+            .setDisplayName(gatewayId)
+            .setStatus("OK")
+            .setLastHeartbeatAtMs(System.currentTimeMillis())
+            .setUpdatedAtMs(System.currentTimeMillis())
+            .build()
+
+    private fun upsertProtocolSummary(
+        protocolId: String,
+        title: String,
+        hasDraft: Boolean,
+        latestVersion: Int? = null
+    ) {
+        val index = protocols.indexOfFirst { it.protocolId == protocolId }
+        val existing = if (index >= 0) protocols[index] else null
+        val summary = ProtocolSummary.newBuilder()
+            .setProtocolId(protocolId)
+            .setTitle(if (title.isNotBlank()) title else existing?.title ?: protocolId)
+            .setLatestVersion(latestVersion ?: existing?.latestVersion ?: 0)
+            .setHasDraft(hasDraft)
+            .setUpdatedAtMs(System.currentTimeMillis())
+            .build()
+        if (index >= 0) {
+            protocols[index] = summary
+        } else {
+            protocols.add(summary)
+        }
+    }
+
+    private fun nextSeq(): Long {
+        seqCounter += 1
+        return seqCounter
     }
 }

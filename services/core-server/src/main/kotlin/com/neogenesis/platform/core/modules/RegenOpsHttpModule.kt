@@ -16,7 +16,9 @@ object RegenOpsHttpModule {
     @Serializable
     data class StartRunRequestDto(
         val protocolId: String,
-        val versionId: String
+        val protocolVersion: Int,
+        val runId: String? = null,
+        val gatewayId: String? = null
     )
 
     fun register(app: Application) {
@@ -27,7 +29,12 @@ object RegenOpsHttpModule {
                 }
                 post("/runs/start") {
                     val req = call.receive<StartRunRequestDto>()
-                    val run = RegenOpsInMemoryStore.startRun(req.protocolId, req.versionId)
+                    val run = RegenOpsInMemoryStore.startRun(
+                        protocolId = req.protocolId,
+                        version = req.protocolVersion,
+                        requestedRunId = req.runId.orEmpty(),
+                        gatewayId = req.gatewayId ?: "gateway-http"
+                    )
                     call.respond(HttpStatusCode.Created, run)
                 }
             }

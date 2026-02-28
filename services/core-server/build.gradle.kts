@@ -23,7 +23,7 @@ tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJ
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 dependencies {
@@ -53,6 +53,8 @@ dependencies {
     implementation(libs.grpc.protobuf)
     implementation(libs.grpc.stub)
     implementation(libs.grpc.kotlin)
+    implementation(libs.protobuf.java)
+    implementation(libs.neogenesis.contracts)
 
     implementation(libs.logback)
     implementation(libs.logstash)
