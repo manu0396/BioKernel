@@ -16,7 +16,7 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 fun androidPlatformModule(context: Context, appConfig: AppConfig): Module = module {
-    single<AppLogger>(override = true) { AndroidAppLogger() }
+    single<AppLogger> { AndroidAppLogger() }
     single<TokenStorage> { AndroidTokenStorage(context) }
     single<SqlDriver> { AndroidSqliteDriver(RegenOpsDatabase.Schema, context, "regenops.db") }
     single<ControlApi> {

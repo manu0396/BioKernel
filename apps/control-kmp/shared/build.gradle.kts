@@ -8,7 +8,13 @@ plugins {
 }
 
 kotlin {
-    androidTarget()
+    androidTarget {
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = "17"
+            }
+        }
+    }
     jvm("desktop")
 
     sourceSets {
@@ -30,7 +36,11 @@ kotlin {
                 implementation(compose.material3)
             }
         }
-        val commonTest by getting
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
         val androidMain by getting {
             dependencies {
                 implementation(libs.ktor.client.okhttp)
@@ -39,6 +49,7 @@ kotlin {
                 implementation(libs.grpc.kotlin)
                 implementation(libs.protobuf.java)
                 implementation(libs.neogenesis.contracts)
+                implementation(libs.androidx.security.crypto)
                 implementation(libs.koin.android)
             }
         }
@@ -62,6 +73,10 @@ android {
     compileSdk = 34
     defaultConfig {
         minSdk = 26
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
