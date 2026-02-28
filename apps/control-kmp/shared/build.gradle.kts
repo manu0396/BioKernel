@@ -60,6 +60,12 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
+        val jvmSharedMain by creating {
+            dependsOn(commonMain)
+            kotlin.srcDir("../../../shared/domain/src/jvmSharedMain/kotlin")
+            kotlin.srcDir("../../../shared/data/src/jvmSharedMain/kotlin")
+            kotlin.srcDir("../../../shared/network/src/jvmSharedMain/kotlin")
+        }
         val androidMain by getting {
             kotlin.srcDir("../../../shared/domain/src/androidMain/kotlin")
             kotlin.srcDir("../../../shared/data/src/androidMain/kotlin")
@@ -76,6 +82,7 @@ kotlin {
             }
         }
         val jvmMain by getting {
+            dependsOn(jvmSharedMain)
             kotlin.srcDir("../../../shared/domain/src/desktopMain/kotlin")
             kotlin.srcDir("../../../shared/data/src/desktopMain/kotlin")
             kotlin.srcDir("../../../shared/network/src/desktopMain/kotlin")

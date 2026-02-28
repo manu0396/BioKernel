@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines)
     implementation(libs.flyway)
     implementation(libs.jbcrypt)
+    implementation(libs.identity.jvm)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.grpc.inprocess)

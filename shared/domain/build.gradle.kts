@@ -38,14 +38,16 @@ kotlin {
                 implementation(libs.kotlinx.coroutines)
             }
         }
+        val jvmSharedMain by creating {
+            dependsOn(commonMain)
+        }
         val androidMain by getting {
             kotlin.setSrcDirs(listOf("src/androidMain/kotlin"))
+            dependsOn(jvmSharedMain)
         }
-        val androidUnitTest by getting
         val desktopMain by getting {
-            kotlin.setSrcDirs(listOf("src/desktopMain/kotlin"))
+            dependsOn(jvmSharedMain)
         }
-        val desktopTest by getting
     }
 }
 

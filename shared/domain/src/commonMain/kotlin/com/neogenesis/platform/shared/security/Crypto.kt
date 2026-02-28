@@ -1,7 +1,5 @@
 package com.neogenesis.platform.shared.security
 
-import kotlin.random.Random
-
 interface CryptoProvider {
     fun sha256(data: String): String
     fun hmacSha256(key: String, data: String): String
@@ -9,19 +7,23 @@ interface CryptoProvider {
     fun base64Encode(data: ByteArray): String
 }
 
+expect fun platformCryptoProvider(): CryptoProvider
+
+@Suppress("unused")
 object Crypto {
-    private lateinit var provider: CryptoProvider
+    private var overrideProvider: CryptoProvider? = null
+    private val provider: CryptoProvider
+        get() = overrideProvider ?: platformCryptoProvider()
 
     fun init(provider: CryptoProvider) {
-        this.provider = provider
+        overrideProvider = provider
     }
 
-    fun generateCodeVerifier(): String = provider.generateRandomString(64)
-
-    fun generateCodeChallenge(verifier: String): String {
-        // For PKCE, challenge is SHA256 of verifier, Base64Url encoded
-        return provider.sha256(verifier)
-    }
-
+    fun sha256(data: String): String = provider.sha256(data)
     fun hmacSha256(key: String, data: String): String = provider.hmacSha256(key, data)
+    fun generateRandomString(length: Int): String = provider.generateRandomString(length)
+    fun base64Encode(data: ByteArray): String = provider.base64Encode(data)
+
+    fun generateCodeVerifier(): String = generateRandomString(64)
+    fun generateCodeChallenge(verifier: String): String = sha256(verifier)
 }

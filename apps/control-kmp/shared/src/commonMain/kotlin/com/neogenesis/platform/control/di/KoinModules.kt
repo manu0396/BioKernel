@@ -22,6 +22,7 @@ import com.neogenesis.platform.control.data.stream.RegenOpsStreamClient
 import com.neogenesis.platform.control.presentation.RegenOpsViewModel
 import com.neogenesis.platform.control.data.db.RegenOpsDatabase
 import com.neogenesis.platform.control.data.db.Protocol_versions
+import com.neogenesis.platform.control.util.FileNameUtils
 import com.neogenesis.platform.shared.network.AppLogger
 import com.neogenesis.platform.shared.network.HttpClientFactory
 import com.neogenesis.platform.shared.network.NetworkConfig
@@ -35,14 +36,18 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 fun initKoin(appConfig: AppConfig, platformModule: Module): Koin {
-    // In Koin 3.x, GlobalContext.getOrNull() returns the Koin instance directly.
     val existingKoin = GlobalContext.getOrNull()
     if (existingKoin != null) return existingKoin
 
     return startKoin {
-        modules(commonModule(appConfig), platformModule)
+        modules(commonModule(appConfig), platformModule, controlKoinModule)
     }.koin
 }
+
+val controlKoinModule: Module =
+    module {
+        single { FileNameUtils }
+    }
 
 fun commonModule(appConfig: AppConfig) = module {
     single { appConfig }

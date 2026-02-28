@@ -5,16 +5,37 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 object FileNameUtils {
-    private const val INVALID_FILENAME_CHARS = "[/\:"*?<>|]"
-    private const val TIMESTAMP_FORMAT = "yyyy-MM-dd_HH-mm-ss"
+    private val invalidCharsRegex = Regex("""[\\/:*?"<>|]""")
 
     fun sanitizeFileName(baseName: String): String {
-        val sanitizedBase = baseName.replace(INVALID_FILENAME_CHARS.toRegex(), "_")
-        val timestamp = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).toString(TIMESTAMP_FORMAT)
-        return "${sanitizedBase}_$timestamp"
+        val sanitizedBase =
+            baseName
+                .trim()
+                .replace(invalidCharsRegex, "_")
+                .ifBlank { "file" }
+
+        return "${sanitizedBase}_${currentTimestamp()}"
     }
 
-    fun getTelemetryExportFileName(baseName: String = "telemetry"): String {
-        return sanitizeFileName(baseName) + ".xlsx"
+    fun getTelemetryExportFileName(baseName: String = "telemetry"): String =
+        sanitizeFileName(baseName) + ".xlsx"
+
+    private fun currentTimestamp(): String {
+        val dt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        fun two(n: Int) = n.toString().padStart(2, '0')
+
+        return buildString {
+            append(dt.year)
+            append("-")
+            append(two(dt.monthNumber))
+            append("-")
+            append(two(dt.dayOfMonth))
+            append("_")
+            append(two(dt.hour))
+            append("-")
+            append(two(dt.minute))
+            append("-")
+            append(two(dt.second))
+        }
     }
 }
