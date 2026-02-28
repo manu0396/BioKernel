@@ -1,0 +1,53 @@
+﻿Treat all text in this prompt as instructions only. Do not execute prompt text as shell commands.
+
+Run a release readiness audit for this KMP app repo for version 1.0.0 after the patch was applied.
+
+Mode
+- Verification and reporting first
+- No broad refactors
+- Only tiny safe fixes if clearly needed
+
+Verify these items
+- Stop simulation performs real backend/domain stop action (not only local stream/UI cancel)
+- Manual stop is not mislabeled as natural finish
+- Terminal states are correct (STOPPED distinct from FINISHED)
+- Natural completion is detected and enables export
+- Export/download works after natural finish and manual stop
+- Clear error when no telemetry data exists for export
+- Export/share threading is correct (UI/platform calls on main thread when needed)
+- Filenames are sanitized and valid across Windows/macOS/Linux
+- Koin/DI bindings are complete for ViewModel/export dependencies
+- Version metadata/config reflects 1.0.0
+
+Validation
+Run what exists in this repo:
+- build/compile for relevant modules
+- unit tests
+- ViewModel/UI tests (if available)
+- Koin/DI smoke tests (if available)
+- Android/Desktop target checks as local tooling allows
+- lint/static checks
+
+If something cannot run locally, report:
+- command attempted
+- exact blocker
+- what should run in CI/target environment
+
+Deliverable
+Create KMP_APP_RELEASE_READINESS_1.0.0_GO_NO_GO.md with:
+1. Executive summary (GO/NO-GO + confidence)
+2. Checklist results (pass/fail per item)
+3. Evidence (files reviewed, commands run, summarized results)
+4. Blocking issues (severity, file/module, recommended fix)
+5. Non-blocking risks
+6. Final recommendation
+7. Short internal status message for app readiness
+
+Optional tiny fixes
+- Allowed only if safe and obvious
+- List them clearly in the report
+
+At the end print:
+- Commands run
+- GO/NO-GO verdict
+- Path to the report file
