@@ -2,6 +2,7 @@ package com.neogenesis.platform.control.presentation
 
 import com.neogenesis.platform.control.AppConfig
 import com.neogenesis.platform.control.data.RegenOpsRepository
+import com.neogenesis.platform.control.data.remote.CommercialApi
 import com.neogenesis.platform.control.data.oidc.DeviceAuthorization
 import com.neogenesis.platform.control.data.oidc.OidcConfig
 import com.neogenesis.platform.control.data.oidc.OidcRepository
@@ -22,7 +23,8 @@ import kotlinx.coroutines.launch
 class RegenOpsViewModel(
     private val config: AppConfig,
     private val repository: RegenOpsRepository,
-    private val oidcRepository: OidcRepository
+    private val oidcRepository: OidcRepository,
+    private val commercialApi: CommercialApi
 ) {
     private val scope = CoroutineScope(Dispatchers.Default + Job())
     private var eventsJob: Job? = null
@@ -31,7 +33,8 @@ class RegenOpsViewModel(
     private val _state = MutableStateFlow(
         RegenOpsUiState(
             screen = AppScreen.PROTOCOLS,
-            auth = AuthUiState(isAuthenticated = oidcRepository.hasTokens())
+            auth = AuthUiState(isAuthenticated = oidcRepository.hasTokens()),
+            commercialModeEnabled = System.getenv("COMMERCIAL_MODE") == "true"
         )
     )
     val state: StateFlow<RegenOpsUiState> = _state
@@ -66,6 +69,9 @@ class RegenOpsViewModel(
         if (screen != AppScreen.LIVE_RUN) {
             stopStreaming()
         }
+        if (screen == AppScreen.COMMERCIAL) {
+            loadCommercialPipeline()
+        }
     }
 
     fun updateQuery(query: String) {
@@ -85,6 +91,10 @@ class RegenOpsViewModel(
 
     fun selectRun(runId: String) {
         _state.update { it.copy(selectedRunId = runId) }
+    }
+
+    fun selectOpportunity(opportunity: CommercialOpportunity) {
+        _state.update { it.copy(selectedOpportunity = opportunity) }
     }
 
     fun refreshProtocols() {
@@ -241,6 +251,26 @@ class RegenOpsViewModel(
     fun logout() {
         oidcRepository.clearTokens()
         _state.update { it.copy(auth = AuthUiState(isAuthenticated = false), statusMessage = "Logged out") }
+    }
+
+    fun loadCommercialPipeline() {
+        if (!_state.value.commercialModeEnabled) return
+        scope.launch {
+            when (val result = commercialApi.fetchPipeline()) {
+                is ApiResult.Success -> _state.update { it.copy(commercialPipeline = result.value, commercialError = null) }
+                is ApiResult.Failure -> _state.update { it.copy(commercialError = "Commercial pipeline unavailable") }
+            }
+        }
+    }
+
+    fun exportCommercialCsv(onExport: (ByteArray) -> Unit) {
+        if (!_state.value.commercialModeEnabled) return
+        scope.launch {
+            when (val result = commercialApi.exportCsv()) {
+                is ApiResult.Success -> onExport(result.value)
+                is ApiResult.Failure -> _state.update { it.copy(commercialError = "Unable to export CSV") }
+            }
+        }
     }
 
     fun close() {

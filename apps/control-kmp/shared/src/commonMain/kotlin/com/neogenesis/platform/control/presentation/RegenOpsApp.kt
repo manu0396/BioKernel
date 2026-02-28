@@ -20,7 +20,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun RegenOpsApp(
     viewModel: RegenOpsViewModel,
-    openExternalUrl: (String) -> Unit
+    openExternalUrl: (String) -> Unit,
+    shareCsv: (ByteArray) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -47,7 +48,8 @@ fun RegenOpsApp(
         NavigationRow(
             screen = state.screen,
             onSelect = { viewModel.setScreen(it) },
-            onLogout = { viewModel.logout() }
+            onLogout = { viewModel.logout() },
+            showCommercial = state.commercialModeEnabled
         )
 
         when (state.screen) {
@@ -96,6 +98,14 @@ fun RegenOpsApp(
                 onOpen = { url -> openExternalUrl(url) },
                 onPoll = { viewModel.pollDeviceAuth() }
             )
+            AppScreen.COMMERCIAL -> CommercialPipelineScreen(
+                pipeline = state.commercialPipeline,
+                selected = state.selectedOpportunity,
+                error = state.commercialError,
+                onSelect = { viewModel.selectOpportunity(it) },
+                onExport = { viewModel.exportCommercialCsv { bytes -> shareCsv(bytes) } },
+                onRefresh = { viewModel.loadCommercialPipeline() }
+            )
         }
 
         state.statusMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
@@ -106,7 +116,8 @@ fun RegenOpsApp(
 private fun NavigationRow(
     screen: AppScreen,
     onSelect: (AppScreen) -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    showCommercial: Boolean
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -116,6 +127,9 @@ private fun NavigationRow(
             Button(onClick = { onSelect(AppScreen.PROTOCOLS) }) { Text("Protocols") }
             Button(onClick = { onSelect(AppScreen.RUN_CONTROL) }) { Text("Run Control") }
             Button(onClick = { onSelect(AppScreen.LIVE_RUN) }) { Text("Live Run") }
+            if (showCommercial) {
+                Button(onClick = { onSelect(AppScreen.COMMERCIAL) }) { Text("Commercial") }
+            }
             Button(onClick = onLogout) { Text("Logout") }
         }
     }
