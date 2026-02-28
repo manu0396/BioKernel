@@ -47,6 +47,32 @@
 
 ---
 
+# ExecPlan: Android Studio Giraffe Config Alignment (2026-02-25)
+
+## Milestones
+1) Confirm version mismatches after Giraffe downgrade (AGP/Gradle/Kotlin/Compose compiler).
+2) Align AGP + Gradle wrapper + Kotlin + Compose compiler to Giraffe-compatible versions.
+3) Sync and validate Android/KMP modules build with updated toolchain.
+
+## File-by-File Change List
+- `PLANS.md`: Track this ExecPlan.
+- `gradle/libs.versions.toml`: Downgrade AGP + Kotlin; add Compose compiler version; remove Kotlin compose plugin.
+- `gradle/wrapper/gradle-wrapper.properties`: Downgrade Gradle wrapper to match AGP 8.1.
+- `build.gradle.kts`: Remove `kotlin.compose` plugin alias usage.
+- `apps/control-kmp/shared/build.gradle.kts`: Remove `kotlin.compose` plugin and add `composeOptions` compiler version for Android target.
+- `apps/control-kmp/androidApp/build.gradle.kts`: Remove `kotlin.compose` plugin and add `composeOptions` compiler version.
+- `apps/control-kmp/desktopApp/build.gradle.kts`: Remove `kotlin.compose` plugin.
+
+## Verification Commands
+- `./gradlew.bat :apps:control-kmp:androidApp:assembleDebug`
+- `./gradlew.bat :apps:control-kmp:desktopApp:compileKotlin`
+
+## Rollback Plan
+- Revert the files listed above.
+- Re-run the verification commands to confirm prior behavior.
+
+---
+
 # ExecPlan: RegenOps Monorepo Reconfiguration (2026-02-24)
 
 ## Milestones

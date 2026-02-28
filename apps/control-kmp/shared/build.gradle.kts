@@ -1,6 +1,8 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-    alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    id("org.jetbrains.kotlin.multiplatform")
+    id("com.android.library")
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose)
     alias(libs.plugins.kotlin.compose)
@@ -8,20 +10,33 @@ plugins {
 }
 
 kotlin {
+    jvmToolchain(21)
+
     androidTarget {
         compilations.all {
             kotlinOptions {
-                jvmTarget = "17"
+                jvmTarget = "21"
             }
         }
     }
-    jvm("desktop")
+    jvm("desktop") {
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_21)
+                }
+            }
+        }
+    }
 
     sourceSets {
         val commonMain by getting {
+            // Collapse shared Gradle modules into this KMP module for IDE stability
+            // (AS Hedgehog+/Panda "Missing ExternalProject for :" workaround).
+            kotlin.srcDir("../../../shared/domain/src/commonMain/kotlin")
+            kotlin.srcDir("../../../shared/data/src/commonMain/kotlin")
+            kotlin.srcDir("../../../shared/network/src/commonMain/kotlin")
             dependencies {
-                implementation(project(":shared:domain"))
-                implementation(project(":shared:network"))
                 implementation(libs.kotlinx.coroutines)
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.serialization.json)
@@ -37,11 +52,17 @@ kotlin {
             }
         }
         val commonTest by getting {
+            kotlin.srcDir("../../../shared/domain/src/commonTest/kotlin")
+            kotlin.srcDir("../../../shared/data/src/commonTest/kotlin")
+            kotlin.srcDir("../../../shared/network/src/commonTest/kotlin")
             dependencies {
                 implementation(kotlin("test"))
             }
         }
         val androidMain by getting {
+            kotlin.srcDir("../../../shared/domain/src/androidMain/kotlin")
+            kotlin.srcDir("../../../shared/data/src/androidMain/kotlin")
+            kotlin.srcDir("../../../shared/network/src/androidMain/kotlin")
             dependencies {
                 implementation(libs.ktor.client.okhttp)
                 implementation(libs.sqldelight.android.driver)
@@ -54,6 +75,9 @@ kotlin {
             }
         }
         val desktopMain by getting {
+            kotlin.srcDir("../../../shared/domain/src/desktopMain/kotlin")
+            kotlin.srcDir("../../../shared/data/src/desktopMain/kotlin")
+            kotlin.srcDir("../../../shared/network/src/desktopMain/kotlin")
             dependencies {
                 implementation(libs.ktor.client.cio)
                 implementation(libs.sqldelight.sqlite.driver)
@@ -75,8 +99,8 @@ android {
         minSdk = 26
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 }
 
@@ -88,4 +112,3 @@ sqldelight {
         }
     }
 }
-

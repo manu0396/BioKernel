@@ -1,16 +1,14 @@
-import io.gitlab.arturbosch.detekt.Detekt
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
-import org.jlleitschuh.gradle.ktlint.tasks.KtLintCheckTask
-import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
-
 plugins {
+    // Define versions centrally in the root project
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.android) apply false
-    alias(libs.plugins.kotlin.serialization) apply false
-    alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
+    
+    // These are not in buildSrc, so we use aliases with versions from libs.versions.toml
+    alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.compose) apply false
     alias(libs.plugins.protobuf) apply false
     alias(libs.plugins.shadow) apply false
@@ -49,7 +47,7 @@ subprojects {
             config.setFrom("$rootDir/config/detekt/detekt.yml")
             ignoreFailures = !strictQuality.get()
         }
-        tasks.withType<Detekt>().configureEach {
+        tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
             exclude("**/build/**")
             exclude("**/generated/**")
             exclude("**/.gradle/**")
@@ -67,19 +65,19 @@ subprojects {
                 exclude("**/*.kts")
             }
         }
-        tasks.withType<KtLintCheckTask>().configureEach {
+        tasks.withType<org.jlleitschuh.gradle.ktlint.tasks.KtLintCheckTask>().configureEach {
             exclude("**/build/**")
             exclude("**/generated/**")
             exclude("**/.gradle/**")
         }
-        tasks.withType<KtLintFormatTask>().configureEach {
+        tasks.withType<org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask>().configureEach {
             exclude("**/build/**")
             exclude("**/generated/**")
             exclude("**/.gradle/**")
         }
     }
 
-    tasks.withType<KotlinCompilationTask<*>>().configureEach {
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
         compilerOptions {
             freeCompilerArgs.add("-Xexpect-actual-classes")
             allWarningsAsErrors.set(

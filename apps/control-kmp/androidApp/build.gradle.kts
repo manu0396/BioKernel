@@ -1,8 +1,36 @@
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
     alias(libs.plugins.kotlin.compose)
 }
+
+val oidcIssuer = providers.gradleProperty("OIDC_ISSUER")
+    .orElse(providers.environmentVariable("OIDC_ISSUER"))
+    .orNull ?: ""
+
+val oidcClientId = providers.gradleProperty("OIDC_CLIENT_ID")
+    .orElse(providers.environmentVariable("OIDC_CLIENT_ID"))
+    .orNull ?: ""
+
+val oidcAudience = providers.gradleProperty("OIDC_AUDIENCE")
+    .orElse(providers.environmentVariable("OIDC_AUDIENCE"))
+    .orNull ?: ""
+
+val regenopsHttpBaseUrl = providers.gradleProperty("REGENOPS_HTTP_BASE_URL")
+    .orElse(providers.environmentVariable("REGENOPS_HTTP_BASE_URL"))
+    .orNull ?: "http://10.0.2.2:8080"
+
+val regenopsGrpcHost = providers.gradleProperty("REGENOPS_GRPC_HOST")
+    .orElse(providers.environmentVariable("REGENOPS_GRPC_HOST"))
+    .orNull ?: "10.0.2.2"
+
+val regenopsGrpcPort = providers.gradleProperty("REGENOPS_GRPC_PORT")
+    .orElse(providers.environmentVariable("REGENOPS_GRPC_PORT"))
+    .orNull?.toIntOrNull() ?: 50051
+
+val regenopsGrpcTls = providers.gradleProperty("REGENOPS_GRPC_TLS")
+    .orElse(providers.environmentVariable("REGENOPS_GRPC_TLS"))
+    .orNull?.toBoolean() ?: false
 
 android {
     namespace = "com.neogenesis.platform.control.android"
@@ -13,22 +41,17 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "1.0"
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "REGENOPS_HTTP_BASE_URL", "\"${System.getenv("REGENOPS_HTTP_BASE_URL") ?: "http://10.0.2.2:8080"}\"")
-        buildConfigField("String", "REGENOPS_GRPC_HOST", "\"${System.getenv("REGENOPS_GRPC_HOST") ?: "10.0.2.2"}\"")
-        buildConfigField("int", "REGENOPS_GRPC_PORT", "${System.getenv("REGENOPS_GRPC_PORT") ?: "9090"}")
-        buildConfigField("boolean", "REGENOPS_GRPC_TLS", "${System.getenv("REGENOPS_GRPC_TLS") ?: "false"}")
-        buildConfigField("String", "OIDC_ISSUER", "\"${System.getenv("OIDC_ISSUER") ?: ""}\"")
-        buildConfigField("String", "OIDC_CLIENT_ID", "\"${System.getenv("OIDC_CLIENT_ID") ?: ""}\"")
-        buildConfigField("String", "OIDC_AUDIENCE", "\"${System.getenv("OIDC_AUDIENCE") ?: ""}\"")
-        buildConfigField("boolean", "COMMERCIAL_MODE", "${System.getenv("COMMERCIAL_MODE") ?: "false"}")
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        buildConfigField("String", "OIDC_ISSUER", "\"$oidcIssuer\"")
+        buildConfigField("String", "OIDC_CLIENT_ID", "\"$oidcClientId\"")
+        buildConfigField("String", "OIDC_AUDIENCE", "\"$oidcAudience\"")
+        buildConfigField("String", "REGENOPS_HTTP_BASE_URL", "\"$regenopsHttpBaseUrl\"")
+        buildConfigField("String", "REGENOPS_GRPC_HOST", "\"$regenopsGrpcHost\"")
+        buildConfigField("int", "REGENOPS_GRPC_PORT", "$regenopsGrpcPort")
+        buildConfigField("boolean", "REGENOPS_GRPC_TLS", "$regenopsGrpcTls")
     }
 
     buildFeatures {
@@ -36,33 +59,31 @@ android {
         buildConfig = true
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
     }
 
-    buildTypes {
-        getByName("debug") {
-            isMinifyEnabled = false
-        }
-        getByName("release") {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
     }
 }
 
 dependencies {
     implementation(project(":apps:control-kmp:shared"))
-    implementation(libs.koin.core)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.lifecycle.runtime)
-    implementation(libs.androidx.security.crypto)
+    implementation(libs.koin.android)
+    implementation(libs.koin.compose)
+
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
 }

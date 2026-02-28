@@ -1,9 +1,14 @@
+@file:Suppress("UnstableApiUsage")
+
 pluginManagement {
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
     }
+}
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
 dependencyResolutionManagement {
@@ -14,15 +19,21 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "NeoGenesisPlatform"
+rootProject.name = "BioKernel"
 
-include(":shared:domain")
-include(":shared:data")
-include(":shared:network")
+// Shared modules
 include(":shared:proto")
+include(":shared:data")
+include(":shared:domain")
+include(":shared:network")
+
+// Services
 include(":services:core-server")
+
+// Agents
 include(":agents:device-gateway")
 
+// Apps (KMP)
 include(":apps:control-kmp:shared")
 include(":apps:control-kmp:androidApp")
 include(":apps:control-kmp:desktopApp")

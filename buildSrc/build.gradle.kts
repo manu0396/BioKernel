@@ -9,15 +9,6 @@ val kotlinVersion = "2.0.10"
 dependencies {
     compileOnly("com.android.tools.build:gradle:$agpVersion")
     compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlinVersion")
-}
-
-sourceSets {
-    main {
-        kotlin {
-            setSrcDirs(listOf("src/main/kotlin"))
-        }
-    }
 }
 
 gradlePlugin {
