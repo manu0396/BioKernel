@@ -1,11 +1,11 @@
-plugins {
+﻿plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
 android {
-    namespace = "com.neurogenesis.feature_login"
+    namespace = "com.neogenesis.feature_login"
     compileSdk = 35
     defaultConfig { minSdk = 24 }
     buildFeatures {
@@ -32,3 +32,6 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
 }
+
+
+
