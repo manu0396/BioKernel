@@ -4,13 +4,13 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal data class OidcDiscoveryResponse(
+data class OidcDiscoveryResponse(
     @SerialName("device_authorization_endpoint") val deviceAuthorizationEndpoint: String,
     @SerialName("token_endpoint") val tokenEndpoint: String
 )
 
 @Serializable
-internal data class OidcDeviceAuthorizationResponse(
+data class OidcDeviceAuthorizationResponse(
     @SerialName("device_code") val deviceCode: String,
     @SerialName("user_code") val userCode: String,
     @SerialName("verification_uri") val verificationUri: String,
@@ -20,7 +20,7 @@ internal data class OidcDeviceAuthorizationResponse(
 )
 
 @Serializable
-internal data class OidcTokenResponse(
+data class OidcTokenResponse(
     @SerialName("access_token") val accessToken: String,
     @SerialName("refresh_token") val refreshToken: String? = null,
     @SerialName("id_token") val idToken: String? = null,
@@ -29,7 +29,7 @@ internal data class OidcTokenResponse(
 )
 
 @Serializable
-internal data class OidcErrorResponse(
+data class OidcErrorResponse(
     val error: String,
     @SerialName("error_description") val errorDescription: String? = null
 )

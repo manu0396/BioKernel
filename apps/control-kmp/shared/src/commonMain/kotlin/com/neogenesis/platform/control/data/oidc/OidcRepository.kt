@@ -45,9 +45,9 @@ class OidcRepository(
                 }
                 is ApiResult.Failure -> {
                     val err = response.error
-                    if (err is NetworkError.HttpError && err.statusCode == 400 && err.message.contains("authorization_pending")) {
+                    if (err is NetworkError.HttpError && err.status == 400 && err.message.contains("authorization_pending")) {
                         delay(intervalSeconds * 1000L)
-                    } else if (err is NetworkError.HttpError && err.statusCode == 400 && err.message.contains("slow_down")) {
+                    } else if (err is NetworkError.HttpError && err.status == 400 && err.message.contains("slow_down")) {
                         delay((intervalSeconds + 5) * 1000L)
                     } else {
                         service.logAuthFailure("OIDC device flow failed", err)

@@ -9,6 +9,10 @@ import com.neogenesis.platform.shared.domain.RunId
 import com.neogenesis.platform.shared.domain.RunStatus
 import com.neogenesis.platform.shared.network.ApiResult
 import com.neogenesis.platform.shared.network.NetworkError
+import com.neogenesis.grpc.ListProtocolsResponse
+import com.neogenesis.grpc.ProtocolSummary
+import com.neogenesis.grpc.ProtocolVersionRecord
+import com.neogenesis.grpc.RunRecord
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -20,7 +24,7 @@ class HttpControlApi(
     private val client: HttpClient
 ) : ControlApi {
     override suspend fun listProtocols(): ApiResult<List<Protocol>> = runCatching {
-        val response: com.neogenesis.platform.proto.v1.ListProtocolsResponse =
+        val response: ListProtocolsResponse =
             client.get("/api/v1/regenops/protocols").body()
         ApiResult.Success(response.protocolsList.map { it.toDomain() })
     }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "http_error")) }
@@ -30,8 +34,9 @@ class HttpControlApi(
     }
 
     override suspend fun startRun(protocolId: String, versionId: String): ApiResult<Run> = runCatching {
-        val response: com.neogenesis.platform.proto.v1.RunRef = client.post("/api/v1/regenops/runs/start") {
-            setBody(mapOf("protocolId" to protocolId, "versionId" to versionId))
+        val protocolVersion = versionId.filter(Char::isDigit).toIntOrNull() ?: 1
+        val response: RunRecord = client.post("/api/v1/regenops/runs/start") {
+            setBody(mapOf("protocolId" to protocolId, "protocolVersion" to protocolVersion))
         }.body()
         ApiResult.Success(response.toDomain())
     }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "http_error")) }
@@ -43,35 +48,43 @@ class HttpControlApi(
         ApiResult.Failure(NetworkError.UnknownError("not_supported"))
 }
 
-private fun com.neogenesis.platform.proto.v1.ProtocolSummary.toDomain(): Protocol {
-    val latest = latestVersion.toDomain()
+private fun ProtocolSummary.toDomain(): Protocol {
+    val latest = ProtocolVersion(
+        id = ProtocolVersionId("${protocolId}-v$latestVersion"),
+        protocolId = ProtocolId(protocolId),
+        version = latestVersion.toString(),
+        createdAt = Clock.System.now(),
+        author = "system",
+        payload = "",
+        published = true
+    )
     return Protocol(
         id = ProtocolId(protocolId),
-        name = name,
-        summary = summary,
+        name = title,
+        summary = "",
         latestVersion = latest,
         versions = listOf(latest)
     )
 }
 
-private fun com.neogenesis.platform.proto.v1.ProtocolVersion.toDomain(): ProtocolVersion {
+private fun ProtocolVersionRecord.toDomain(): ProtocolVersion {
     return ProtocolVersion(
-        id = ProtocolVersionId(versionId),
+        id = ProtocolVersionId("${protocolId}-v$version"),
         protocolId = ProtocolId(protocolId),
-        version = version,
+        version = version.toString(),
         createdAt = Clock.System.now(),
-        author = "system",
-        payload = payload,
-        published = published
+        author = publishedBy.ifBlank { "system" },
+        payload = contentJson,
+        published = true
     )
 }
 
-private fun com.neogenesis.platform.proto.v1.RunRef.toDomain(): Run {
+private fun RunRecord.toDomain(): Run {
     val status = runCatching { RunStatus.valueOf(status) }.getOrElse { RunStatus.PENDING }
     return Run(
         id = RunId(runId),
-        protocolId = ProtocolId(""),
-        protocolVersionId = ProtocolVersionId(""),
+        protocolId = ProtocolId(protocolId),
+        protocolVersionId = ProtocolVersionId(protocolVersion.toString()),
         status = status,
         createdAt = Clock.System.now(),
         updatedAt = Clock.System.now()
