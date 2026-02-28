@@ -1,5 +1,7 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import io.gitlab.arturbosch.detekt.Detekt
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
+import org.jlleitschuh.gradle.ktlint.tasks.KtLintCheckTask
+import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
@@ -64,6 +66,16 @@ subprojects {
                 exclude("**/.gradle/**")
                 exclude("**/*.kts")
             }
+        }
+        tasks.withType<KtLintCheckTask>().configureEach {
+            exclude("**/build/**")
+            exclude("**/generated/**")
+            exclude("**/.gradle/**")
+        }
+        tasks.withType<KtLintFormatTask>().configureEach {
+            exclude("**/build/**")
+            exclude("**/generated/**")
+            exclude("**/.gradle/**")
         }
     }
 

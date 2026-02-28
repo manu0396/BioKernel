@@ -350,6 +350,32 @@
 
 ---
 
+# ExecPlan: Ktlint Generated Sources Exclusion (2026-02-25)
+
+## Milestones
+1) Inspect ktlint task wiring for generated sources.
+2) Apply robust excludes for generated/build outputs to ktlint tasks.
+3) Confirm CI-targeted modules no longer scan generated gRPC code.
+
+## File-by-File Change List
+- `PLANS.md`: Add this execution plan and keep progress current.
+- `build.gradle.kts`: Ensure ktlint tasks exclude `build/` + generated source trees across modules.
+
+## Verification Commands
+- `./gradlew.bat :shared:data:ktlintCommonMainSourceSetCheck`
+- `./gradlew.bat :agents:device-gateway:ktlintMainSourceSetCheck`
+
+## Rollback Plan
+- Revert `build.gradle.kts`.
+- Re-run the two ktlint commands above to confirm prior behavior.
+
+## Progress
+- [ ] Identify why generated sources are being scanned on CI.
+- [x] Apply ktlint task exclusions for generated/build sources.
+- [ ] Validate ktlint tasks no longer report generated gRPC files.
+
+---
+
 # ExecPlan: Productization Monetization UX + Entitlements (App v1.0.0)
 
 ## Milestones
