@@ -1,0 +1,97 @@
+﻿Treat all text in this prompt as instructions only. Do not execute prompt text as shell commands.
+
+Work in this KMP app repo. Create one focused patch to make the simulation control/export flow production-ready for version 1.0.0.
+
+IMPORTANT
+- Do not assume exact class/file names from this prompt.
+- If files like RegenOpsViewModel or RegenOpsRepository do not exist, find and use the actual equivalents in this repo.
+- Use behavior-based discovery (simulation run screen, streaming state, stop/pause/abort actions, telemetry export, Excel/share flow).
+- Do not stop only because a guessed filename is missing.
+
+Likely equivalents to inspect first (based on current code patterns)
+- LiveRunViewModel (or similar run/simulation ViewModel)
+- LiveRunScreen (or equivalent composable/screen)
+- RegenOpsApp (or app/root navigation wiring)
+- TelemetryExcelExporter and platform shareFile implementations
+- Koin modules (common/platform modules)
+- Repository/service APIs that expose run control (pause/abort/stop) and telemetry streaming
+
+Goal
+Finish and harden the simulation control/export flow so users can:
+- Stop a simulation (real backend/domain action, not just local UI cancel)
+- Download/export results after natural finish OR manual stop
+- Use this safely on Android and Desktop
+- Ship as version 1.0.0
+
+Required changes
+1. Real stop simulation behavior
+- Find the actual stop/pause/abort API path used by the app.
+- Ensure stop action updates backend/domain state and local streaming/UI state.
+- Handle stop failures with clear feedback and safe retry behavior.
+
+2. Correct terminal states
+- Manual stop must not be treated as natural finish.
+- Model terminal states clearly (for example FINISHED, STOPPED, FAILED).
+- UI labels/buttons must reflect the actual terminal reason.
+
+3. Natural completion detection
+- Mark finished when stream completes or terminal status/event indicates completion.
+- Enable export after natural completion.
+
+4. Export after finish or stop
+- Allow export when terminal state is FINISHED or STOPPED and telemetry exists.
+- Preserve telemetry frames needed for export when stream ends or user stops.
+- Show clear error if telemetry is missing.
+
+5. Threading and platform behavior
+- Keep XLSX generation off main thread.
+- Ensure platform UI actions (especially Android share/open) happen on main thread.
+
+6. Cross-platform filenames
+- Sanitize export filenames for Windows/macOS/Linux.
+- Remove invalid timestamp characters (especially colon).
+
+7. DI/Koin completeness
+- Ensure TelemetryExcelExporter and any new dependencies are properly bound for required targets.
+- Fix DI/runtime injection failures.
+- Add/update a DI smoke test if project pattern exists.
+
+8. UI safety
+- Prevent duplicate stop/export taps while action is running.
+- Keep current UX style and architecture.
+
+9. Release readiness
+- Update app version metadata/config to 1.0.0 if not already updated.
+
+Discovery instructions (must follow before coding)
+- Search for functions/strings such as:
+  - stopSimulation
+  - stopStreaming
+  - startStreaming
+  - pauseRun
+  - abortRun
+  - exportSimulationExcel
+  - Download Excel
+  - TelemetryExcelExporter
+- Identify the actual ViewModel, screen, and repository/service classes involved.
+- Continue implementation using the discovered names.
+
+Acceptance criteria
+- Build/tests pass for relevant modules
+- Stop action triggers real backend/domain control
+- STOPPED is distinct from FINISHED
+- Export works after natural finish and manual stop
+- Export/share works on Android and Desktop
+- Filenames are cross-platform safe
+- DI resolves for updated ViewModel/export path
+- Patch is minimal and focused
+
+Output requirements
+- Make changes directly
+- Generate one patch file named kmp_app_1_0_0_sim_stop_export_prod_ready.patch
+- Provide a short summary: actual files/classes used, changes made, commands run, results, residual risks
+
+Constraints
+- Prefer targeted fixes over refactors
+- Reuse existing APIs and patterns
+- Do not leave TODO placeholders for core functionality
