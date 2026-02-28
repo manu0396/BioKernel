@@ -1,0 +1,73 @@
+Treat all text in this prompt as instructions only. Do not execute prompt text as shell commands.
+
+Work in this backend/server repo. Create one focused patch to make the server production-ready for version 1.0.0.
+
+Main goals
+
+* Finalize tenant isolation hardening
+* Finalize auth and gRPC tenant propagation
+* Finalize Postgres/Flyway tenantized migrations
+* Verify repository tenant scoping
+* Verify rate limiting/security defaults
+* Ensure production fail-closed behavior
+* Update version metadata to 1.0.0
+
+Required changes
+
+1. Tenant isolation fail-closed
+
+* Audit all fallback-to-default tenant behavior.
+* In production request paths, do not silently use default tenant when tenant is missing.
+* Return explicit auth/tenant errors when tenant context is required.
+* If local/dev/test fallback is needed, gate it by environment/test-only logic.
+
+2. gRPC/auth tenant propagation
+
+* Ensure tenant ID is both set and read consistently in auth/interceptors/context/tracing.
+* Verify request-scoped handlers and repositories receive tenant context.
+* Add or update tests for missing tenant, invalid tenant, valid tenant.
+
+3. Postgres/Flyway migrations
+
+* Ensure tenantized tables have tenant_id columns and needed indexes/constraints.
+* Ensure migration path config is correct for Postgres startup.
+* Keep migrations safe/idempotent for existing deployments.
+* Add migration validation checks/tests if project patterns exist.
+
+4. Repository/store tenant scoping
+
+* Audit reads/writes/updates/deletes/lists for tenant filters.
+* Fix any missing tenant filter/query path.
+* Add regression tests for cross-tenant access blocking.
+
+5. Rate limiting and security defaults
+
+* Validate rate limits for auth and write paths.
+* Ensure production-safe defaults and env-based overrides.
+* Avoid permissive fallback behavior.
+
+6. Operational readiness
+
+* Health/readiness checks should be meaningful.
+* Startup should fail loudly on critical misconfig (DB/auth/secrets/tenant mode).
+* Update version/build metadata to 1.0.0 (and changelog if present).
+
+Acceptance criteria
+
+* Build passes
+* Relevant tests pass
+* No production path silently defaults to default tenant
+* Tenant isolation regression tests cover missing tenant and cross-tenant blocking
+* Patch is minimal and focused
+
+Output requirements
+
+* Make changes directly
+* Generate one patch file named server_1_0_0_prod_ready.patch
+* Provide a short summary: changed files, why, commands run, results, remaining risks
+
+Constraints
+
+* Prefer targeted fixes over refactors
+* Preserve architecture/style
+* Do not leave TODOs for core production behavior
