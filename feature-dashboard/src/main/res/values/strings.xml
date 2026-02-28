@@ -1,0 +1,8 @@
+<resources>
+    <string name="dashboard_title">Retina-on-a-Chip Dashboard</string>
+    <string name="dashboard_sample_id_label">Sample ID: %1$s</string>
+    <string name="dashboard_patient_id_label">Patient ID: %1$s</string>
+    <string name="dashboard_compatibility_label">Compatibility: %1$s%%</string>
+    <string name="dashboard_toxicity_status">Toxicity Status: %1$s</string>
+    <string name="dashboard_toxicity_summary">Toxicity: %1$s | Score: %2$.2f</string>
+</resources>
