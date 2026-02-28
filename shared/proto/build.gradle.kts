@@ -1,20 +1,21 @@
 import com.google.protobuf.gradle.id
 
 plugins {
+    `java-library`
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.protobuf)
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 dependencies {
-    implementation(libs.protobuf.java)
-    implementation(libs.grpc.stub)
-    implementation(libs.grpc.protobuf)
-    implementation(libs.grpc.kotlin)
-    implementation(libs.kotlinx.coroutines)
+    api(libs.protobuf.java)
+    api(libs.grpc.stub)
+    api(libs.grpc.protobuf)
+    api(libs.grpc.kotlin)
+    api(libs.kotlinx.coroutines)
 }
 
 protobuf {

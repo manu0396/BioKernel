@@ -1,36 +1,39 @@
+import java.util.Properties
+
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
-val oidcIssuer = providers.gradleProperty("OIDC_ISSUER")
-    .orElse(providers.environmentVariable("OIDC_ISSUER"))
-    .orNull ?: ""
+// Load local.properties manually from the project root
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { load(it) }
+    }
+}
 
-val oidcClientId = providers.gradleProperty("OIDC_CLIENT_ID")
-    .orElse(providers.environmentVariable("OIDC_CLIENT_ID"))
-    .orNull ?: ""
+fun propertyOrEnv(key: String, default: String): String {
+    val camelKey = key.lowercase().split("_").joinToString("") { it.replaceFirstChar { c -> c.uppercase() } }.replaceFirstChar { it.lowercase() }
+    
+    return localProperties.getProperty(key)
+        ?: localProperties.getProperty(camelKey)
+        ?: (findProperty(key) as? String)
+        ?: (findProperty(camelKey) as? String)
+        ?: System.getenv(key)
+        ?: default
+}
 
-val oidcAudience = providers.gradleProperty("OIDC_AUDIENCE")
-    .orElse(providers.environmentVariable("OIDC_AUDIENCE"))
-    .orNull ?: ""
+fun propertyOrEnvInt(key: String, default: Int): Int {
+    val value = propertyOrEnv(key, default.toString())
+    return value.toIntOrNull() ?: default
+}
 
-val regenopsHttpBaseUrl = providers.gradleProperty("REGENOPS_HTTP_BASE_URL")
-    .orElse(providers.environmentVariable("REGENOPS_HTTP_BASE_URL"))
-    .orNull ?: "http://10.0.2.2:8080"
-
-val regenopsGrpcHost = providers.gradleProperty("REGENOPS_GRPC_HOST")
-    .orElse(providers.environmentVariable("REGENOPS_GRPC_HOST"))
-    .orNull ?: "10.0.2.2"
-
-val regenopsGrpcPort = providers.gradleProperty("REGENOPS_GRPC_PORT")
-    .orElse(providers.environmentVariable("REGENOPS_GRPC_PORT"))
-    .orNull?.toIntOrNull() ?: 50051
-
-val regenopsGrpcTls = providers.gradleProperty("REGENOPS_GRPC_TLS")
-    .orElse(providers.environmentVariable("REGENOPS_GRPC_TLS"))
-    .orNull?.toBoolean() ?: false
+fun propertyOrEnvBool(key: String, default: Boolean): Boolean {
+    val value = propertyOrEnv(key, default.toString())
+    return value.toBooleanStrictOrNull() ?: default
+}
 
 android {
     namespace = "com.neogenesis.platform.control.android"
@@ -41,17 +44,24 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "OIDC_ISSUER", "\"$oidcIssuer\"")
-        buildConfigField("String", "OIDC_CLIENT_ID", "\"$oidcClientId\"")
-        buildConfigField("String", "OIDC_AUDIENCE", "\"$oidcAudience\"")
-        buildConfigField("String", "REGENOPS_HTTP_BASE_URL", "\"$regenopsHttpBaseUrl\"")
-        buildConfigField("String", "REGENOPS_GRPC_HOST", "\"$regenopsGrpcHost\"")
-        buildConfigField("int", "REGENOPS_GRPC_PORT", "$regenopsGrpcPort")
-        buildConfigField("boolean", "REGENOPS_GRPC_TLS", "$regenopsGrpcTls")
+        // Map configuration to BuildConfig
+        buildConfigField("String", "OIDC_ISSUER", "\"${propertyOrEnv("OIDC_ISSUER", "")}\"")
+        buildConfigField("String", "OIDC_CLIENT_ID", "\"${propertyOrEnv("OIDC_CLIENT_ID", "")}\"")
+        buildConfigField("String", "OIDC_AUDIENCE", "\"${propertyOrEnv("OIDC_AUDIENCE", "")}\"")
+
+        buildConfigField("String", "REGENOPS_HTTP_BASE_URL", "\"${propertyOrEnv("REGENOPS_HTTP_BASE_URL", "http://10.0.2.2:8080")}\"")
+        buildConfigField("String", "REGENOPS_GRPC_HOST", "\"${propertyOrEnv("REGENOPS_GRPC_HOST", "10.0.2.2")}\"")
+        buildConfigField("int", "REGENOPS_GRPC_PORT", "${propertyOrEnvInt("REGENOPS_GRPC_PORT", 50051)}")
+        buildConfigField("boolean", "REGENOPS_GRPC_TLS", "${propertyOrEnvBool("REGENOPS_GRPC_TLS", false)}")
+
+        buildConfigField("boolean", "TRACE_MODE", "${propertyOrEnvBool("TRACE_MODE", false)}")
+        buildConfigField("boolean", "DEMO_MODE", "${propertyOrEnvBool("DEMO_MODE", false)}")
+        buildConfigField("boolean", "FOUNDER_MODE", "${propertyOrEnvBool("FOUNDER_MODE", false)}")
+        buildConfigField("boolean", "COMMERCIAL_MODE", "${propertyOrEnvBool("COMMERCIAL_MODE", false)}")
     }
 
     buildFeatures {

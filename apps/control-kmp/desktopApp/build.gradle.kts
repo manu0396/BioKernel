@@ -8,6 +8,14 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// Ensure the source set points to jvmMain where the code actually lives
+sourceSets {
+    main {
+        kotlin.srcDirs("src/jvmMain/kotlin")
+        resources.srcDirs("src/jvmMain/resources")
+    }
+}
+
 dependencies {
     implementation(project(":apps:control-kmp:shared"))
     implementation(libs.koin.core)
@@ -17,7 +25,7 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "com.neogenesis.platform.control.desktop.DesktopApp"
+        mainClass = "com.neogenesis.platform.control.desktop.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "RegenOpsControl"

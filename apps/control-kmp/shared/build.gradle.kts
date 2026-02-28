@@ -19,7 +19,9 @@ kotlin {
             }
         }
     }
-    jvm("desktop") {
+    
+    // Rename to jvm() to match jvmMain source set naming conventions
+    jvm {
         compilations.all {
             compileTaskProvider.configure {
                 compilerOptions {
@@ -32,11 +34,11 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             // Collapse shared Gradle modules into this KMP module for IDE stability
-            // (AS Hedgehog+/Panda "Missing ExternalProject for :" workaround).
             kotlin.srcDir("../../../shared/domain/src/commonMain/kotlin")
             kotlin.srcDir("../../../shared/data/src/commonMain/kotlin")
             kotlin.srcDir("../../../shared/network/src/commonMain/kotlin")
             dependencies {
+                api(project(":shared:proto"))
                 implementation(libs.kotlinx.coroutines)
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.serialization.json)
@@ -74,7 +76,7 @@ kotlin {
                 implementation(libs.koin.android)
             }
         }
-        val desktopMain by getting {
+        val jvmMain by getting {
             kotlin.srcDir("../../../shared/domain/src/desktopMain/kotlin")
             kotlin.srcDir("../../../shared/data/src/desktopMain/kotlin")
             kotlin.srcDir("../../../shared/network/src/desktopMain/kotlin")

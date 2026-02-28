@@ -39,10 +39,10 @@ class RegenOpsViewModel(
         RegenOpsUiState(
             screen = AppScreen.PROTOCOLS,
             auth = AuthUiState(isAuthenticated = oidcRepository.hasTokens()),
-            commercialModeEnabled = System.getenv("COMMERCIAL_MODE") == "true",
-            founderModeEnabled = System.getenv("FOUNDER_MODE") == "true",
-            traceModeEnabled = System.getenv("TRACE_MODE") == "true",
-            demoModeEnabled = System.getenv("DEMO_MODE") == "true"
+            commercialModeEnabled = config.commercialModeEnabled,
+            founderModeEnabled = config.founderModeEnabled,
+            traceModeEnabled = config.traceModeEnabled,
+            demoModeEnabled = config.demoModeEnabled
         )
     )
     val state: StateFlow<RegenOpsUiState> = _state

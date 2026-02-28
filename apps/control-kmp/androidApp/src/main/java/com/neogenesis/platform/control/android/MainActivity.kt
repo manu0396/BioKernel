@@ -5,14 +5,14 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.MaterialTheme
 import com.neogenesis.platform.control.AppConfig
 import com.neogenesis.platform.control.di.initKoin
 import com.neogenesis.platform.control.platform.androidPlatformModule
 import com.neogenesis.platform.control.presentation.RegenOpsApp
 import com.neogenesis.platform.control.presentation.RegenOpsViewModel
+import com.neogenesis.platform.control.presentation.design.NgTheme
+import org.koin.core.Koin
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.get
 
 class MainActivity : ComponentActivity(), KoinComponent {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,13 +24,17 @@ class MainActivity : ComponentActivity(), KoinComponent {
             grpcUseTls = BuildConfig.REGENOPS_GRPC_TLS,
             oidcIssuer = BuildConfig.OIDC_ISSUER,
             oidcClientId = BuildConfig.OIDC_CLIENT_ID,
-            oidcAudience = BuildConfig.OIDC_AUDIENCE.takeIf { it.isNotBlank() }
+            oidcAudience = BuildConfig.OIDC_AUDIENCE.takeIf { it.isNotBlank() },
+            traceModeEnabled = BuildConfig.TRACE_MODE,
+            demoModeEnabled = BuildConfig.DEMO_MODE,
+            founderModeEnabled = BuildConfig.FOUNDER_MODE,
+            commercialModeEnabled = BuildConfig.COMMERCIAL_MODE
         )
-        initKoin(appConfig, androidPlatformModule(this, appConfig))
-        val viewModel: RegenOpsViewModel = get()
+        val koin: Koin = initKoin(appConfig, androidPlatformModule(this, appConfig))
+        val viewModel: RegenOpsViewModel = koin.get()
 
         setContent {
-            MaterialTheme {
+            NgTheme {
                 RegenOpsApp(
                     viewModel = viewModel,
                     openExternalUrl = { url ->

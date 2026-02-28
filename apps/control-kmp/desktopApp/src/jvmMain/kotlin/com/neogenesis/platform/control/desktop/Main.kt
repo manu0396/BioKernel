@@ -83,7 +83,6 @@ private fun loadConfig(): Properties {
 }
 
 private fun getSetting(props: Properties, key: String, default: String?): String {
-    // Priority: 1. System Env, 2. File Properties (exact), 3. File Properties (lowercase), 4. Default
     return System.getenv(key) 
         ?: props.getProperty(key) 
         ?: props.getProperty(key.lowercase())

@@ -7,5 +7,9 @@ data class AppConfig(
     val grpcUseTls: Boolean,
     val oidcIssuer: String,
     val oidcClientId: String,
-    val oidcAudience: String? = null
+    val oidcAudience: String? = null,
+    val traceModeEnabled: Boolean = false,
+    val demoModeEnabled: Boolean = false,
+    val founderModeEnabled: Boolean = false,
+    val commercialModeEnabled: Boolean = false
 )

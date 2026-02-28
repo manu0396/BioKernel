@@ -16,7 +16,7 @@ import org.koin.dsl.module
 import java.io.File
 
 fun desktopPlatformModule(appConfig: AppConfig): Module = module {
-    single<AppLogger>(override = true) { DesktopAppLogger() }
+    single<AppLogger> { DesktopAppLogger() }
     single<TokenStorage> { DesktopTokenStorage(get()) }
     single<SqlDriver> {
         val dbFile = File(System.getProperty("user.home"), ".regenops/regenops.db")

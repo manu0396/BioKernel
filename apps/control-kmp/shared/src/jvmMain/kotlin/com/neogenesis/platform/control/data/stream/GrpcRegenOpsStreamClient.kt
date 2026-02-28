@@ -30,9 +30,7 @@ import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 
 class GrpcRegenOpsStreamClient(
@@ -141,13 +139,13 @@ private fun ProtoRunEvent.toDomain(): RunEvent {
 
 private fun ProtoTelemetryFrame.toDomain(): TelemetryFrame {
     return TelemetryFrame(
-        timestamp = runCatching { Instant.parse(timestamp) }.getOrElse { Instant.fromEpochMilliseconds(0) },
+        timestamp = Instant.fromEpochMilliseconds(timestampMs),
         pressure = PressureReading(pressureKpa),
-        displacement = NozzleDisplacement(0.0),
-        flowRate = FlowRate(flowRate),
-        temperature = Temperature(0.0),
-        viscosity = ViscosityEstimation(0.0),
-        pid = PIDState(0.0, 0.0, 0.0),
-        mpc = MPCPrediction(0, 0.0)
+        displacement = NozzleDisplacement(displacementUm),
+        flowRate = FlowRate(flowRateUlS),
+        temperature = Temperature(temperatureC),
+        viscosity = ViscosityEstimation(viscosityPas),
+        pid = PIDState(pidP, pidI, pidD),
+        mpc = MPCPrediction(mpcHorizonMs, mpcPredictedPressureKpa)
     )
 }

@@ -35,7 +35,10 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 fun initKoin(appConfig: AppConfig, platformModule: Module): Koin {
-    GlobalContext.getOrNull()?.let { return it }
+    // In Koin 3.x, GlobalContext.getOrNull() returns the Koin instance directly.
+    val existingKoin = GlobalContext.getOrNull()
+    if (existingKoin != null) return existingKoin
+
     return startKoin {
         modules(commonModule(appConfig), platformModule)
     }.koin
@@ -64,21 +67,21 @@ fun commonModule(appConfig: AppConfig) = module {
     single { OidcDeviceAuthService(get(), get()) }
     single { OidcRepository(get(), get(), get()) }
     single {
-        if (System.getenv("DEMO_MODE") == "true") {
+        if (appConfig.demoModeEnabled) {
             RegenOpsRepository(DemoControlApi(), get(), DemoStreamClient())
         } else {
             RegenOpsRepository(get<ControlApi>(), get(), get<RegenOpsStreamClient>())
         }
     }
     single<ExportsApi> {
-        if (System.getenv("DEMO_MODE") == "true") {
+        if (appConfig.demoModeEnabled) {
             DemoExportsApi()
         } else {
             HttpExportsApi(get())
         }
     }
     single<TraceApi> {
-        if (System.getenv("DEMO_MODE") == "true") {
+        if (appConfig.demoModeEnabled) {
             DemoTraceApi()
         } else {
             HttpTraceApi(get())
