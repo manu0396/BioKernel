@@ -23,6 +23,7 @@ android {
         buildConfigField("String", "OIDC_ISSUER", "\"${System.getenv("OIDC_ISSUER") ?: ""}\"")
         buildConfigField("String", "OIDC_CLIENT_ID", "\"${System.getenv("OIDC_CLIENT_ID") ?: ""}\"")
         buildConfigField("String", "OIDC_AUDIENCE", "\"${System.getenv("OIDC_AUDIENCE") ?: ""}\"")
+        buildConfigField("boolean", "COMMERCIAL_MODE", "${System.getenv("COMMERCIAL_MODE") ?: "false"}")
     }
 
     compileOptions {
@@ -63,4 +64,5 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime)
     implementation(libs.androidx.security.crypto)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
 }
