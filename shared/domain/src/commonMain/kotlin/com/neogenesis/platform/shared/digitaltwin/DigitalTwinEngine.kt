@@ -1,4 +1,4 @@
-﻿package com.neogenesis.platform.shared.digitaltwin
+package com.neogenesis.platform.shared.digitaltwin
 
 import com.neogenesis.platform.shared.telemetry.TelemetryFrame
 import kotlinx.serialization.Serializable

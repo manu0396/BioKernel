@@ -1,4 +1,4 @@
-﻿package com.neogenesis.platform.shared.usecases
+package com.neogenesis.platform.shared.usecases
 
 import com.neogenesis.platform.shared.domain.*
 import com.neogenesis.platform.shared.errors.DomainError

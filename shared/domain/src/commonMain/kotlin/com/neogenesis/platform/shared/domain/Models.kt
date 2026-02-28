@@ -1,4 +1,4 @@
-﻿package com.neogenesis.platform.shared.domain
+package com.neogenesis.platform.shared.domain
 
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable

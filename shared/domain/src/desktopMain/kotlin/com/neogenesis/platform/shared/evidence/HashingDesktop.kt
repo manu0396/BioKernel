@@ -1,4 +1,4 @@
-﻿package com.neogenesis.platform.shared.evidence
+package com.neogenesis.platform.shared.evidence
 
 import java.security.MessageDigest
 

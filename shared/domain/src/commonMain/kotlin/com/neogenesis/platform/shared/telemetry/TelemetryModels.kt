@@ -1,4 +1,4 @@
-﻿package com.neogenesis.platform.shared.telemetry
+package com.neogenesis.platform.shared.telemetry
 
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable

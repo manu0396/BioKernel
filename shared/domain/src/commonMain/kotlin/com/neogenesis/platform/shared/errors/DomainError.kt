@@ -1,4 +1,4 @@
-﻿package com.neogenesis.platform.shared.errors
+package com.neogenesis.platform.shared.errors
 
 sealed class DomainError(val message: String) {
     class ValidationError(message: String) : DomainError(message)

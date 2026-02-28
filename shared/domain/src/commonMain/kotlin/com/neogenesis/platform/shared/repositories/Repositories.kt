@@ -1,4 +1,4 @@
-﻿package com.neogenesis.platform.shared.repositories
+package com.neogenesis.platform.shared.repositories
 
 import com.neogenesis.platform.shared.domain.*
 import com.neogenesis.platform.shared.telemetry.TelemetryFrame

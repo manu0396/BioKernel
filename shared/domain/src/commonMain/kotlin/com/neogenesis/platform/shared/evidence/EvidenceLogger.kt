@@ -1,4 +1,4 @@
-﻿package com.neogenesis.platform.shared.evidence
+package com.neogenesis.platform.shared.evidence
 
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable

@@ -1,4 +1,4 @@
-﻿package com.neogenesis.platform.shared.security
+package com.neogenesis.platform.shared.security
 
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
