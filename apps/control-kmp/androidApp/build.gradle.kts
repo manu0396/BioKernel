@@ -69,6 +69,48 @@ android {
         buildConfig = true
     }
 
+    flavorDimensions.add("client")
+    flavorDimensions.add("store")
+
+    productFlavors {
+
+        create("csic") {
+            dimension = "client"
+            applicationIdSuffix = ".csic"
+            buildConfigField("String", "TELEMETRY_ENDPOINT", "\"https://isolated-telemetry.csic.es/grpc\"")
+            buildConfigField("String", "TENANT_ID", "\"csic_research_isolated\"")
+        }
+
+        create("sermes") {
+            dimension = "client"
+            applicationIdSuffix = ".sermes"
+            buildConfigField("String", "TELEMETRY_ENDPOINT", "\"https://clinical-trials.sermes.cro/api/v1/\"")
+            buildConfigField("String", "TENANT_ID", "\"sermes_cro_01\"")
+        }
+
+        create("enterprise") {
+            dimension = "client"
+            applicationIdSuffix = ".enterprise"
+            buildConfigField("String", "TELEMETRY_ENDPOINT", "\"https://commercial.neogenesis.com/v1/pipeline\"")
+            buildConfigField("String", "TENANT_ID", "\"commercial_enterprise_pack\"")
+        }
+
+        create("demo") {
+            dimension = "client"
+            applicationIdSuffix = ".demo"
+            buildConfigField("String", "TELEMETRY_ENDPOINT", "\"https://sandbox.biokernel.dev/api/\"")
+            buildConfigField("String", "TENANT_ID", "\"demo_environment\"")
+        }
+
+        create("google") {
+            dimension = "store"
+        }
+
+        create("huawei") {
+            dimension = "store"
+        }
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
