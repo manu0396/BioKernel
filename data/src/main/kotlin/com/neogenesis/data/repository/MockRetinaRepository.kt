@@ -26,7 +26,6 @@ class MockRetinaRepository : RetinaRepository {
             RetinaAnalysis(
                 id = "BIO-001-${patientId.take(3)}",
                 rawHash = "0x${(patientId + "1").hashCode().toString(16).uppercase()}",
-                countryIso = "ESP",
                 compatibilityScore = 98.2,
                 toxicity = ToxicityLevel.LOW,
                 toxicityScore = 0.12f,
@@ -37,7 +36,6 @@ class MockRetinaRepository : RetinaRepository {
             RetinaAnalysis(
                 id = "BIO-002-${patientId.take(3)}",
                 rawHash = "0x${(patientId + "2").hashCode().toString(16).uppercase()}",
-                countryIso = "MEX",
                 compatibilityScore = 65.4,
                 toxicity = ToxicityLevel.MODERATE,
                 toxicityScore = 0.45f,
@@ -48,7 +46,6 @@ class MockRetinaRepository : RetinaRepository {
             RetinaAnalysis(
                 id = "BIO-003-${patientId.take(3)}",
                 rawHash = "0x${(patientId + "3").hashCode().toString(16).uppercase()}",
-                countryIso = "PER",
                 compatibilityScore = 32.1,
                 toxicity = ToxicityLevel.HIGH,
                 toxicityScore = 0.78f,
@@ -59,7 +56,6 @@ class MockRetinaRepository : RetinaRepository {
             RetinaAnalysis(
                 id = "BIO-004-${patientId.take(3)}",
                 rawHash = "0xLETHAL_ALPHA",
-                countryIso = "GLO",
                 compatibilityScore = 8.9,
                 toxicity = ToxicityLevel.LETHAL,
                 toxicityScore = 1.0f,
@@ -70,7 +66,6 @@ class MockRetinaRepository : RetinaRepository {
             RetinaAnalysis(
                 id = "BIO-005-${patientId.take(3)}",
                 rawHash = "0x${(patientId + "5").hashCode().toString(16).uppercase()}",
-                countryIso = "ESP",
                 compatibilityScore = 95.0,
                 toxicity = ToxicityLevel.LOW,
                 toxicityScore = 0.15f,
@@ -81,7 +76,6 @@ class MockRetinaRepository : RetinaRepository {
             RetinaAnalysis(
                 id = "BIO-MOD-992",
                 rawHash = "0x7D2A${patientId.take(2)}",
-                countryIso = "MEX",
                 compatibilityScore = 62.4,
                 toxicity = ToxicityLevel.MODERATE,
                 toxicityScore = 0.45f,

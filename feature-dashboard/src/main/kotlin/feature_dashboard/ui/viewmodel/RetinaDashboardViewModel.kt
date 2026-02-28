@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.neogenesis.domain.model.RetinaAnalysis
 import com.neogenesis.domain.usecases.GetRetinaAnalysisUseCase
 import com.neogenesis.domain.usecases.SyncRetinaAnalysisUseCase
-import com.neogenesis.session.manager.SessionManager 
+import com.neogenesis.domain.session.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

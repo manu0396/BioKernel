@@ -7,6 +7,10 @@
     <string name="dashboard_toxicity_summary">Toxicity: %1$s | Score: %2$.2f</string>
     <string name="no_telemetry_available">No Telemetry Data Available</string>
     <string name="sistem_telemetry">SYSTEM TELEMETRY</string>
+    <string name="error_unauthorized">Su sesión ha expirado por seguridad. Reautentique su perfil.</string>
+    <string name="error_no_network">Error de enlace: Compruebe su conexión a la red de Bio-Nodos.</string>
+    <string name="error_server_generic">Fallo en el servidor (%1$d): %2$s</string>
+    <string name="error_unknown">Error inesperado en el sistema: %1$s</string>
 </resources>
 
 
