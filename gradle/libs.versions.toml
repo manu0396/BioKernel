@@ -34,6 +34,7 @@ sqldelight = "2.0.2"
 micrometer = "1.13.3"
 opentelemetry = "1.39.0"
 neogenesisContracts = "1.0.0"
+apachePoi = "5.2.5"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
@@ -65,7 +66,7 @@ otel-sdk = { module = "io.opentelemetry:opentelemetry-sdk", version.ref = "opent
 otel-sdk-trace = { module = "io.opentelemetry:opentelemetry-sdk-trace", version.ref = "opentelemetry" }
 otel-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp", version.ref = "opentelemetry" }
 neogenesis-contracts = { module = "com.neogenesis:neogenesis-contracts", version.ref = "neogenesisContracts" }
-
+org-apache-poi = { module = "org.apache.poi:poi-ooxml", version.ref = "apachePoi"}
 koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 

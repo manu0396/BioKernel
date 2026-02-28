@@ -20,7 +20,6 @@ kotlin {
         }
     }
     
-    // Rename to jvm() to match jvmMain source set naming conventions
     jvm {
         compilations.all {
             compileTaskProvider.configure {
@@ -89,6 +88,7 @@ kotlin {
                 implementation(libs.grpc.stub)
                 implementation(libs.protobuf.java)
                 implementation(libs.neogenesis.contracts)
+                implementation(libs.org.apache.poi)
             }
         }
     }
