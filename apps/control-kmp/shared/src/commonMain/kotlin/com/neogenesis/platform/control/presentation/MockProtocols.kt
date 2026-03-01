@@ -39,6 +39,9 @@ object MockProtocols {
             id: String,
             name: String,
             summary: String,
+            resultSummary: String,
+            lastOutcome: String,
+            resultMetrics: Map<String, String>,
             versions: List<ProtocolVersion>,
         ): Protocol {
             val latest = versions.maxByOrNull { it.version.toIntOrNull() ?: 0 }
@@ -46,6 +49,9 @@ object MockProtocols {
                 id = ProtocolId(id),
                 name = name,
                 summary = summary,
+                resultSummary = resultSummary,
+                lastOutcome = lastOutcome,
+                resultMetrics = resultMetrics,
                 versions = versions,
                 // IMPORTANT: domain requires latestVersion
                 latestVersion = latest,
@@ -61,6 +67,14 @@ object MockProtocols {
                 id = p1Id,
                 name = "RegenOps: Controlled Growth Run",
                 summary = "Execute a controlled growth simulation with safety bounds and trace checkpoints.",
+                resultSummary = "Yield stability 98.7% with zero drift alerts across 3 checkpoints.",
+                lastOutcome = "SUCCESS",
+                resultMetrics = mapOf(
+                    "Yield" to "98.7%",
+                    "Stability" to "0.3% variance",
+                    "Trace Checkpoints" to "3/3",
+                    "Cycle Time" to "42m"
+                ),
                 versions = listOf(
                     version(
                         p1Id, "pv-regen-001-3", 3, false, "ops@neogenesis",
@@ -78,6 +92,13 @@ object MockProtocols {
                 id = p2Id,
                 name = "QC: Parameter Drift Audit",
                 summary = "Audit protocol focused on drift thresholds and evidence export integrity.",
+                resultSummary = "Drift compliance within threshold; one warning at 0.04 ΔpH.",
+                lastOutcome = "WARNING",
+                resultMetrics = mapOf(
+                    "Drift Alerts" to "1",
+                    "Max ΔpH" to "0.04",
+                    "Export Integrity" to "Verified"
+                ),
                 versions = listOf(
                     version(
                         p2Id, "pv-qc-002-1", 1, true, "qa@neogenesis",
@@ -90,6 +111,13 @@ object MockProtocols {
                 id = p3Id,
                 name = "Chain-of-Evidence: Full Linkage",
                 summary = "Enforce evidence hashing + manifest linkage at each stage transition.",
+                resultSummary = "Audit bundle generated with full hash chain and manifest linkage.",
+                lastOutcome = "SUCCESS",
+                resultMetrics = mapOf(
+                    "Hash Chain" to "OK",
+                    "Manifest Links" to "12",
+                    "Audit Bundle" to "Generated"
+                ),
                 versions = listOf(
                     version(
                         p3Id, "pv-chain-003-1", 1, true, "sec@neogenesis",

@@ -13,11 +13,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
@@ -26,6 +32,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -64,6 +71,7 @@ fun ProtocolsScreen(
     onSelect: (Protocol) -> Unit,
     onRefresh: () -> Unit,
 ) {
+    val expanded = remember { mutableStateMapOf<String, Boolean>() }
     val filtered =
         if (query.isBlank()) {
             protocols
@@ -115,7 +123,17 @@ fun ProtocolsScreen(
                     val publishedCount = protocol.versions.count { it.published }
                     val summary = protocol.summary ?: ""
 
-                    NgCard(onClick = { onSelect(protocol) }) {
+                    val isExpanded = expanded[protocol.id.value] == true
+                    val outcome = protocol.lastOutcome ?: "UNKNOWN"
+                    val outcomeStatus =
+                        when (outcome.uppercase()) {
+                            "SUCCESS", "COMPLETED" -> NgStatus.Success
+                            "WARNING" -> NgStatus.Warning
+                            "FAILED", "ABORTED" -> NgStatus.Error
+                            else -> NgStatus.Info
+                        }
+
+                    NgCard(onClick = { expanded[protocol.id.value] = !isExpanded }) {
                         Column(
                             modifier = Modifier.fillMaxWidth().padding(NgSpacing.Medium),
                             verticalArrangement = Arrangement.spacedBy(NgSpacing.Small),
@@ -124,48 +142,108 @@ fun ProtocolsScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(protocol.name, style = MaterialTheme.typography.titleMedium)
-                                    Text(
-                                        protocol.id.value,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(NgSpacing.Small)
+                                ) {
+                                    Icon(
+                                        imageVector = if (isExpanded) Icons.Default.FolderOpen else Icons.Default.Folder,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
+                                    Column {
+                                        Text(protocol.name, style = MaterialTheme.typography.titleMedium)
+                                        Text(
+                                            protocol.id.value,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
                                 }
 
                                 Column(
                                     horizontalAlignment = Alignment.End,
                                     verticalArrangement = Arrangement.spacedBy(6.dp),
                                 ) {
-                                    NgStatusChip(
-                                        text = if (isPublished) "Published" else "Draft",
-                                        status = if (isPublished) NgStatus.Success else NgStatus.Info,
-                                    )
+                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        NgStatusChip(
+                                            text = if (isPublished) "Published" else "Draft",
+                                            status = if (isPublished) NgStatus.Success else NgStatus.Info,
+                                        )
+                                        NgStatusChip(text = outcome, status = outcomeStatus)
+                                    }
                                     ProtocolBadge(text = latestVersionLabel)
                                 }
-                            }
 
-                            if (summary.isNotBlank()) {
-                                Text(
-                                    text = summary,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
+                                Icon(
+                                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                ProtocolBadge(text = "${protocol.versions.size} versions")
-                                if (publishedCount > 0) ProtocolBadge(text = "$publishedCount published")
-                                latest?.let { v ->
-                                    if (v.author.isNotBlank()) ProtocolBadge(text = "by ${v.author}")
-                                    ProtocolBadge(text = formatInstant(v.createdAt))
+                            if (!isExpanded) {
+                                if (summary.isNotBlank()) {
+                                    Text(
+                                        text = summary,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
                                 }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    ProtocolBadge(text = "${protocol.versions.size} versions")
+                                    if (publishedCount > 0) ProtocolBadge(text = "$publishedCount published")
+                                    latest?.let { v ->
+                                        if (v.author.isNotBlank()) ProtocolBadge(text = "by ${v.author}")
+                                        ProtocolBadge(text = formatInstant(v.createdAt))
+                                    }
+                                }
+                            } else {
+                                if (summary.isNotBlank()) {
+                                    Text(
+                                        text = summary,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                protocol.resultSummary?.let {
+                                    Text(
+                                        text = "Result: $it",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                }
+                                if (protocol.resultMetrics.isNotEmpty()) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        protocol.resultMetrics.entries.take(4).forEach { (label, value) ->
+                                            NgMetricTile(label = label, value = value, modifier = Modifier.weight(1f))
+                                        }
+                                    }
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    ProtocolBadge(text = "${protocol.versions.size} versions")
+                                    if (publishedCount > 0) ProtocolBadge(text = "$publishedCount published")
+                                    latest?.let { v ->
+                                        ProtocolBadge(text = "Latest v${v.version}")
+                                        if (v.author.isNotBlank()) ProtocolBadge(text = "by ${v.author}")
+                                        ProtocolBadge(text = formatInstant(v.createdAt))
+                                    }
+                                }
+                                TextButton(onClick = { onSelect(protocol) }) { Text("Open Protocol") }
                             }
                         }
                     }
@@ -217,6 +295,22 @@ fun ProtocolDetailScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+
+                protocol.resultSummary?.let {
+                    Text("Result Overview", style = MaterialTheme.typography.titleSmall)
+                    Text(it, style = MaterialTheme.typography.bodyMedium)
+                }
+
+                if (protocol.resultMetrics.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        protocol.resultMetrics.entries.take(4).forEach { (label, value) ->
+                            NgMetricTile(label = label, value = value, modifier = Modifier.weight(1f))
+                        }
+                    }
                 }
 
                 val latest = protocol.latestVersion

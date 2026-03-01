@@ -27,6 +27,13 @@ class DemoControlApi : ControlApi {
             id = ProtocolId("proto-1"),
             name = "Demo Protocol",
             summary = "Demo protocol for smoke test",
+            resultSummary = "Synthetic demo run completed. Stability 97.9% with no alerts.",
+            lastOutcome = "SUCCESS",
+            resultMetrics = mapOf(
+                "Stability" to "97.9%",
+                "Drift Alerts" to "0",
+                "Cycle Time" to "28m"
+            ),
             latestVersion = version,
             versions = listOf(version)
         )
