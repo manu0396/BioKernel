@@ -11,10 +11,13 @@ import com.neogenesis.platform.shared.errors.DomainResult
 import com.neogenesis.platform.shared.telemetry.TelemetryExport
 import com.neogenesis.platform.shared.telemetry.TelemetryFrame
 import com.neogenesis.platform.shared.validation.TelemetryValidation
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
 import io.ktor.server.auth.authenticate
 import io.ktor.server.request.receive
+import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -66,7 +69,18 @@ object TelemetryModule {
                             "Missing jobId"
                         )
                         val frames = repository.list(PrintJobId(jobId), 10_000)
-                        call.respond(mapOf("json" to TelemetryExport.toJson(frames), "csv" to TelemetryExport.toCsv(frames)))
+                        val acceptHeader = call.request.headers[HttpHeaders.Accept] ?: ""
+                        if (acceptHeader.contains("text/csv", ignoreCase = true)) {
+                            val csv = TelemetryExport.toCsv(frames)
+                            call.respondBytes(csv.encodeToByteArray(), contentType = ContentType.Text.CSV)
+                        } else {
+                            call.respond(
+                                mapOf(
+                                    "json" to TelemetryExport.toJson(frames),
+                                    "csv" to TelemetryExport.toCsv(frames)
+                                )
+                            )
+                        }
                     }
                 }
             }

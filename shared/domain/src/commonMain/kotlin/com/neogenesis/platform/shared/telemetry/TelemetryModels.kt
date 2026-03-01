@@ -30,7 +30,8 @@ data class PIDState(
 )
 
 @Serializable
-data class MPCPrediction(
+data class
+MPCPrediction(
     val horizonMs: Int,
     val predictedPressureKpa: Double
 )

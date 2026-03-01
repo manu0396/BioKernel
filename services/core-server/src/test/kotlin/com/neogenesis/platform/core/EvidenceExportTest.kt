@@ -39,6 +39,67 @@ class EvidenceExportTest {
             install(ContentNegotiation) { json() }
         }
 
+        val context = createJobWithTelemetry(client)
+
+        client.post("/api/v1/evidence/${context.job.id.value}/log") {
+            header(HttpHeaders.Authorization, "Bearer ${context.tokens.accessToken}")
+            contentType(ContentType.Application.Json)
+            setBody(
+                EvidenceModule.AuditRequest(
+                    actorId = context.user.id.value,
+                    deviceId = context.device.id.value,
+                    eventType = "JOB_STARTED",
+                    payload = "{\"jobId\":\"${context.job.id.value}\"}"
+                )
+            )
+        }
+
+        val export = client.get("/api/v1/evidence/${context.job.id.value}/package") {
+            header(HttpHeaders.Authorization, "Bearer ${context.tokens.accessToken}")
+        }
+        assertEquals(HttpStatusCode.OK, export.status)
+        val bytes = export.body<ByteArray>()
+        val names = mutableSetOf<String>()
+        ZipInputStream(bytes.inputStream()).use { zip ->
+            var entry = zip.nextEntry
+            while (entry != null) {
+                names.add(entry.name)
+                entry = zip.nextEntry
+            }
+        }
+        assertTrue(names.contains("manifest.json"))
+        assertTrue(names.contains("audit.json"))
+    }
+
+    @Test
+    fun telemetryExportAliasReturnsCsv() = testApplication {
+        configureTestEnv()
+        application { module(AppConfig.fromEnv()) }
+        val client = createClient {
+            install(ContentNegotiation) { json() }
+        }
+
+        val context = createJobWithTelemetry(client)
+
+        val export = client.get("/api/v1/telemetry/${context.job.id.value}/export") {
+            header(HttpHeaders.Authorization, "Bearer ${context.tokens.accessToken}")
+            header(HttpHeaders.Accept, "text/csv")
+        }
+        assertEquals(HttpStatusCode.OK, export.status)
+        val contentType = export.headers[HttpHeaders.ContentType]
+        assertTrue(contentType?.contains("text/csv") == true)
+        val payload = export.body<ByteArray>()
+        assertTrue(payload.isNotEmpty())
+    }
+
+    private data class JobContext(
+        val tokens: AuthModule.TokenResponse,
+        val user: com.neogenesis.platform.shared.domain.User,
+        val device: Device,
+        val job: PrintJob
+    )
+
+    private suspend fun createJobWithTelemetry(client: io.ktor.client.HttpClient): JobContext {
         val register = client.post("/api/v1/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(AuthModule.RegisterRequest("operator", "securepass1", setOf(Role.ADMIN)))
@@ -101,34 +162,7 @@ class EvidenceExportTest {
             )
         }
 
-        client.post("/api/v1/evidence/${job.id.value}/log") {
-            header(HttpHeaders.Authorization, "Bearer ${tokens.accessToken}")
-            contentType(ContentType.Application.Json)
-            setBody(
-                EvidenceModule.AuditRequest(
-                    actorId = user.id.value,
-                    deviceId = device.id.value,
-                    eventType = "JOB_STARTED",
-                    payload = "{\"jobId\":\"${job.id.value}\"}"
-                )
-            )
-        }
-
-        val export = client.get("/api/v1/evidence/${job.id.value}/package") {
-            header(HttpHeaders.Authorization, "Bearer ${tokens.accessToken}")
-        }
-        assertEquals(HttpStatusCode.OK, export.status)
-        val bytes = export.body<ByteArray>()
-        val names = mutableSetOf<String>()
-        ZipInputStream(bytes.inputStream()).use { zip ->
-            var entry = zip.nextEntry
-            while (entry != null) {
-                names.add(entry.name)
-                entry = zip.nextEntry
-            }
-        }
-        assertTrue(names.contains("manifest.json"))
-        assertTrue(names.contains("audit.json"))
+        return JobContext(tokens, user, device, job)
     }
 
     private fun configureTestEnv() {

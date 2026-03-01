@@ -175,6 +175,10 @@ internal object RegenOpsInMemoryStore {
 
     fun getRun(runId: String): RunRecord? = runs[runId]
 
+    fun listRuns(): List<RunRecord> = runs.values.sortedByDescending { it.startedAtMs }
+
+    fun runCount(): Int = runs.size
+
     fun events(runId: String): Flow<RunEventRecord> = runEvents.asSharedFlow().filter { it.runId == runId }
 
     fun telemetry(runId: String): Flow<TelemetryRecord> = telemetry.asSharedFlow().filter { it.runId == runId }

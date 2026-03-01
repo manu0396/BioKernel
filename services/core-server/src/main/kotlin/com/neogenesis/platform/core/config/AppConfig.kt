@@ -10,7 +10,8 @@ data class AppConfig(
     val grpcTls: GrpcTlsConfig,
     val jwt: JwtConfig,
     val database: DatabaseConfig,
-    val pairingSecret: String
+    val pairingSecret: String,
+    val demoModeEnabled: Boolean
 ) {
     companion object {
         fun fromEnv(): AppConfig {
@@ -22,6 +23,7 @@ data class AppConfig(
             val jwt = JwtConfig.fromEnv()
             val database = DatabaseConfig.fromEnv()
             val pairingSecret = Env.required("PAIRING_SECRET")
+            val demoModeEnabled = Env.bool("NG_DEMO_MODE", false)
             return AppConfig(
                 environment = environment,
                 httpPort = httpPort,
@@ -30,7 +32,8 @@ data class AppConfig(
                 grpcTls = grpcTls,
                 jwt = jwt,
                 database = database,
-                pairingSecret = pairingSecret
+                pairingSecret = pairingSecret,
+                demoModeEnabled = demoModeEnabled
             )
         }
     }

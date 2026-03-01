@@ -161,5 +161,11 @@ fun Application.module(appConfig: AppConfig = AppConfig.fromEnv()) {
     RecipeModule.register(this, recipeRepository, auditLogger)
     HealthModule.register(this)
     RegenOpsHttpModule.register(this)
+    ExportsAliasModule.register(this, telemetryRepository, evidencePackageBuilder)
+    if (appConfig.demoModeEnabled) {
+        MetricsModule.register(this)
+        CommercialModule.register(this)
+        DemoSimulatorModule.register(this)
+    }
 }
 

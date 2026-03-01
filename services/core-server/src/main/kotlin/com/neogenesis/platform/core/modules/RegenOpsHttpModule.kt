@@ -1,5 +1,8 @@
 package com.neogenesis.platform.core.modules
 
+import com.neogenesis.grpc.ProtocolSummary
+import com.neogenesis.grpc.ProtocolVersionRecord
+import com.neogenesis.grpc.RunRecord
 import com.neogenesis.platform.core.grpc.RegenOpsInMemoryStore
 import com.neogenesis.platform.core.observability.HttpRequestLabels
 import io.ktor.http.HttpStatusCode
@@ -7,8 +10,8 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
-import io.ktor.server.routing.post
 import io.ktor.server.routing.get
+import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import kotlinx.serialization.Serializable
@@ -20,6 +23,41 @@ object RegenOpsHttpModule {
         val protocolVersion: Int,
         val runId: String? = null,
         val gatewayId: String? = null
+    )
+
+    @Serializable
+    data class PublishVersionRequestDto(
+        val versionId: String,
+        val changelog: String? = null
+    )
+
+    @Serializable
+    data class ListProtocolsResponseDto(
+        val protocols: List<ProtocolSummaryDto> = emptyList()
+    )
+
+    @Serializable
+    data class ProtocolSummaryDto(
+        val protocolId: String,
+        val title: String,
+        val summary: String? = null,
+        val latestVersion: Int
+    )
+
+    @Serializable
+    data class ProtocolVersionRecordDto(
+        val protocolId: String,
+        val version: Int,
+        val contentJson: String,
+        val publishedBy: String? = null
+    )
+
+    @Serializable
+    data class RunRecordDto(
+        val runId: String,
+        val protocolId: String,
+        val protocolVersion: Int,
+        val status: String
     )
 
     @Serializable
@@ -37,17 +75,18 @@ object RegenOpsHttpModule {
     )
 
     fun register(app: Application) {
-        // Initialize seed data if mock mode is enabled or as a default for first contact
         seedMockData()
 
         app.routing {
             route("/api/v1/regenops") {
                 get("/protocols") {
-                    call.respond(RegenOpsInMemoryStore.listProtocols())
+                    val response = ListProtocolsResponseDto(
+                        protocols = RegenOpsInMemoryStore.listProtocols().protocolsList.map { it.toDto() }
+                    )
+                    call.respond(response)
                 }
                 get("/runs") {
-                    // Currently no listRuns in store, but we can return empty or mock
-                    call.respond(emptyList<String>())
+                    call.respond(RegenOpsInMemoryStore.listRuns().map { it.toDto() })
                 }
                 post("/runs/start") {
                     val req = call.receive<StartRunRequestDto>()
@@ -58,15 +97,23 @@ object RegenOpsHttpModule {
                         gatewayId = req.gatewayId ?: "gateway-http",
                         labels = HttpRequestLabels.fromCall(call, req.protocolId, req.protocolVersion)
                     )
-                    call.respond(HttpStatusCode.Created, run)
+                    call.respond(HttpStatusCode.Created, run.toDto())
                 }
                 post("/runs/{id}/pause") {
                     val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
-                    call.respond(RegenOpsInMemoryStore.updateRun(id, "PAUSED", HttpRequestLabels.fromCall(call)))
+                    val run = RegenOpsInMemoryStore.updateRun(id, "PAUSED", HttpRequestLabels.fromCall(call))
+                    call.respond(run.toDto())
                 }
                 post("/runs/{id}/abort") {
                     val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
-                    call.respond(RegenOpsInMemoryStore.updateRun(id, "ABORTED", HttpRequestLabels.fromCall(call)))
+                    val run = RegenOpsInMemoryStore.updateRun(id, "ABORTED", HttpRequestLabels.fromCall(call))
+                    call.respond(run.toDto())
+                }
+                post("/protocols/{id}/publish") {
+                    val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+                    val req = call.receive<PublishVersionRequestDto>()
+                    val record = RegenOpsInMemoryStore.publishVersion(id, req.changelog ?: "Published via control app")
+                    call.respond(record.toDto())
                 }
             }
             route("/api/v1/trace") {
@@ -88,8 +135,31 @@ object RegenOpsHttpModule {
         }
     }
 
+    private fun ProtocolSummary.toDto(): ProtocolSummaryDto =
+        ProtocolSummaryDto(
+            protocolId = protocolId,
+            title = title,
+            summary = null,
+            latestVersion = latestVersion
+        )
+
+    private fun ProtocolVersionRecord.toDto(): ProtocolVersionRecordDto =
+        ProtocolVersionRecordDto(
+            protocolId = protocolId,
+            version = version,
+            contentJson = contentJson,
+            publishedBy = "system"
+        )
+
+    private fun RunRecord.toDto(): RunRecordDto =
+        RunRecordDto(
+            runId = runId,
+            protocolId = protocolId,
+            protocolVersion = protocolVersion,
+            status = status
+        )
+
     private fun seedMockData() {
-        // Only seed if empty or explicitly requested via REGENOPS_MOCK=true
         if (System.getenv("REGENOPS_MOCK") == "false") return
 
         val protocols = listOf(
