@@ -56,3 +56,61 @@
 - [x] Business metrics + Prometheus rules + Grafana dashboards + metrics contract docs.
 - [x] Android backup hardening (rules + manifest overrides + policy doc).
 - [x] Verification: `./gradlew.bat test` and `./gradlew.bat :services:core-server:compileKotlin`.
+# ExecPlan: RegenOps Control App + Core Server Demo Enablement (2026-03-01)
+
+## Milestones
+1) Fix UI bugs: simulate chip, dialog alignment, start mission robustness.
+2) Wire simulation API end-to-end with demo tenant + correlation id support.
+3) Make all UI actions functional across screens; document in UI action audit.
+4) Add server demo-gated endpoints for metrics, commercial pipeline, and exports alignment.
+5) Add client/server tests to cover new flows.
+
+## File-by-File Change List
+Client
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/design/NgComponents.kt`: Make status chip optionally clickable with role and hover.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/RegenOpsApp.kt`: Wire SIMULATE/SIMULATION chip, fix dialogs alignment, start mission UI state.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/RegenOpsViewModel.kt`: Remove simulation gate, add start/run loading and errors, wire simulator flow.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/remote/SimulatorApi.kt`: New simulator API client.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/remote/HttpSimulatorApi.kt`: HTTP implementation for simulator.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/remote/HttpClientFactory.kt`: Add tenant_id + X-Correlation-Id support.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/AppConfig.kt`: Add demo tenant default if needed.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/remote/ExportsApi.kt`: Align export endpoints or client paths.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/remote/TraceApi.kt`: Ensure endpoints match server.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/remote/CommercialApi.kt`: Ensure endpoints match server.
+- `apps/control-kmp/shared/src/commonTest/kotlin/com/neogenesis/platform/control/presentation/RegenOpsViewModelTest.kt`: Add start/run tests.
+- `apps/control-kmp/androidApp/src/androidTest/kotlin/...`: Compose UI tests for chip, dialogs, and start flows.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/design/NgPointer.kt`: Expect pointer hover helper.
+- `apps/control-kmp/shared/src/androidMain/kotlin/com/neogenesis/platform/control/presentation/design/NgPointer.kt`: Android no-op hover helper.
+- `apps/control-kmp/shared/src/jvmMain/kotlin/com/neogenesis/platform/control/presentation/design/NgPointer.kt`: Desktop hover pointer icon.
+- `apps/control-kmp/shared/src/androidMain/kotlin/com/neogenesis/platform/control/data/remote/GrpcControlApi.kt`: Stub listRuns for platform builds.
+- `apps/control-kmp/shared/src/jvmMain/kotlin/com/neogenesis/platform/control/data/remote/GrpcControlApi.kt`: Stub listRuns for platform builds.
+- `docs/qa/UI_ACTIONS_IMPLEMENTED.md`: UI action audit and endpoint mapping.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/modules/TelemetryModule.kt`: Respect `Accept: text/csv` for export.
+
+Server
+- `src/main/kotlin/com/neogenesis/server/config/AppConfig.kt`: Add NG_DEMO_MODE flag (if config lives here).
+- `src/main/kotlin/com/neogenesis/server/modules/demo/SimulatorModule.kt`: Ensure demo gating and role checks.
+- `src/main/kotlin/com/neogenesis/server/modules/metrics/MetricsModule.kt`: Add reproducibility-score + drift-alerts endpoints.
+- `src/main/kotlin/com/neogenesis/server/modules/commercial/CommercialModule.kt`: Add pipeline + export endpoints.
+- `src/main/kotlin/com/neogenesis/server/modules/exports/ExportsModule.kt`: Add export aliases if needed.
+- `src/test/kotlin/com/neogenesis/server/...`: Integration tests for demo endpoints and simulator.
+
+## Verification Commands
+- `./gradlew.bat test`
+- `./gradlew.bat :backend:test`
+- `./gradlew.bat :domain:test`
+- `./gradlew.bat :shared-network:test`
+- `./gradlew.bat :androidApp:assembleDebug`
+
+## Rollback Plan
+- Revert the files listed above.
+- Remove demo-only modules/endpoints and keep production behavior unchanged.
+- Re-run the verification commands to confirm baseline stability.
+
+## Progress
+- [x] Milestone 1: Fix UI bugs (chip, dialogs, start mission).
+- [x] Milestone 2: Simulation API end-to-end (tenant + correlation).
+- [x] Milestone 3: UI action audit + no-op removals.
+- [x] Milestone 4: Demo-gated server endpoints (metrics, commercial, exports).
+- [x] Milestone 5: Tests + docs (added coverage; local runs complete).
+

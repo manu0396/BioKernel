@@ -6,7 +6,18 @@ import com.neogenesis.platform.control.data.RegenOpsRepository
 import com.neogenesis.platform.control.data.oidc.OidcRepository
 import com.neogenesis.platform.control.data.remote.CommercialApi
 import com.neogenesis.platform.control.data.remote.ExportsApi
+import com.neogenesis.platform.control.data.remote.SimulatorApi
 import com.neogenesis.platform.control.data.remote.TraceApi
+import com.neogenesis.platform.shared.domain.Protocol
+import com.neogenesis.platform.shared.domain.ProtocolId
+import com.neogenesis.platform.shared.domain.ProtocolVersion
+import com.neogenesis.platform.shared.domain.ProtocolVersionId
+import com.neogenesis.platform.shared.domain.Run
+import com.neogenesis.platform.shared.domain.RunId
+import com.neogenesis.platform.shared.domain.RunStatus
+import com.neogenesis.platform.shared.network.ApiResult
+import com.neogenesis.platform.shared.network.AppLogger
+import com.neogenesis.platform.shared.network.NoOpLogger
 import com.neogenesis.platform.shared.telemetry.FlowRate
 import com.neogenesis.platform.shared.telemetry.MPCPrediction
 import com.neogenesis.platform.shared.telemetry.NozzleDisplacement
@@ -15,6 +26,7 @@ import com.neogenesis.platform.shared.telemetry.PressureReading
 import com.neogenesis.platform.shared.telemetry.TelemetryFrame
 import com.neogenesis.platform.shared.telemetry.Temperature
 import com.neogenesis.platform.shared.telemetry.ViscosityEstimation
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -25,6 +37,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class RegenOpsViewModelTest {
+
     @Test
     fun startStreamingCollectsTelemetry() = runTest {
         val repository: RegenOpsRepository = mockk(relaxed = true)
@@ -33,8 +46,8 @@ class RegenOpsViewModelTest {
         val exportsApi: ExportsApi = mockk()
         val traceApi: TraceApi = mockk()
 
-        val protocolsFlow = MutableStateFlow(emptyList<com.neogenesis.platform.shared.domain.Protocol>())
-        val runsFlow = MutableStateFlow(emptyList<com.neogenesis.platform.shared.domain.Run>())
+        val protocolsFlow = MutableStateFlow(emptyList<Protocol>())
+        val runsFlow = MutableStateFlow(emptyList<Run>())
         val telemetryStream = MutableSharedFlow<TelemetryFrame>()
 
         every { repository.protocols } returns protocolsFlow
@@ -51,11 +64,15 @@ class RegenOpsViewModelTest {
             oidcIssuer = "",
             oidcClientId = "",
             oidcAudience = null,
+            tenantId = "tenant-1",
             traceModeEnabled = false,
             demoModeEnabled = false,
             founderModeEnabled = false,
             commercialModeEnabled = false
         )
+
+        val simulatorApi: SimulatorApi = mockk(relaxed = true)
+        val logger: AppLogger = NoOpLogger
 
         val viewModel = RegenOpsViewModel(
             config = config,
@@ -63,7 +80,9 @@ class RegenOpsViewModelTest {
             oidcRepository = oidcRepository,
             commercialApi = commercialApi,
             exportsApi = exportsApi,
-            traceApi = traceApi
+            traceApi = traceApi,
+            simulatorApi = simulatorApi,
+            logger = logger
         )
 
         viewModel.startStreaming("run-123")
@@ -82,6 +101,6 @@ class RegenOpsViewModelTest {
             telemetryStream.emit(frame)
             val updated = awaitItem().let { if (it.telemetryFrames.contains(frame)) it else awaitItem() }
             assertEquals(true, updated.telemetryFrames.contains(frame))
+            cancelAndIgnoreRemainingEvents()
         }
     }
-}
