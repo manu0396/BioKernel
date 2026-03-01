@@ -1,0 +1,19 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: neogenesis-core-grpc-mtls
+spec:
+  secretName: neogenesis-grpc-mtls
+  duration: 24h
+  renewBefore: 6h
+  issuerRef:
+    name: neogenesis-vault-pki
+    kind: ClusterIssuer
+  usages:
+    - server auth
+    - client auth
+  dnsNames:
+    - core-server
+    - core-server.default
+    - core-server.default.svc
+    - core-server.default.svc.cluster.local

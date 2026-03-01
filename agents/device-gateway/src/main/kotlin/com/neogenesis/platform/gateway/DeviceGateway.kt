@@ -8,9 +8,11 @@ import com.neogenesis.grpc.PushRunEventsRequest
 import com.neogenesis.grpc.PushTelemetryRequest
 import com.neogenesis.grpc.RegisterGatewayRequest
 import io.grpc.ManagedChannel
+import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import java.io.File
 import java.time.Instant
 
 object DeviceGateway {
@@ -19,12 +21,26 @@ object DeviceGateway {
         val coreHost = System.getenv("CORE_GRPC_HOST") ?: "localhost"
         val corePort = (System.getenv("CORE_GRPC_PORT") ?: "9090").toInt()
         val useTls = (System.getenv("CORE_GRPC_TLS") ?: "false").toBoolean()
+        val clientCert = System.getenv("CORE_GRPC_TLS_CERT_CHAIN_PATH")
+        val clientKey = System.getenv("CORE_GRPC_TLS_PRIVATE_KEY_PATH")
+        val trustCert = System.getenv("CORE_GRPC_TLS_TRUST_CERT_PATH")
         val gatewayId = System.getenv("GATEWAY_ID") ?: "gateway-local"
         val runId = System.getenv("SIM_RUN_ID") ?: "run-simulated"
 
-        val channel: ManagedChannel = NettyChannelBuilder.forAddress(coreHost, corePort)
-            .apply { if (!useTls) usePlaintext() }
-            .build()
+        val channelBuilder = NettyChannelBuilder.forAddress(coreHost, corePort)
+        if (!useTls) {
+            channelBuilder.usePlaintext()
+        } else {
+            val sslBuilder = GrpcSslContexts.forClient()
+            if (!trustCert.isNullOrBlank()) {
+                sslBuilder.trustManager(File(trustCert))
+            }
+            if (!clientCert.isNullOrBlank() && !clientKey.isNullOrBlank()) {
+                sslBuilder.keyManager(File(clientCert), File(clientKey))
+            }
+            channelBuilder.sslContext(sslBuilder.build())
+        }
+        val channel: ManagedChannel = channelBuilder.build()
 
         val stub = GatewayServiceGrpcKt.GatewayServiceCoroutineStub(channel)
 

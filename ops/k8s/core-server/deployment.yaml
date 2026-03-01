@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: core-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: core-server
+  template:
+    metadata:
+      labels:
+        app: core-server
+    spec:
+      containers:
+        - name: core-server
+          image: ghcr.io/neogenesis/core-server:latest
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 9090
+              name: grpc
+          env:
+            - name: HTTP_PORT
+              value: "8080"
+            - name: GRPC_PORT
+              value: "9090"
+            - name: GRPC_ENABLED
+              value: "true"
+            - name: GRPC_TLS_ENABLED
+              value: "true"
+            - name: GRPC_TLS_REQUIRE_CLIENT_AUTH
+              value: "true"
+            - name: GRPC_TLS_CERT_CHAIN_PATH
+              value: "/etc/grpc/tls/tls.crt"
+            - name: GRPC_TLS_PRIVATE_KEY_PATH
+              value: "/etc/grpc/tls/tls.key"
+            - name: GRPC_TLS_TRUST_CERT_PATH
+              value: "/etc/grpc/tls/ca.crt"
+            - name: GRPC_TLS_RELOAD_INTERVAL_SEC
+              value: "300"
+          volumeMounts:
+            - name: grpc-mtls
+              mountPath: /etc/grpc/tls
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+      volumes:
+        - name: grpc-mtls
+          secret:
+            secretName: neogenesis-grpc-mtls

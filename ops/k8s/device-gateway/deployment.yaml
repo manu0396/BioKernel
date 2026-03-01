@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: device-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: device-gateway
+  template:
+    metadata:
+      labels:
+        app: device-gateway
+    spec:
+      containers:
+        - name: device-gateway
+          image: ghcr.io/neogenesis/device-gateway:latest
+          env:
+            - name: CORE_GRPC_HOST
+              value: "core-server"
+            - name: CORE_GRPC_PORT
+              value: "9090"
+            - name: CORE_GRPC_TLS
+              value: "true"
+            - name: CORE_GRPC_TLS_CERT_CHAIN_PATH
+              value: "/etc/grpc/tls/tls.crt"
+            - name: CORE_GRPC_TLS_PRIVATE_KEY_PATH
+              value: "/etc/grpc/tls/tls.key"
+            - name: CORE_GRPC_TLS_TRUST_CERT_PATH
+              value: "/etc/grpc/tls/ca.crt"
+          volumeMounts:
+            - name: grpc-mtls
+              mountPath: /etc/grpc/tls
+              readOnly: true
+      volumes:
+        - name: grpc-mtls
+          secret:
+            secretName: neogenesis-gateway-mtls
