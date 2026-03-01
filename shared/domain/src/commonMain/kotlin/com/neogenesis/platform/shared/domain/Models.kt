@@ -138,11 +138,13 @@ data class Protocol(
     val id: ProtocolId,
     val name: String,
     val summary: String,
+    val status: String = "DRAFT",
     val resultSummary: String? = null,
     val resultMetrics: Map<String, String> = emptyMap(),
     val lastOutcome: String? = null,
     val evidenceSummary: String? = null,
     val lastRunTimeline: List<String> = emptyList(),
+    val evidenceArtifacts: List<String> = emptyList(),
     val latestVersion: ProtocolVersion?,
     val versions: List<ProtocolVersion> = emptyList()
 )

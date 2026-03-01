@@ -76,11 +76,13 @@ private fun ProtocolSummaryDto.toDomain(): Protocol {
         id = ProtocolId(protocolId),
         name = title,
         summary = summary ?: "",
+        status = status ?: "DRAFT",
         resultSummary = resultSummary,
         lastOutcome = lastOutcome,
         resultMetrics = resultMetrics,
         evidenceSummary = evidenceSummary,
         lastRunTimeline = lastRunTimeline,
+        evidenceArtifacts = evidenceArtifacts,
         latestVersion = latest,
         versions = listOf(latest)
     )

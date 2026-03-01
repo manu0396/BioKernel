@@ -41,6 +41,7 @@ class RegenOpsViewModel(
     private val scope = CoroutineScope(Dispatchers.Default + Job())
     private var eventsJob: Job? = null
     private var telemetryJob: Job? = null
+    private var protocolExtras: Map<String, Protocol> = emptyMap()
 
     /** Simple back stack for “detail” navigation (not the bottom tabs). */
     private val backStack: ArrayDeque<AppScreen> = ArrayDeque()
@@ -67,7 +68,19 @@ class RegenOpsViewModel(
                             // Keep the UI usable when backend returns empty.
                             MockProtocols.sample()
                         } else {
-                            protocols
+                            protocols.map { protocol ->
+                                val extra = protocolExtras[protocol.id.value]
+                                if (extra == null) protocol
+                                else protocol.copy(
+                                    status = extra.status,
+                                    resultSummary = extra.resultSummary,
+                                    resultMetrics = extra.resultMetrics,
+                                    lastOutcome = extra.lastOutcome,
+                                    evidenceSummary = extra.evidenceSummary,
+                                    lastRunTimeline = extra.lastRunTimeline,
+                                    evidenceArtifacts = extra.evidenceArtifacts
+                                )
+                            }
                         }
 
                     val selected = resolveSelectedProtocol(current.selectedProtocol, effectiveProtocols)
@@ -190,8 +203,10 @@ class RegenOpsViewModel(
     fun refreshProtocols() {
         scope.launch {
             when (val result = repository.refreshProtocols()) {
-                is ApiResult.Success ->
+                is ApiResult.Success -> {
+                    protocolExtras = result.value.associateBy { it.id.value }
                     _state.update { it.copy(statusMessage = "Protocols refreshed", errorBanner = null) }
+                }
                 is ApiResult.Failure ->
                     _state.update { it.copy(errorBanner = mapNetworkError(result.error, "Failed to refresh protocols")) }
             }
@@ -204,6 +219,7 @@ class RegenOpsViewModel(
         scope.launch {
             when (val result = repository.createProtocol(request)) {
                 is ApiResult.Success -> {
+                    protocolExtras = protocolExtras + (result.value.id.value to result.value)
                     _state.update {
                         it.copy(
                             statusMessage = "Protocol created",

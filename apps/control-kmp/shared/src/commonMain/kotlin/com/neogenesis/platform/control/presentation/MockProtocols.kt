@@ -44,6 +44,7 @@ object MockProtocols {
             resultMetrics: Map<String, String>,
             evidenceSummary: String,
             lastRunTimeline: List<String>,
+            evidenceArtifacts: List<String>,
             versions: List<ProtocolVersion>,
         ): Protocol {
             val latest = versions.maxByOrNull { it.version.toIntOrNull() ?: 0 }
@@ -51,11 +52,13 @@ object MockProtocols {
                 id = ProtocolId(id),
                 name = name,
                 summary = summary,
+                status = "PUBLISHED",
                 resultSummary = resultSummary,
                 lastOutcome = lastOutcome,
                 resultMetrics = resultMetrics,
                 evidenceSummary = evidenceSummary,
                 lastRunTimeline = lastRunTimeline,
+                evidenceArtifacts = evidenceArtifacts,
                 versions = versions,
                 // IMPORTANT: domain requires latestVersion
                 latestVersion = latest,
@@ -87,6 +90,7 @@ object MockProtocols {
                     "00:29 Checkpoint B verified",
                     "00:41 Completion & seal"
                 ),
+                evidenceArtifacts = listOf("run_report.csv", "audit_bundle.zip", "manifest.json"),
                 versions = listOf(
                     version(
                         p1Id, "pv-regen-001-3", 3, false, "ops@neogenesis",
@@ -119,6 +123,7 @@ object MockProtocols {
                     "00:27 Remediation applied",
                     "00:33 Export sealed"
                 ),
+                evidenceArtifacts = listOf("drift_report.csv", "audit_bundle.zip"),
                 versions = listOf(
                     version(
                         p2Id, "pv-qc-002-1", 1, true, "qa@neogenesis",
@@ -145,6 +150,7 @@ object MockProtocols {
                     "00:12 Linkage verified",
                     "00:18 Bundle generated"
                 ),
+                evidenceArtifacts = listOf("manifest.json", "audit_bundle.zip"),
                 versions = listOf(
                     version(
                         p3Id, "pv-chain-003-1", 1, true, "sec@neogenesis",

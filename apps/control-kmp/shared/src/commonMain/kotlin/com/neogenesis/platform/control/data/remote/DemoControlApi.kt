@@ -30,6 +30,7 @@ class DemoControlApi : ControlApi {
             id = ProtocolId("proto-1"),
             name = "Demo Protocol",
             summary = "Demo protocol for smoke test",
+            status = "PUBLISHED",
             resultSummary = "Synthetic demo run completed. Stability 97.9% with no alerts.",
             lastOutcome = "SUCCESS",
             resultMetrics = mapOf(
@@ -43,6 +44,7 @@ class DemoControlApi : ControlApi {
                 "00:09 Drift check",
                 "00:18 Export sealed"
             ),
+            evidenceArtifacts = listOf("run_report.csv", "audit_bundle.zip"),
             latestVersion = version,
             versions = listOf(version)
         )
@@ -65,11 +67,13 @@ class DemoControlApi : ControlApi {
             id = ProtocolId(request.protocolId),
             name = request.title,
             summary = request.summary,
+            status = request.status ?: "DRAFT",
             resultSummary = request.resultSummary,
             lastOutcome = request.lastOutcome,
             resultMetrics = request.resultMetrics,
             evidenceSummary = request.evidenceSummary,
             lastRunTimeline = request.lastRunTimeline,
+            evidenceArtifacts = request.evidenceArtifacts,
             latestVersion = version,
             versions = listOf(version)
         )

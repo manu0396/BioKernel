@@ -163,6 +163,9 @@ fun RegenOpsApp(
                                             onBack = viewModel::navigateBack,
                                             onSelectVersion = viewModel::selectVersion,
                                             onPublish = viewModel::publishSelectedVersion,
+                                            onOpenExports = {
+                                                viewModel.navigateTo(AppScreen.EXPORTS)
+                                            },
                                         )
 
                                     AppScreen.RUN_CONTROL ->

@@ -12,11 +12,13 @@ data class ProtocolSummaryDto(
     val protocolId: String,
     val title: String,
     val summary: String? = null,
+    val status: String? = null,
     val resultSummary: String? = null,
     val lastOutcome: String? = null,
     val resultMetrics: Map<String, String> = emptyMap(),
     val evidenceSummary: String? = null,
     val lastRunTimeline: List<String> = emptyList(),
+    val evidenceArtifacts: List<String> = emptyList(),
     val latestVersion: Int
 )
 
@@ -27,11 +29,13 @@ data class CreateProtocolRequest(
     val summary: String,
     val contentJson: String,
     val author: String,
+    val status: String? = null,
     val resultSummary: String? = null,
     val lastOutcome: String? = null,
     val resultMetrics: Map<String, String> = emptyMap(),
     val evidenceSummary: String? = null,
-    val lastRunTimeline: List<String> = emptyList()
+    val lastRunTimeline: List<String> = emptyList(),
+    val evidenceArtifacts: List<String> = emptyList()
 )
 
 @Serializable

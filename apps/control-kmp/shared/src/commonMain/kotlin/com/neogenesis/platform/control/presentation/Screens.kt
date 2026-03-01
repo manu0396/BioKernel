@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.Canvas
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOpen
@@ -41,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -86,6 +88,7 @@ fun ProtocolsScreen(
     var newAuthor by remember { mutableStateOf("") }
     var newResultSummary by remember { mutableStateOf("") }
     var newOutcome by remember { mutableStateOf("SUCCESS") }
+    var newStatus by remember { mutableStateOf("DRAFT") }
     var metric1Label by remember { mutableStateOf("Yield") }
     var metric1Value by remember { mutableStateOf("98.0%") }
     var metric2Label by remember { mutableStateOf("Stability") }
@@ -94,6 +97,7 @@ fun ProtocolsScreen(
     var metric3Value by remember { mutableStateOf("35m") }
     var evidenceSummary by remember { mutableStateOf("") }
     var timelineCsv by remember { mutableStateOf("00:00 Init, 00:12 Checkpoint A, 00:24 Complete") }
+    var artifactsCsv by remember { mutableStateOf("run_report.csv, audit_bundle.zip") }
 
     val dialogProperties = if (WindowSize.isDesktop()) {
         DialogProperties(usePlatformDefaultWidth = false)
@@ -142,6 +146,7 @@ fun ProtocolsScreen(
                     item { Text("Result Overview", style = MaterialTheme.typography.titleSmall) }
                     item { NgTextField(value = newResultSummary, onValueChange = { newResultSummary = it }, label = "Result Summary") }
                     item { NgTextField(value = newOutcome, onValueChange = { newOutcome = it }, label = "Outcome (SUCCESS/WARNING/FAILED)") }
+                    item { NgTextField(value = newStatus, onValueChange = { newStatus = it }, label = "Protocol Status (DRAFT/PUBLISHED/ARCHIVED)") }
 
                     item { Text("Key Metrics", style = MaterialTheme.typography.titleSmall) }
                     item { NgTextField(value = metric1Label, onValueChange = { metric1Label = it }, label = "Metric 1 Label") }
@@ -154,6 +159,7 @@ fun ProtocolsScreen(
                     item { Text("Evidence & Timeline", style = MaterialTheme.typography.titleSmall) }
                     item { NgTextField(value = evidenceSummary, onValueChange = { evidenceSummary = it }, label = "Evidence Summary") }
                     item { NgTextField(value = timelineCsv, onValueChange = { timelineCsv = it }, label = "Timeline (comma separated)") }
+                    item { NgTextField(value = artifactsCsv, onValueChange = { artifactsCsv = it }, label = "Evidence Artifacts (comma separated)") }
                 }
             },
             confirmButton = {
@@ -168,6 +174,7 @@ fun ProtocolsScreen(
                             metric3Label to metric3Value
                         ).filter { it.first.isNotBlank() && it.second.isNotBlank() }.toMap()
                         val timeline = timelineCsv.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                        val artifacts = artifactsCsv.split(",").map { it.trim() }.filter { it.isNotBlank() }
                         onCreateProtocol(
                             CreateProtocolRequest(
                                 protocolId = newId,
@@ -175,11 +182,13 @@ fun ProtocolsScreen(
                                 summary = newSummary,
                                 contentJson = newContentJson,
                                 author = newAuthor,
+                                status = newStatus.takeIf { it.isNotBlank() },
                                 resultSummary = newResultSummary.takeIf { it.isNotBlank() },
                                 lastOutcome = newOutcome.takeIf { it.isNotBlank() },
                                 resultMetrics = metrics,
                                 evidenceSummary = evidenceSummary.takeIf { it.isNotBlank() },
-                                lastRunTimeline = timeline
+                                lastRunTimeline = timeline,
+                                evidenceArtifacts = artifacts
                             )
                         )
                         if (!isCreatingProtocol) {
@@ -300,6 +309,7 @@ fun ProtocolsScreen(
                                             status = if (isPublished) NgStatus.Success else NgStatus.Info,
                                         )
                                         NgStatusChip(text = outcome, status = outcomeStatus)
+                                        NgStatusChip(text = protocol.status, status = if (protocol.status.uppercase() == "PUBLISHED") NgStatus.Success else NgStatus.Info)
                                     }
                                     ProtocolBadge(text = latestVersionLabel)
                                 }
@@ -350,21 +360,28 @@ fun ProtocolsScreen(
                                         style = MaterialTheme.typography.bodyMedium,
                                     )
                                 }
-                                protocol.evidenceSummary?.let {
-                                    Text("Evidence: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                                if (protocol.lastRunTimeline.isNotEmpty()) {
-                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text("Last Run Timeline", style = MaterialTheme.typography.titleSmall)
-                                        protocol.lastRunTimeline.forEach { step -> Text("• $step", style = MaterialTheme.typography.bodySmall) }
-                                    }
-                                }
-                                if (protocol.resultMetrics.isNotEmpty()) {
-                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
+                Text("Evidence Panel", style = MaterialTheme.typography.titleSmall)
+                protocol.evidenceSummary?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (protocol.evidenceArtifacts.isNotEmpty()) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        protocol.evidenceArtifacts.forEach { artifact ->
+                            OutlinedButton(onClick = onOpenExports) { Text(artifact) }
+                        }
+                    }
+                } else {
+                    OutlinedButton(onClick = onOpenExports) { Text("Open Exports") }
+                }
+                if (protocol.lastRunTimeline.isNotEmpty()) {
+                    ProtocolTimeline(protocol.lastRunTimeline)
+                }
+                if (protocol.resultMetrics.isNotEmpty()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                             protocol.resultMetrics.entries.take(4).forEach { (label, value) ->
                                                 NgMetricTile(label = label, value = value, modifier = Modifier.weight(1f))
                                             }
@@ -408,6 +425,7 @@ fun ProtocolDetailScreen(
     onBack: () -> Unit,
     onSelectVersion: (ProtocolVersion) -> Unit,
     onPublish: () -> Unit,
+    onOpenExports: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(NgSpacing.Medium)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -415,6 +433,7 @@ fun ProtocolDetailScreen(
             Spacer(modifier = Modifier.width(NgSpacing.Small))
             Text(protocol?.name ?: "Protocol", style = MaterialTheme.typography.headlineSmall)
         }
+        protocol?.let { NgStatusChip(text = it.status, status = if (it.status.uppercase() == "PUBLISHED") NgStatus.Success else NgStatus.Info) }
 
         if (protocol == null) {
             NgEmptyState(
