@@ -4,6 +4,7 @@ import com.neogenesis.platform.control.AppConfig
 import com.neogenesis.platform.control.data.RegenOpsRepository
 import com.neogenesis.platform.control.data.remote.CommercialApi
 import com.neogenesis.platform.control.data.remote.ExportsApi
+import com.neogenesis.platform.control.data.remote.SimulatorApi
 import com.neogenesis.platform.control.data.remote.TraceApi
 import com.neogenesis.platform.control.data.oidc.DeviceAuthorization
 import com.neogenesis.platform.control.data.oidc.OidcConfig
@@ -12,6 +13,9 @@ import com.neogenesis.platform.shared.domain.Protocol
 import com.neogenesis.platform.shared.domain.ProtocolVersion
 import com.neogenesis.platform.shared.domain.RunStatus
 import com.neogenesis.platform.shared.network.ApiResult
+import com.neogenesis.platform.shared.network.AppLogger
+import com.neogenesis.platform.shared.network.LogLevel
+import com.neogenesis.platform.shared.network.Redaction
 import com.neogenesis.platform.shared.network.NetworkError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +34,8 @@ class RegenOpsViewModel(
     private val commercialApi: CommercialApi,
     private val exportsApi: ExportsApi,
     private val traceApi: TraceApi,
+    private val simulatorApi: SimulatorApi,
+    private val logger: AppLogger,
 ) {
     private val scope = CoroutineScope(Dispatchers.Default + Job())
     private var eventsJob: Job? = null
@@ -156,7 +162,11 @@ class RegenOpsViewModel(
     }
 
     fun setSimulatedRunEnabled(enabled: Boolean) {
-        if (!_state.value.founderModeEnabled && !_state.value.demoModeEnabled) return
+        logger.log(
+            LogLevel.INFO,
+            "Simulated run toggle",
+            mapOf("enabled" to enabled.toString())
+        )
         _state.update { current ->
             current.copy(
                 simulatedRunEnabled = enabled,
@@ -167,6 +177,10 @@ class RegenOpsViewModel(
 
     fun selectOpportunity(opportunity: CommercialOpportunity) {
         _state.update { it.copy(selectedOpportunity = opportunity) }
+    }
+
+    fun clearSelectedOpportunity() {
+        _state.update { it.copy(selectedOpportunity = null) }
     }
 
     // -----------------------------------------------------------------------------
@@ -189,7 +203,7 @@ class RegenOpsViewModel(
                 is ApiResult.Success ->
                     _state.update { it.copy(statusMessage = "Runs refreshed", errorBanner = null) }
                 is ApiResult.Failure ->
-                    _state.update { it.copy(statusMessage = "Runs refresh not supported yet") }
+                    _state.update { it.copy(errorBanner = mapNetworkError(result.error, "Failed to refresh runs")) }
             }
         }
     }
@@ -207,6 +221,10 @@ class RegenOpsViewModel(
     }
 
     fun startRun() {
+        if (_state.value.isStartingRun) {
+            _state.update { it.copy(statusMessage = "Run already starting...") }
+            return
+        }
         val protocolId = _state.value.selectedProtocol?.id?.value
         val versionId = _state.value.selectedVersion?.id?.value
         if (protocolId == null || versionId == null) {
@@ -214,20 +232,40 @@ class RegenOpsViewModel(
             return
         }
 
+        logger.log(LogLevel.INFO, "Start mission clicked", mapOf("protocolId" to protocolId, "versionId" to versionId))
+        _state.update { it.copy(isStartingRun = true, errorBanner = null) }
+
         scope.launch {
-            when (val result = repository.startRun(protocolId, versionId)) {
-                is ApiResult.Success -> {
-                    val runId = result.value.id.value
-                    val message =
-                        if (_state.value.simulatedRunEnabled) "Simulated run requested" else "Run started"
-                    _state.update { it.copy(selectedRunId = runId, statusMessage = message, errorBanner = null) }
+            try {
+                logger.log(LogLevel.DEBUG, "Start run API call", mapOf("protocolId" to protocolId, "versionId" to versionId))
+                when (val result = repository.startRun(protocolId, versionId)) {
+                    is ApiResult.Success -> {
+                        val runId = result.value.id.value
+                        val message =
+                            if (_state.value.simulatedRunEnabled) "Simulated run requested" else "Run started"
+                        logger.log(LogLevel.INFO, "Run started", mapOf("runId" to Redaction.value(runId)))
+                        _state.update {
+                            it.copy(
+                                selectedRunId = runId,
+                                statusMessage = message,
+                                errorBanner = null,
+                                isStartingRun = false
+                            )
+                        }
 
-                    navigateTo(AppScreen.LIVE_RUN)
-                    startStreaming(runId)
+                        navigateTo(AppScreen.LIVE_RUN)
+                        startStreaming(runId)
+                    }
+
+                    is ApiResult.Failure -> {
+                        val errorMessage = mapNetworkError(result.error, "Start run failed")
+                        logger.log(LogLevel.WARN, "Start run failed", mapOf("error" to errorMessage))
+                        _state.update { it.copy(errorBanner = errorMessage, isStartingRun = false) }
+                    }
                 }
-
-                is ApiResult.Failure ->
-                    _state.update { it.copy(errorBanner = mapNetworkError(result.error, "Start run failed")) }
+            } catch (err: Throwable) {
+                logger.log(LogLevel.ERROR, "Start run crashed", mapOf("error" to (err.message ?: "unknown")))
+                _state.update { it.copy(errorBanner = "Start run failed: ${err.message ?: "unknown"}", isStartingRun = false) }
             }
         }
     }
@@ -238,16 +276,61 @@ class RegenOpsViewModel(
     }
 
     fun startSimulatedRun(config: SimulationConfig) {
-        if (!_state.value.founderModeEnabled && !_state.value.demoModeEnabled) return
+        if (_state.value.isStartingRun) {
+            _state.update { it.copy(statusMessage = "Simulation already starting...") }
+            return
+        }
+        val protocolId = _state.value.selectedProtocol?.id?.value ?: "sim-protocol"
         if (!_state.value.simulatedRunEnabled) setSimulatedRunEnabled(true)
+
+        logger.log(
+            LogLevel.INFO,
+            "Start simulation requested",
+            mapOf(
+                "protocolId" to protocolId,
+                "durationMinutes" to config.durationMinutes.toString(),
+                "tickMillis" to config.tickMillis.toString()
+            )
+        )
 
         _state.update {
             it.copy(
                 statusMessage =
                     "Starting simulation: ${config.durationMinutes}m @${config.speedFactor}x (${config.tickMillis}ms tick)",
+                isStartingRun = true,
+                errorBanner = null
             )
         }
-        startRun()
+
+        scope.launch {
+            try {
+                logger.log(LogLevel.DEBUG, "Start simulation API call", mapOf("protocolId" to protocolId))
+                when (val result = simulatorApi.startSimulatedRun(protocolId, config)) {
+                    is ApiResult.Success -> {
+                        val runId = result.value
+                        logger.log(LogLevel.INFO, "Simulation started", mapOf("runId" to Redaction.value(runId)))
+                        _state.update {
+                            it.copy(
+                                selectedRunId = runId,
+                                statusMessage = "Simulation started",
+                                errorBanner = null,
+                                isStartingRun = false
+                            )
+                        }
+                        navigateTo(AppScreen.LIVE_RUN)
+                        startStreaming(runId)
+                    }
+                    is ApiResult.Failure -> {
+                        val errorMessage = mapNetworkError(result.error, "Start simulation failed")
+                        logger.log(LogLevel.WARN, "Start simulation failed", mapOf("error" to errorMessage))
+                        _state.update { it.copy(errorBanner = errorMessage, isStartingRun = false) }
+                    }
+                }
+            } catch (err: Throwable) {
+                logger.log(LogLevel.ERROR, "Start simulation crashed", mapOf("error" to (err.message ?: "unknown")))
+                _state.update { it.copy(errorBanner = "Start simulation failed: ${err.message ?: "unknown"}", isStartingRun = false) }
+            }
+        }
     }
 
     fun pauseRun() {
@@ -428,7 +511,10 @@ class RegenOpsViewModel(
     // Exports (Report / PDF)
     // -----------------------------------------------------------------------------
     fun exportRunReport(onExport: (ByteArray, String, String) -> Unit) {
-        if (!_state.value.founderModeEnabled && !_state.value.demoModeEnabled) return
+        if (!_state.value.founderModeEnabled && !_state.value.demoModeEnabled) {
+            _state.update { it.copy(export = it.export.copy(errorMessage = "Exports require demo or founder mode")) }
+            return
+        }
 
         val runId = resolveExportRunId()
         if (runId == null) {
@@ -466,7 +552,10 @@ class RegenOpsViewModel(
     }
 
     fun exportAuditBundle(onExport: (ByteArray, String, String) -> Unit) {
-        if (!_state.value.founderModeEnabled && !_state.value.demoModeEnabled) return
+        if (!_state.value.founderModeEnabled && !_state.value.demoModeEnabled) {
+            _state.update { it.copy(export = it.export.copy(errorMessage = "Exports require demo or founder mode")) }
+            return
+        }
 
         val runId = resolveExportRunId()
         if (runId == null) {
@@ -536,7 +625,7 @@ class RegenOpsViewModel(
 
     private fun mapNetworkError(error: NetworkError, fallback: String): String =
         when (error) {
-            is NetworkError.ConnectivityError -> "Server unreachable"
+            is NetworkError.ConnectivityError -> "Server unreachable: ${error.message}"
             is NetworkError.TimeoutError -> "Request timed out"
             is NetworkError.HttpError ->
                 when (error.status) {
@@ -547,6 +636,20 @@ class RegenOpsViewModel(
                     else -> fallback
                 }
             is NetworkError.SerializationError -> "Invalid response from server"
-            is NetworkError.UnknownError -> fallback
+            is NetworkError.UnknownError -> {
+                val detail = error.message.ifBlank { "unknown_error" }
+                val normalized = detail.lowercase()
+                when {
+                    normalized.contains("grpc_error") || normalized.contains("unreachable") || normalized.contains("connection") ->
+                        "Server unreachable: $detail"
+                    else -> "$fallback: $detail"
+                }
+            }
         }
 }
+
+
+
+
+
+

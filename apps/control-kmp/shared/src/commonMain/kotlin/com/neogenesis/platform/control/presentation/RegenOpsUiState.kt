@@ -66,6 +66,7 @@ data class RegenOpsUiState(
     val export: ExportUiState = ExportUiState(),
     val trace: TraceUiState = TraceUiState(),
     val simulatedRunEnabled: Boolean = false,
+    val isStartingRun: Boolean = false,
     val errorBanner: String? = null,
     val streamStatus: String? = null,
     val auth: AuthUiState = AuthUiState(),

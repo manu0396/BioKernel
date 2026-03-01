@@ -109,7 +109,19 @@ fun RegenOpsApp(
                             Row(horizontalArrangement = Arrangement.spacedBy(NgSpacing.Small)) {
                                 if (state.traceModeEnabled) NgStatusChip(text = "TRACE ENABLED", status = NgStatus.Success)
                                 if (state.demoModeEnabled) NgStatusChip(text = "DEMO MODE", status = NgStatus.Info)
-                                if (state.simulatedRunEnabled) NgStatusChip(text = "SIMULATION", status = NgStatus.Warning)
+                                if (state.simulatedRunEnabled) {
+                                    NgStatusChip(
+                                        text = "SIMULATION",
+                                        status = NgStatus.Warning,
+                                        onClick = { viewModel.setSimulatedRunEnabled(false) }
+                                    )
+                                } else {
+                                    NgStatusChip(
+                                        text = "SIMULATE",
+                                        status = NgStatus.Warning,
+                                        onClick = { viewModel.setSimulatedRunEnabled(true) }
+                                    )
+                                }
                             }
 
                             if (!state.auth.isAuthenticated) {
@@ -153,6 +165,7 @@ fun RegenOpsApp(
                                             runs = state.runs,
                                             demoModeEnabled = state.demoModeEnabled,
                                             simulatedRunEnabled = state.simulatedRunEnabled,
+                                            isStartingRun = state.isStartingRun,
                                             onSimulatedRunToggle = viewModel::setSimulatedRunEnabled,
                                             onSelectProtocol = viewModel::selectProtocol,
                                             onSelectVersion = viewModel::selectVersion,
@@ -197,6 +210,7 @@ fun RegenOpsApp(
                                             canGoBack = canGoBack,
                                             onBack = viewModel::navigateBack,
                                             onSelect = viewModel::selectOpportunity,
+                                            onDismissSelected = viewModel::clearSelectedOpportunity,
                                             onExport = {
                                                 viewModel.exportCommercialCsv { bytes ->
                                                     shareFile(bytes, "commercial_pipeline.csv", "text/csv")

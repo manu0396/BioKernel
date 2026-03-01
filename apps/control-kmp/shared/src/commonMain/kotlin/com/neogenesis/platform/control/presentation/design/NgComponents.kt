@@ -3,6 +3,7 @@ package com.neogenesis.platform.control.presentation.design
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -10,6 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 // --- Motion Tokens ---
@@ -172,7 +176,8 @@ fun NgMetricTile(
 @Composable
 fun NgStatusChip(
     text: String,
-    status: NgStatus = NgStatus.Info
+    status: NgStatus = NgStatus.Info,
+    onClick: (() -> Unit)? = null
 ) {
     val color = when (status) {
         NgStatus.Success -> NgColors.Success
@@ -180,10 +185,20 @@ fun NgStatusChip(
         NgStatus.Error -> NgColors.Error
         NgStatus.Info -> NgColors.Info
     }
-    
+
+    val clickableModifier = if (onClick != null) {
+        Modifier
+            .clickable { onClick() }
+            .ngPointerHover()
+            .semantics { role = Role.Button }
+    } else {
+        Modifier
+    }
+
     Surface(
         color = color.copy(alpha = 0.1f),
-        shape = MaterialTheme.shapes.extraSmall
+        shape = MaterialTheme.shapes.extraSmall,
+        modifier = clickableModifier
     ) {
         Text(
             text = text,
