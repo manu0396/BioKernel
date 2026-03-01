@@ -1,4 +1,5 @@
 import com.google.protobuf.gradle.id
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -20,6 +21,10 @@ tasks.shadowJar {
 
 tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
     archiveClassifier.set("")
+}
+
+tasks.withType<ShadowJar>().configureEach {
+    isZip64 = true
 }
 
 kotlin {
@@ -104,4 +109,3 @@ protobuf {
         }
     }
 }
-
