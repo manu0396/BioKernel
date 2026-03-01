@@ -642,7 +642,8 @@ fun LiveRunScreen(
 
         NgCard {
             Column(modifier = Modifier.padding(NgSpacing.Medium)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LivePulseBadge()
                     NgStatusChip(text = "LIVE STREAM", status = NgStatus.Success)
                     Spacer(modifier = Modifier.width(NgSpacing.Small))
                     Text(runId, style = MaterialTheme.typography.labelSmall)
@@ -658,15 +659,45 @@ fun LiveRunScreen(
             items(runEvents) { event ->
                 NgCard {
                     Column(modifier = Modifier.padding(NgSpacing.Medium)) {
-                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                            Text(event.eventType, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                val status = when {
+                                    event.eventType.contains("failed", true) || event.eventType.contains("aborted", true) -> NgStatus.Error
+                                    event.eventType.contains("paused", true) -> NgStatus.Warning
+                                    event.eventType.contains("started", true) || event.eventType.contains("completed", true) -> NgStatus.Success
+                                    else -> NgStatus.Info
+                                }
+                                NgStatusChip(text = event.eventType, status = status)
+                            }
                             Text(event.createdAt.toString(), style = MaterialTheme.typography.labelSmall)
                         }
+                        Spacer(modifier = Modifier.height(6.dp))
                         Text(event.message, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LivePulseBadge() {
+    val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "pulse")
+    val alpha = transition.animateFloat(
+        initialValue = 0.4f,
+        targetValue = 1f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(900),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+        ),
+        label = "pulse-alpha"
+    )
+    androidx.compose.foundation.Canvas(modifier = Modifier.size(10.dp)) {
+        drawCircle(color = NgColors.Success.copy(alpha = alpha.value))
     }
 }
 

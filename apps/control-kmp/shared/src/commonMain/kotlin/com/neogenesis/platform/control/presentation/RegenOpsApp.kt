@@ -6,13 +6,16 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
@@ -40,6 +43,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.neogenesis.platform.control.presentation.design.NgCard
@@ -277,67 +283,110 @@ fun AuthScreen(
     onOpen: (String) -> Unit,
     onPoll: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(NgSpacing.Large),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(NgSpacing.Large),
+    val background = Brush.linearGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.surface,
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+            MaterialTheme.colorScheme.surface
+        ),
+        start = Offset(0f, 0f),
+        end = Offset(0f, 1200f)
+    )
+    val halo = Brush.radialGradient(
+        colors = listOf(NgColors.Primary.copy(alpha = 0.18f), Color.Transparent),
+        center = Offset(400f, 240f),
+        radius = 520f
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(background)
     ) {
-        Text("Precision Control Access", style = MaterialTheme.typography.displaySmall)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(halo)
+        )
 
-        NgCard {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(NgSpacing.Large),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(NgSpacing.Large),
+        ) {
             Column(
-                modifier = Modifier.padding(NgSpacing.Medium),
-                verticalArrangement = Arrangement.spacedBy(NgSpacing.Medium),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                if (state.deviceAuthorization == null) {
-                    Text("Authorize this terminal to begin operational control.")
+                Text("NeoGenesis RegenOps", style = MaterialTheme.typography.labelLarge, color = NgColors.Primary)
+                Text("Precision Control Access", style = MaterialTheme.typography.displaySmall)
+                Text(
+                    "Secure device authorization for mission-critical workflows.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
-                    if (state.statusMessage == "OIDC config missing") {
-                        NgStatusChip(text = "Configuration Error", status = NgStatus.Error)
-                        Text(
-                            "OIDC_ISSUER or OIDC_CLIENT_ID is not set in build configuration.",
-                            style = MaterialTheme.typography.bodySmall,
-                        )
+            NgCard(modifier = Modifier.widthIn(max = 520.dp)) {
+                Column(
+                    modifier = Modifier.padding(NgSpacing.Medium),
+                    verticalArrangement = Arrangement.spacedBy(NgSpacing.Medium),
+                ) {
+                    if (state.deviceAuthorization == null) {
+                        Text("Authorize this terminal to begin operational control.")
+
+                        if (state.statusMessage == "OIDC config missing") {
+                            NgStatusChip(text = "Configuration Error", status = NgStatus.Error)
+                            Text(
+                                "OIDC_ISSUER or OIDC_CLIENT_ID is not set in build configuration.",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        } else {
+                            NgPrimaryButton(text = "Begin Authorization", onClick = onStart)
+                        }
                     } else {
-                        NgPrimaryButton(text = "Begin Authorization", onClick = onStart)
+                        val device = state.deviceAuthorization
+                        Text("User Code", style = MaterialTheme.typography.labelLarge)
+                        Text(
+                            device.userCode,
+                            style = MaterialTheme.typography.displayMedium,
+                            color = NgColors.Primary,
+                        )
+
+                        Text(
+                            "1. Open the verification URL on another device.\n" +
+                                    "2. Enter the code shown above.\n" +
+                                    "3. Click 'Confirm Authorization' here.",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+
+                        NgPrimaryButton(
+                            text = "Open Verification URL",
+                            onClick = { onOpen(device.verificationUriComplete ?: device.verificationUri) },
+                        )
+
+                        OutlinedButton(
+                            onClick = onPoll,
+                            modifier = Modifier.fillMaxWidth().height(48.dp)
+                        ) {
+                            Text("Confirm Authorization")
+                        }
+
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(2.dp))
+                        Text(
+                            "Polling for authorization...",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
-                } else {
-                    val device = state.deviceAuthorization
-                    Text("User Code", style = MaterialTheme.typography.labelLarge)
-                    Text(
-                        device.userCode,
-                        style = MaterialTheme.typography.displayMedium,
-                        color = NgColors.Primary,
-                    )
-
-                    Text(
-                        "1. Open the verification URL on another device.\n" +
-                                "2. Enter the code shown above.\n" +
-                                "3. Click 'Confirm Authorization' here.",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-
-                    NgPrimaryButton(
-                        text = "Open Verification URL",
-                        onClick = { onOpen(device.verificationUriComplete ?: device.verificationUri) },
-                    )
-
-                    OutlinedButton(onClick = onPoll, modifier = Modifier.fillMaxSize()) {
-                        Text("Confirm Authorization")
-                    }
-
-                    LinearProgressIndicator(modifier = Modifier.fillMaxSize().height(2.dp))
-                    Text(
-                        "Polling for authorization...",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
             }
-        }
 
-        if (state.statusMessage != null && state.statusMessage != "OIDC config missing") {
-            NgStatusChip(text = state.statusMessage!!, status = NgStatus.Warning)
+            if (state.statusMessage != null && state.statusMessage != "OIDC config missing") {
+                NgStatusChip(text = state.statusMessage!!, status = NgStatus.Warning)
+            }
         }
     }
 }
