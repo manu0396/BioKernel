@@ -1,7 +1,6 @@
 package com.neogenesis.platform.control.presentation
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.animateContentSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.Canvas
+import androidx.compose.animation.animateContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.List
@@ -53,6 +53,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.neogenesis.platform.control.presentation.design.NgCard
+import com.neogenesis.platform.control.presentation.design.NgColors
 import com.neogenesis.platform.control.presentation.design.NgEmptyState
 import com.neogenesis.platform.control.presentation.design.NgMetricTile
 import com.neogenesis.platform.control.presentation.design.NgPrimaryButton
@@ -224,22 +225,6 @@ fun ProtocolsScreen(
             }
         }
 
-    if (showStatusDialog && protocol != null) {
-        AlertDialog(
-            onDismissRequest = { showStatusDialog = false },
-            title = { Text("Update Protocol Status") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(NgSpacing.Small)) {
-                    NgTextField(value = pendingStatus, onValueChange = { pendingStatus = it }, label = "Status (DRAFT/PUBLISHED/ARCHIVED)")
-                    Text("Allowed: DRAFT ? PUBLISHED ? ARCHIVED", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { onUpdateStatus(protocol.id.value, pendingStatus.trim().uppercase()); showStatusDialog = false }) { Text("Apply") }
-            },
-            dismissButton = { TextButton(onClick = { showStatusDialog = false }) { Text("Cancel") } },
-        )
-    }
     Column(verticalArrangement = Arrangement.spacedBy(NgSpacing.Medium)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -382,22 +367,20 @@ fun ProtocolsScreen(
                                         style = MaterialTheme.typography.bodyMedium,
                                     )
                                 }
-                Text("Evidence Panel", style = MaterialTheme.typography.titleSmall)
-                protocol.evidenceSummary?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                if (protocol.evidenceArtifacts.isNotEmpty()) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        protocol.evidenceArtifacts.forEach { artifact ->
-                            OutlinedButton(onClick = { if (artifact.contains("audit", true)) onDownloadAudit() else onDownloadReport() }) { Text(artifact) }
-                        }
-                    }
-                } else {
-                    OutlinedButton(onClick = onDownloadReport) { Text("Open Exports") }
-                }
-                if (protocol.lastRunTimeline.isNotEmpty()) {
-                    ProtocolTimeline(protocol.lastRunTimeline)
-                }
+                                Text("Evidence Panel", style = MaterialTheme.typography.titleSmall)
+                                protocol.evidenceSummary?.let {
+                                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                if (protocol.evidenceArtifacts.isNotEmpty()) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        protocol.evidenceArtifacts.forEach { artifact ->
+                                            NgStatusChip(text = artifact, status = NgStatus.Info)
+                                        }
+                                    }
+                                }
+                                if (protocol.lastRunTimeline.isNotEmpty()) {
+                                    ProtocolTimeline(protocol.lastRunTimeline)
+                                }
                 if (protocol.resultMetrics.isNotEmpty()) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(
@@ -1249,6 +1232,33 @@ private fun ProtocolBadge(text: String, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         )
+    }
+}
+
+@Composable
+private fun ProtocolTimeline(steps: List<String>, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        steps.forEachIndexed { index, step ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Canvas(modifier = Modifier.size(14.dp)) {
+                    drawCircle(
+                        color =
+                            when {
+                                step.contains("complete", true) || step.contains("seal", true) -> NgColors.Success
+                                step.contains("checkpoint", true) -> NgColors.Warning
+                                step.contains("init", true) -> NgColors.Primary
+                                else -> NgColors.Info
+                            },
+                    )
+                }
+                Column {
+                    Text(step, style = MaterialTheme.typography.bodySmall)
+                    if (index < steps.lastIndex) {
+                        Text(" ", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
+        }
     }
 }
 

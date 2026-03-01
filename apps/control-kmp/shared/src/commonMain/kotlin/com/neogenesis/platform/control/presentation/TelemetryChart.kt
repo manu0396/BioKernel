@@ -63,7 +63,7 @@ fun TelemetryChart(frames: List<TelemetryFrame>) {
             val pressure = tail.map { it.pressure.kpa }
             val flow = tail.map { it.flowRate.microlitersPerSecond }
             val temp = tail.map { it.temperature.celsius }
-            val viscosity = tail.map { it.viscosity.pas }
+            val viscosity = tail.map { it.viscosity.pascalSecond }
 
             fun mapY(value: Double, min: Double, max: Double): Float {
                 val normalized = if (max == min) 0.5 else (value - min) / (max - min)
@@ -123,3 +123,4 @@ private fun LegendDot(color: Color, label: String) {
         Text(label, style = MaterialTheme.typography.labelSmall)
     }
 }
+

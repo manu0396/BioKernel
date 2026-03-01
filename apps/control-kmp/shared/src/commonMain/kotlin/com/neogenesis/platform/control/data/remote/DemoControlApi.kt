@@ -10,6 +10,7 @@ import com.neogenesis.platform.shared.domain.Run
 import com.neogenesis.platform.shared.domain.RunId
 import com.neogenesis.platform.shared.domain.RunStatus
 import com.neogenesis.platform.shared.network.ApiResult
+import com.neogenesis.platform.shared.network.NetworkError
 import kotlinx.datetime.Clock
 
 class DemoControlApi : ControlApi {
