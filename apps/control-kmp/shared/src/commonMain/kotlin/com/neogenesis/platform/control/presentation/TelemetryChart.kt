@@ -27,6 +27,12 @@ import com.neogenesis.platform.shared.telemetry.TelemetryFrame
 @Composable
 fun TelemetryChart(frames: List<TelemetryFrame>) {
     val tail = frames.takeLast(120)
+    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+    val pressureColor = NgColors.Primary
+    val flowColor = NgColors.Secondary
+    val tempColor = Color(0xFF8E24AA)
+    val viscosityColor = Color(0xFF546E7A)
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -46,9 +52,9 @@ fun TelemetryChart(frames: List<TelemetryFrame>) {
         val last = tail.last()
         val metrics = listOf(
             "Pressure" to "${"%.1f".format(last.pressure.kpa)} kPa",
-            "Flow" to "${"%.2f".format(last.flowRate.microlitersPerSecond)} µL/s",
-            "Temp" to "${"%.1f".format(last.temperature.celsius)} °C",
-            "Viscosity" to "${"%.2f".format(last.viscosity.pas)} Pa·s"
+            "Flow" to "${"%.2f".format(last.flowRate.microlitersPerSecond)} uL/s",
+            "Temp" to "${"%.1f".format(last.temperature.celsius)} C",
+            "Viscosity" to "${"%.2f".format(last.viscosity.pascalSecond)} Pa·s"
         )
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(NgSpacing.Small),
@@ -70,7 +76,6 @@ fun TelemetryChart(frames: List<TelemetryFrame>) {
                 return size.height * (1f - normalized.toFloat())
             }
 
-            val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
             val dash = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), 0f)
             val rows = 4
             for (i in 0..rows) {
@@ -96,20 +101,20 @@ fun TelemetryChart(frames: List<TelemetryFrame>) {
                 drawCircle(color, radius = 4f, center = Offset(stepX * lastIndex, mapY(values[lastIndex], min, max)))
             }
 
-            drawSeries(pressure, NgColors.Primary, 4f)
-            drawSeries(flow, NgColors.Secondary, 3f)
-            drawSeries(temp, Color(0xFF8E24AA), 3f)
-            drawSeries(viscosity, Color(0xFF546E7A), 3f)
+            drawSeries(pressure, pressureColor, 4f)
+            drawSeries(flow, flowColor, 3f)
+            drawSeries(temp, tempColor, 3f)
+            drawSeries(viscosity, viscosityColor, 3f)
         }
 
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = NgSpacing.Small),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            LegendDot(color = NgColors.Primary, label = "Pressure")
-            LegendDot(color = NgColors.Secondary, label = "Flow")
-            LegendDot(color = Color(0xFF8E24AA), label = "Temp")
-            LegendDot(color = Color(0xFF546E7A), label = "Viscosity")
+            LegendDot(color = pressureColor, label = "Pressure")
+            LegendDot(color = flowColor, label = "Flow")
+            LegendDot(color = tempColor, label = "Temp")
+            LegendDot(color = viscosityColor, label = "Viscosity")
         }
     }
 }

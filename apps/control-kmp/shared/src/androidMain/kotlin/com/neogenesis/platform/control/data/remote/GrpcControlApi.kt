@@ -1,6 +1,8 @@
 package com.neogenesis.platform.control.data.remote
 
 import com.neogenesis.platform.control.AppConfig
+import com.neogenesis.platform.control.device.DeviceInfoStore
+import com.neogenesis.platform.control.device.GrpcDeviceHeaders
 import com.neogenesis.platform.shared.domain.Protocol
 import com.neogenesis.platform.shared.domain.ProtocolId
 import com.neogenesis.platform.shared.domain.ProtocolVersion
@@ -19,19 +21,28 @@ import com.neogenesis.grpc.RunControlRequest
 import com.neogenesis.grpc.RunRecord
 import com.neogenesis.grpc.RunServiceGrpcKt
 import com.neogenesis.grpc.StartRunRequest
+import io.grpc.CallOptions
+import io.grpc.Channel
+import io.grpc.ClientCall
+import io.grpc.ClientInterceptor
 import io.grpc.ManagedChannel
+import io.grpc.Metadata
+import io.grpc.MethodDescriptor
 import io.grpc.okhttp.OkHttpChannelBuilder
 import kotlinx.datetime.Clock
 
 class GrpcControlApi(
-    config: AppConfig
+    config: AppConfig,
+    deviceInfoStore: DeviceInfoStore
 ) : ControlApi {
     private val channel: ManagedChannel = OkHttpChannelBuilder.forAddress(config.grpcHost, config.grpcPort)
         .apply { if (!config.grpcUseTls) usePlaintext() }
         .build()
 
     private val protocolStub = ProtocolServiceGrpcKt.ProtocolServiceCoroutineStub(channel)
+        .withInterceptors(DeviceMetadataInterceptor(deviceInfoStore))
     private val runStub = RunServiceGrpcKt.RunServiceCoroutineStub(channel)
+        .withInterceptors(DeviceMetadataInterceptor(deviceInfoStore))
 
     override suspend fun listProtocols(): ApiResult<List<Protocol>> = runCatching {
         val response = protocolStub.listProtocols(ListProtocolsRequest.newBuilder().build())
@@ -80,6 +91,29 @@ class GrpcControlApi(
     }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "grpc_error")) }
 
     fun close() = channel.shutdownNow()
+}
+
+private class DeviceMetadataInterceptor(
+    private val deviceInfoStore: DeviceInfoStore
+) : ClientInterceptor {
+    override fun <ReqT : Any?, RespT : Any?> interceptCall(
+        method: MethodDescriptor<ReqT, RespT>,
+        callOptions: CallOptions,
+        next: Channel
+    ): ClientCall<ReqT, RespT> {
+        val call = next.newCall(method, callOptions)
+        return object : ClientCall<ReqT, RespT>() {
+            override fun start(responseListener: Listener<RespT>, headers: Metadata) {
+                GrpcDeviceHeaders.apply(headers, deviceInfoStore.get())
+                call.start(responseListener, headers)
+            }
+
+            override fun request(numMessages: Int) = call.request(numMessages)
+            override fun cancel(message: String?, cause: Throwable?) = call.cancel(message, cause)
+            override fun halfClose() = call.halfClose()
+            override fun sendMessage(message: ReqT) = call.sendMessage(message)
+        }
+    }
 }
 
 private fun ProtocolSummary.toDomain(): Protocol {

@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.Canvas
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.List
@@ -1270,4 +1271,3 @@ private fun formatInstant(instant: Instant): String {
         append(" "); append(two(dt.hour)); append(":"); append(two(dt.minute))
     }
 }
-
