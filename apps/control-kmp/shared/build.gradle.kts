@@ -58,6 +58,10 @@ kotlin {
             kotlin.srcDir("../../../shared/network/src/commonTest/kotlin")
             dependencies {
                 implementation(kotlin("test"))
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.turbine)
+                implementation(libs.ktor.client.mock)
+                implementation(libs.mockk)
             }
         }
         val jvmSharedMain by creating {
@@ -80,6 +84,14 @@ kotlin {
                 implementation(libs.neogenesis.contracts)
                 implementation(libs.androidx.security.crypto)
                 implementation(libs.koin.android)
+            }
+        }
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.turbine)
+                implementation(libs.mockk)
             }
         }
         val jvmMain by getting {

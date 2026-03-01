@@ -5,7 +5,7 @@ import com.neogenesis.platform.control.infrastructure.excel.TelemetryExcelExport
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
-actual fun platformModule(): Module =
+fun platformModule(): Module =
     module {
         single<TelemetryExcelExporter> { TelemetryExcelExporterImpl() }
     }

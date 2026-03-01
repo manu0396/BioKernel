@@ -20,3 +20,8 @@ NeoGenesis Platform is a Kotlin Multiplatform system composed of:
 
 ## Determinism
 Digital Twin engine is pure Kotlin and deterministic for given parameters.
+
+## gRPC Compatibility
+- gRPC contracts are sourced from the `neogenesis-contracts` artifact.
+- Bump the contracts version for any breaking wire changes and keep server/client in lockstep.
+- Prefer additive, backward-compatible changes for pilot environments.

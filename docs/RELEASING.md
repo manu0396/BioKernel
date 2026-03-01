@@ -68,3 +68,8 @@ Run client-focused monetization checks before final sign-off:
 6. Return to app and refresh entitlement state.
 7. Validate premium-gated actions show paywall when entitlement is missing.
 8. Validate premium-gated actions are available when entitlement is present.
+
+## 8) Security/Observability Checks
+1. Confirm gRPC mTLS is enabled in the target environment (short-lived certs).
+2. Validate `/metrics` is scraped and Grafana dashboards import cleanly.
+3. Confirm Android release builds have backups disabled.

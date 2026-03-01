@@ -6,6 +6,8 @@ ktor = "2.3.12"
 serialization = "1.7.1"
 datetime = "0.6.1"
 coroutines = "1.9.0"
+mockk = "1.13.12"
+turbine = "1.1.0"
 grpc = "1.65.1"
 grpcKotlin = "1.4.1"
 protobuf = "3.25.5"
@@ -41,6 +43,9 @@ identityJvm = "202411.1"
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
