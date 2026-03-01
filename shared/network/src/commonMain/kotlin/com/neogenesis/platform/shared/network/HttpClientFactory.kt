@@ -32,6 +32,13 @@ object HttpClientFactory {
             }
             defaultRequest {
                 url.takeFrom(config.baseUrl)
+                val tenantId = config.tenantId?.takeIf { it.isNotBlank() }
+                if (tenantId != null && !url.parameters.contains("tenant_id")) {
+                    url.parameters.append("tenant_id", tenantId)
+                }
+                if (tenantId != null && !headers.contains("X-Tenant-Id")) {
+                    header("X-Tenant-Id", tenantId)
+                }
                 if (!headers.contains("X-Correlation-Id")) {
                     header("X-Correlation-Id", config.correlationIdProvider())
                 }

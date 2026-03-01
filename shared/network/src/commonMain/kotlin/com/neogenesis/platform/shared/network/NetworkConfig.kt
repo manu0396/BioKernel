@@ -7,6 +7,7 @@ data class NetworkConfig(
     val socketTimeoutMs: Long = 15_000,
     val retries: Int = 2,
     val allowCleartext: Boolean = false,
+    val tenantId: String? = null,
     val correlationIdProvider: () -> String = { CorrelationIds.newId() }
 )
 

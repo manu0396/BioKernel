@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
@@ -21,6 +23,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -326,6 +329,7 @@ fun RunControlScreen(
     runs: List<Run>,
     demoModeEnabled: Boolean,
     simulatedRunEnabled: Boolean,
+    isStartingRun: Boolean,
     onSimulatedRunToggle: (Boolean) -> Unit,
     onSelectProtocol: (Protocol) -> Unit,
     onSelectVersion: (ProtocolVersion) -> Unit,
@@ -344,6 +348,14 @@ fun RunControlScreen(
     var showSimConfig by remember { mutableStateOf(false) }
 
     var durationMinutes by remember { mutableStateOf("30") }
+
+    val dialogProperties = if (WindowSize.isDesktop()) {
+        DialogProperties(usePlatformDefaultWidth = false)
+    } else {
+        DialogProperties()
+    }
+    val dialogModifier = Modifier.fillMaxWidth().widthIn(max = 520.dp)
+
     var tickMillis by remember { mutableStateOf("250") }
     var speedFactor by remember { mutableStateOf("1.0") }
     var operatorName by remember { mutableStateOf("") }
@@ -352,12 +364,14 @@ fun RunControlScreen(
     if (showProtocolPicker) {
         AlertDialog(
             onDismissRequest = { showProtocolPicker = false },
+            properties = dialogProperties,
+            modifier = dialogModifier,
             title = { Text("Select Protocol") },
             text = {
                 if (protocols.isEmpty()) {
                     Text("No protocols available.")
                 } else {
-                    LazyColumn {
+                    LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp)) {
                         items(protocols) { p ->
                             TextButton(
                                 onClick = {
@@ -378,6 +392,8 @@ fun RunControlScreen(
         val versions = selectedProtocol?.versions.orEmpty().sortedByDescending { it.createdAt }
         AlertDialog(
             onDismissRequest = { showVersionPicker = false },
+            properties = dialogProperties,
+            modifier = dialogModifier,
             title = { Text("Select Version") },
             text = {
                 if (selectedProtocol == null) {
@@ -385,7 +401,7 @@ fun RunControlScreen(
                 } else if (versions.isEmpty()) {
                     Text("No versions available.")
                 } else {
-                    LazyColumn {
+                    LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp)) {
                         items(versions) { v ->
                             TextButton(
                                 onClick = {
@@ -408,9 +424,11 @@ fun RunControlScreen(
     if (showSimConfig) {
         AlertDialog(
             onDismissRequest = { showSimConfig = false },
+            properties = dialogProperties,
+            modifier = dialogModifier,
             title = { Text("Simulation Settings") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(NgSpacing.Small)) {
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(NgSpacing.Small)) {
                     NgTextField(value = durationMinutes, onValueChange = { durationMinutes = it.filter(Char::isDigit) }, label = "Duration (minutes)")
                     NgTextField(value = tickMillis, onValueChange = { tickMillis = it.filter(Char::isDigit) }, label = "Tick (ms)")
                     NgTextField(value = speedFactor, onValueChange = { speedFactor = it }, label = "Speed factor (e.g. 1.0, 2.0)")
@@ -499,6 +517,7 @@ fun RunControlScreen(
                         text = if (simulatedRunEnabled) "Start Simulation" else "Start Mission",
                         onClick = { if (simulatedRunEnabled) showSimConfig = true else onStartRun() },
                         modifier = Modifier.weight(1f),
+                        isLoading = isStartingRun,
                         enabled = selectedVersion != null,
                     )
 
@@ -655,6 +674,7 @@ fun CommercialPipelineScreen(
     canGoBack: Boolean = false,
     onBack: () -> Unit = {},
     onSelect: (CommercialOpportunity) -> Unit,
+    onDismissSelected: () -> Unit,
     onExport: () -> Unit,
     onRefresh: () -> Unit,
 ) {
@@ -700,7 +720,7 @@ fun CommercialPipelineScreen(
 
         selected?.let { opp ->
             AlertDialog(
-                onDismissRequest = { /* no-op */ },
+                onDismissRequest = onDismissSelected,
                 title = { Text(opp.name) },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(NgSpacing.Small)) {
@@ -714,7 +734,7 @@ fun CommercialPipelineScreen(
                         }
                     }
                 },
-                confirmButton = { TextButton(onClick = { /* no-op */ }) { Text("Close") } },
+                confirmButton = { TextButton(onClick = onDismissSelected) { Text("Close") } },
             )
         }
     }
@@ -868,3 +888,4 @@ private fun formatInstant(instant: Instant): String {
         append(" "); append(two(dt.hour)); append(":"); append(two(dt.minute))
     }
 }
+

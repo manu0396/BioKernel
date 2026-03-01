@@ -8,6 +8,7 @@ data class AppConfig(
     val oidcIssuer: String,
     val oidcClientId: String,
     val oidcAudience: String? = null,
+    val tenantId: String = "tenant-1",
     val traceModeEnabled: Boolean = false,
     val demoModeEnabled: Boolean = false,
     val founderModeEnabled: Boolean = false,

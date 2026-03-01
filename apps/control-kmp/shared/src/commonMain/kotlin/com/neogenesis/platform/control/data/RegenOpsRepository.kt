@@ -40,7 +40,13 @@ class RegenOpsRepository(
     }
 
     suspend fun refreshRuns(): ApiResult<List<Run>> {
-        return ApiResult.Failure(NetworkError.UnknownError("not_supported"))
+        val result = controlApi.listRuns()
+        if (result is ApiResult.Success) {
+            result.value.forEach { run ->
+                localData.insertRun(run)
+            }
+        }
+        return result
     }
 
     suspend fun publishVersion(protocolId: String, versionId: String): ApiResult<ProtocolVersion> {

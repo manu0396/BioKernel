@@ -25,6 +25,7 @@ class MainActivity : ComponentActivity(), KoinComponent {
             oidcIssuer = BuildConfig.OIDC_ISSUER,
             oidcClientId = BuildConfig.OIDC_CLIENT_ID,
             oidcAudience = BuildConfig.OIDC_AUDIENCE.takeIf { it.isNotBlank() },
+            tenantId = BuildConfig.TENANT_ID,
             traceModeEnabled = BuildConfig.TRACE_MODE,
             demoModeEnabled = BuildConfig.DEMO_MODE,
             founderModeEnabled = BuildConfig.FOUNDER_MODE,

@@ -28,6 +28,7 @@ fun main() = application {
         oidcIssuer = getSetting(props, "OIDC_ISSUER", ""),
         oidcClientId = getSetting(props, "OIDC_CLIENT_ID", ""),
         oidcAudience = getSetting(props, "OIDC_AUDIENCE", null),
+        tenantId = getSetting(props, "TENANT_ID", "tenant-1"),
         traceModeEnabled = getSetting(props, "TRACE_MODE", "false").toBoolean(),
         demoModeEnabled = getSetting(props, "DEMO_MODE", "false").toBoolean(),
         founderModeEnabled = getSetting(props, "FOUNDER_MODE", "false").toBoolean(),

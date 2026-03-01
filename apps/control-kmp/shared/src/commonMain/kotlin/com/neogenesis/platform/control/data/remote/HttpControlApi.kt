@@ -25,9 +25,17 @@ class HttpControlApi(
         ApiResult.Success(response.protocols.map { it.toDomain() })
     }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "http_error")) }
 
-    override suspend fun publishVersion(protocolId: String, versionId: String): ApiResult<ProtocolVersion> {
-        return ApiResult.Failure(NetworkError.UnknownError("not_supported"))
-    }
+    override suspend fun listRuns(): ApiResult<List<Run>> = runCatching {
+        val response: List<RunRecordDto> = client.get("/api/v1/regenops/runs").body()
+        ApiResult.Success(response.map { it.toDomain() })
+    }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "http_error")) }
+
+    override suspend fun publishVersion(protocolId: String, versionId: String): ApiResult<ProtocolVersion> = runCatching {
+        val response: ProtocolVersionRecordDto = client.post("/api/v1/regenops/protocols/${'$'}protocolId/publish") {
+            setBody(mapOf("versionId" to versionId))
+        }.body()
+        ApiResult.Success(response.toDomain())
+    }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "http_error")) }
 
     override suspend fun startRun(protocolId: String, versionId: String): ApiResult<Run> = runCatching {
         val protocolVersion = versionId.filter(Char::isDigit).toIntOrNull() ?: 1
@@ -37,11 +45,15 @@ class HttpControlApi(
         ApiResult.Success(response.toDomain())
     }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "http_error")) }
 
-    override suspend fun pauseRun(runId: String): ApiResult<Run> =
-        ApiResult.Failure(NetworkError.UnknownError("not_supported"))
+    override suspend fun pauseRun(runId: String): ApiResult<Run> = runCatching {
+        val response: RunRecordDto = client.post("/api/v1/regenops/runs/${'$'}runId/pause").body()
+        ApiResult.Success(response.toDomain())
+    }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "http_error")) }
 
-    override suspend fun abortRun(runId: String): ApiResult<Run> =
-        ApiResult.Failure(NetworkError.UnknownError("not_supported"))
+    override suspend fun abortRun(runId: String): ApiResult<Run> = runCatching {
+        val response: RunRecordDto = client.post("/api/v1/regenops/runs/${'$'}runId/abort").body()
+        ApiResult.Success(response.toDomain())
+    }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "http_error")) }
 }
 
 private fun ProtocolSummaryDto.toDomain(): Protocol {

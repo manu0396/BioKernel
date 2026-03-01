@@ -35,6 +35,8 @@ class GrpcControlApi(
         ApiResult.Success(response.protocolsList.map { it.toDomain() })
     }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "grpc_error")) }
 
+    override suspend fun listRuns(): ApiResult<List<Run>> = ApiResult.Success(emptyList())
+
     override suspend fun publishVersion(protocolId: String, versionId: String): ApiResult<ProtocolVersion> = runCatching {
         val response = protocolStub.publishVersion(
             com.neogenesis.platform.proto.v1.PublishVersionRequest.newBuilder()

@@ -33,8 +33,30 @@ class DemoControlApi : ControlApi {
         return ApiResult.Success(listOf(protocol))
     }
 
-    override suspend fun publishVersion(protocolId: String, versionId: String) =
-        ApiResult.Failure(com.neogenesis.platform.shared.network.NetworkError.UnknownError("not_supported"))
+    override suspend fun listRuns(): ApiResult<List<Run>> {
+        val run = Run(
+            id = RunId("run-demo"),
+            protocolId = ProtocolId("proto-1"),
+            protocolVersionId = ProtocolVersionId("v1"),
+            status = RunStatus.RUNNING,
+            createdAt = Clock.System.now(),
+            updatedAt = Clock.System.now()
+        )
+        return ApiResult.Success(listOf(run))
+    }
+
+    override suspend fun publishVersion(protocolId: String, versionId: String): ApiResult<ProtocolVersion> {
+        val version = ProtocolVersion(
+            id = ProtocolVersionId(versionId),
+            protocolId = ProtocolId(protocolId),
+            version = versionId.filter(Char::isDigit).ifBlank { "1" },
+            createdAt = Clock.System.now(),
+            author = "demo",
+            payload = "{}",
+            published = true
+        )
+        return ApiResult.Success(version)
+    }
 
     override suspend fun startRun(protocolId: String, versionId: String): ApiResult<Run> {
         val run = Run(
@@ -48,9 +70,27 @@ class DemoControlApi : ControlApi {
         return ApiResult.Success(run)
     }
 
-    override suspend fun pauseRun(runId: String): ApiResult<Run> =
-        ApiResult.Failure(com.neogenesis.platform.shared.network.NetworkError.UnknownError("not_supported"))
+    override suspend fun pauseRun(runId: String): ApiResult<Run> {
+        val run = Run(
+            id = RunId(runId),
+            protocolId = ProtocolId("proto-1"),
+            protocolVersionId = ProtocolVersionId("v1"),
+            status = RunStatus.PAUSED,
+            createdAt = Clock.System.now(),
+            updatedAt = Clock.System.now()
+        )
+        return ApiResult.Success(run)
+    }
 
-    override suspend fun abortRun(runId: String): ApiResult<Run> =
-        ApiResult.Failure(com.neogenesis.platform.shared.network.NetworkError.UnknownError("not_supported"))
+    override suspend fun abortRun(runId: String): ApiResult<Run> {
+        val run = Run(
+            id = RunId(runId),
+            protocolId = ProtocolId("proto-1"),
+            protocolVersionId = ProtocolVersionId("v1"),
+            status = RunStatus.ABORTED,
+            createdAt = Clock.System.now(),
+            updatedAt = Clock.System.now()
+        )
+        return ApiResult.Success(run)
+    }
 }

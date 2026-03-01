@@ -9,11 +9,13 @@ import com.neogenesis.platform.control.data.oidc.OidcDeviceAuthService
 import com.neogenesis.platform.control.data.remote.ControlApi
 import com.neogenesis.platform.control.data.remote.DemoControlApi
 import com.neogenesis.platform.control.data.remote.CommercialApi
+import com.neogenesis.platform.control.data.remote.SimulatorApi
 import com.neogenesis.platform.control.data.remote.DemoExportsApi
 import com.neogenesis.platform.control.data.remote.DemoTraceApi
 import com.neogenesis.platform.control.data.remote.ExportsApi
 import com.neogenesis.platform.control.data.remote.HttpCommercialApi
 import com.neogenesis.platform.control.data.remote.HttpExportsApi
+import com.neogenesis.platform.control.data.remote.HttpSimulatorApi
 import com.neogenesis.platform.control.data.remote.HttpTraceApi
 import com.neogenesis.platform.control.data.remote.TraceApi
 import com.neogenesis.platform.control.data.oidc.OidcRepository
@@ -56,7 +58,8 @@ fun commonModule(appConfig: AppConfig) = module {
         HttpClientFactory.create(
             NetworkConfig(
                 baseUrl = appConfig.httpBaseUrl,
-                allowCleartext = allowCleartextForLocalhost(appConfig.httpBaseUrl)
+                allowCleartext = allowCleartextForLocalhost(appConfig.httpBaseUrl),
+                tenantId = appConfig.tenantId
             ),
             tokenStorage = get<TokenStorage>()
         )
@@ -93,5 +96,6 @@ fun commonModule(appConfig: AppConfig) = module {
         }
     }
     single<CommercialApi> { HttpCommercialApi(get()) }
-    single { RegenOpsViewModel(get(), get(), get(), get(), get(), get()) }
+    single<SimulatorApi> { HttpSimulatorApi(get()) }
+    single { RegenOpsViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
 }
