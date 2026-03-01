@@ -12,7 +12,26 @@ data class ProtocolSummaryDto(
     val protocolId: String,
     val title: String,
     val summary: String? = null,
+    val resultSummary: String? = null,
+    val lastOutcome: String? = null,
+    val resultMetrics: Map<String, String> = emptyMap(),
+    val evidenceSummary: String? = null,
+    val lastRunTimeline: List<String> = emptyList(),
     val latestVersion: Int
+)
+
+@Serializable
+data class CreateProtocolRequest(
+    val protocolId: String,
+    val title: String,
+    val summary: String,
+    val contentJson: String,
+    val author: String,
+    val resultSummary: String? = null,
+    val lastOutcome: String? = null,
+    val resultMetrics: Map<String, String> = emptyMap(),
+    val evidenceSummary: String? = null,
+    val lastRunTimeline: List<String> = emptyList()
 )
 
 @Serializable

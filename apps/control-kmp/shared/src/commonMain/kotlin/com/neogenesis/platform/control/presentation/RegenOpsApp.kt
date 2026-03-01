@@ -144,6 +144,7 @@ fun RegenOpsApp(
                                             protocols = state.protocols,
                                             query = state.protocolQuery,
                                             onQueryChange = viewModel::updateQuery,
+                                            isCreatingProtocol = state.isCreatingProtocol,
                                             canGoBack = canGoBack,
                                             onBack = viewModel::navigateBack,
                                             onSelect = {
@@ -151,6 +152,7 @@ fun RegenOpsApp(
                                                 viewModel.navigateTo(AppScreen.PROTOCOL_DETAIL)
                                             },
                                             onRefresh = viewModel::refreshProtocols,
+                                            onCreateProtocol = viewModel::createProtocol,
                                         )
 
                                     AppScreen.PROTOCOL_DETAIL ->

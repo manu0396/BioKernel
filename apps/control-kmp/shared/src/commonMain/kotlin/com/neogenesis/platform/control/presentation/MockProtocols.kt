@@ -42,6 +42,8 @@ object MockProtocols {
             resultSummary: String,
             lastOutcome: String,
             resultMetrics: Map<String, String>,
+            evidenceSummary: String,
+            lastRunTimeline: List<String>,
             versions: List<ProtocolVersion>,
         ): Protocol {
             val latest = versions.maxByOrNull { it.version.toIntOrNull() ?: 0 }
@@ -52,6 +54,8 @@ object MockProtocols {
                 resultSummary = resultSummary,
                 lastOutcome = lastOutcome,
                 resultMetrics = resultMetrics,
+                evidenceSummary = evidenceSummary,
+                lastRunTimeline = lastRunTimeline,
                 versions = versions,
                 // IMPORTANT: domain requires latestVersion
                 latestVersion = latest,
@@ -74,6 +78,14 @@ object MockProtocols {
                     "Stability" to "0.3% variance",
                     "Trace Checkpoints" to "3/3",
                     "Cycle Time" to "42m"
+                ),
+                evidenceSummary = "Evidence bundle sealed with SHA-256 hashes; zero integrity anomalies.",
+                lastRunTimeline = listOf(
+                    "00:00 Init safety envelope",
+                    "00:08 Ramp-up stable",
+                    "00:17 Checkpoint A verified",
+                    "00:29 Checkpoint B verified",
+                    "00:41 Completion & seal"
                 ),
                 versions = listOf(
                     version(
@@ -99,6 +111,14 @@ object MockProtocols {
                     "Max ΔpH" to "0.04",
                     "Export Integrity" to "Verified"
                 ),
+                evidenceSummary = "Evidence chain verified. One minor deviation noted.",
+                lastRunTimeline = listOf(
+                    "00:00 Baseline capture",
+                    "00:12 Drift spike detected",
+                    "00:16 Warning issued",
+                    "00:27 Remediation applied",
+                    "00:33 Export sealed"
+                ),
                 versions = listOf(
                     version(
                         p2Id, "pv-qc-002-1", 1, true, "qa@neogenesis",
@@ -117,6 +137,13 @@ object MockProtocols {
                     "Hash Chain" to "OK",
                     "Manifest Links" to "12",
                     "Audit Bundle" to "Generated"
+                ),
+                evidenceSummary = "All evidence entries linked; manifest verified.",
+                lastRunTimeline = listOf(
+                    "00:00 Manifest seed",
+                    "00:05 Hash chain extended",
+                    "00:12 Linkage verified",
+                    "00:18 Bundle generated"
                 ),
                 versions = listOf(
                     version(

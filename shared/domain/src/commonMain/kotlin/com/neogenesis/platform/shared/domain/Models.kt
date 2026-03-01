@@ -141,6 +141,8 @@ data class Protocol(
     val resultSummary: String? = null,
     val resultMetrics: Map<String, String> = emptyMap(),
     val lastOutcome: String? = null,
+    val evidenceSummary: String? = null,
+    val lastRunTimeline: List<String> = emptyList(),
     val latestVersion: ProtocolVersion?,
     val versions: List<ProtocolVersion> = emptyList()
 )

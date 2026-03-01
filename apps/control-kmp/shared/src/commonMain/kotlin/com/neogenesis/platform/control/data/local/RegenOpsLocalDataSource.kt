@@ -118,6 +118,16 @@ class RegenOpsLocalDataSource(
             published = version.published
         )
     }
+
+    fun insertProtocol(protocol: Protocol) {
+        queries.insertProtocol(
+            id = protocol.id.value,
+            name = protocol.name,
+            summary = protocol.summary,
+            latestVersionId = protocol.latestVersion?.id?.value,
+            updatedAt = (protocol.latestVersion?.createdAt ?: Instant.fromEpochMilliseconds(0)).toEpochMilliseconds()
+        )
+    }
 }
 
 private data class LocalProtocolRow(

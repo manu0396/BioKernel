@@ -25,6 +25,12 @@ class HttpControlApi(
         ApiResult.Success(response.protocols.map { it.toDomain() })
     }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "http_error")) }
 
+    override suspend fun createProtocol(request: CreateProtocolRequest): ApiResult<Protocol> = runCatching {
+        val response: ProtocolSummaryDto =
+            client.post("/api/v1/regenops/protocols") { setBody(request) }.body()
+        ApiResult.Success(response.toDomain())
+    }.getOrElse { ApiResult.Failure(NetworkError.UnknownError(it.message ?: "http_error")) }
+
     override suspend fun listRuns(): ApiResult<List<Run>> = runCatching {
         val response: List<RunRecordDto> = client.get("/api/v1/regenops/runs").body()
         ApiResult.Success(response.map { it.toDomain() })
@@ -70,6 +76,11 @@ private fun ProtocolSummaryDto.toDomain(): Protocol {
         id = ProtocolId(protocolId),
         name = title,
         summary = summary ?: "",
+        resultSummary = resultSummary,
+        lastOutcome = lastOutcome,
+        resultMetrics = resultMetrics,
+        evidenceSummary = evidenceSummary,
+        lastRunTimeline = lastRunTimeline,
         latestVersion = latest,
         versions = listOf(latest)
     )

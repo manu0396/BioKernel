@@ -13,16 +13,19 @@ import com.neogenesis.platform.shared.network.ApiResult
 import kotlinx.datetime.Clock
 
 class DemoControlApi : ControlApi {
+    private val protocols = mutableListOf<Protocol>()
+
     override suspend fun listProtocols(): ApiResult<List<Protocol>> {
-        val version = ProtocolVersion(
-            id = ProtocolVersionId("v1"),
-            protocolId = ProtocolId("proto-1"),
-            version = "1.0",
-            createdAt = Clock.System.now(),
-            author = "demo",
-            payload = "{}",
-            published = true
-        )
+        if (protocols.isEmpty()) {
+            val version = ProtocolVersion(
+                id = ProtocolVersionId("v1"),
+                protocolId = ProtocolId("proto-1"),
+                version = "1.0",
+                createdAt = Clock.System.now(),
+                author = "demo",
+                payload = "{}",
+                published = true
+            )
         val protocol = Protocol(
             id = ProtocolId("proto-1"),
             name = "Demo Protocol",
@@ -34,10 +37,44 @@ class DemoControlApi : ControlApi {
                 "Drift Alerts" to "0",
                 "Cycle Time" to "28m"
             ),
+            evidenceSummary = "Evidence bundle created; all hashes verified.",
+            lastRunTimeline = listOf(
+                "00:00 Init",
+                "00:09 Drift check",
+                "00:18 Export sealed"
+            ),
             latestVersion = version,
             versions = listOf(version)
         )
-        return ApiResult.Success(listOf(protocol))
+            protocols.add(protocol)
+        }
+        return ApiResult.Success(protocols.toList())
+    }
+
+    override suspend fun createProtocol(request: CreateProtocolRequest): ApiResult<Protocol> {
+        val version = ProtocolVersion(
+            id = ProtocolVersionId("${request.protocolId}-v1"),
+            protocolId = ProtocolId(request.protocolId),
+            version = "1",
+            createdAt = Clock.System.now(),
+            author = request.author,
+            payload = request.contentJson,
+            published = false
+        )
+        val protocol = Protocol(
+            id = ProtocolId(request.protocolId),
+            name = request.title,
+            summary = request.summary,
+            resultSummary = request.resultSummary,
+            lastOutcome = request.lastOutcome,
+            resultMetrics = request.resultMetrics,
+            evidenceSummary = request.evidenceSummary,
+            lastRunTimeline = request.lastRunTimeline,
+            latestVersion = version,
+            versions = listOf(version)
+        )
+        protocols.add(protocol)
+        return ApiResult.Success(protocol)
     }
 
     override suspend fun listRuns(): ApiResult<List<Run>> {

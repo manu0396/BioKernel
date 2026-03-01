@@ -2,6 +2,7 @@ package com.neogenesis.platform.control.data
 
 import com.neogenesis.platform.control.data.local.RegenOpsLocalDataSource
 import com.neogenesis.platform.control.data.remote.ControlApi
+import com.neogenesis.platform.control.data.remote.CreateProtocolRequest
 import com.neogenesis.platform.control.data.stream.RegenOpsStreamClient
 import com.neogenesis.platform.shared.domain.Protocol
 import com.neogenesis.platform.shared.domain.ProtocolVersion
@@ -35,6 +36,22 @@ class RegenOpsRepository(
                 list
             }
             localData.replaceProtocols(protocols, versions)
+        }
+        return result
+    }
+
+    suspend fun createProtocol(request: CreateProtocolRequest): ApiResult<Protocol> {
+        val result = controlApi.createProtocol(request)
+        if (result is ApiResult.Success) {
+            val protocol = result.value
+            val versions = protocol.versions.toMutableList()
+            protocol.latestVersion?.let { latest ->
+                if (versions.none { it.id == latest.id }) {
+                    versions.add(0, latest)
+                }
+            }
+            localData.insertProtocol(protocol)
+            versions.forEach { localData.insertProtocolVersion(it) }
         }
         return result
     }

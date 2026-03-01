@@ -24,6 +24,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
@@ -36,6 +38,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
@@ -49,6 +52,7 @@ import com.neogenesis.platform.control.presentation.design.NgSpacing
 import com.neogenesis.platform.control.presentation.design.NgStatus
 import com.neogenesis.platform.control.presentation.design.NgStatusChip
 import com.neogenesis.platform.control.presentation.design.NgTextField
+import com.neogenesis.platform.control.data.remote.CreateProtocolRequest
 import com.neogenesis.platform.shared.domain.Protocol
 import com.neogenesis.platform.shared.domain.ProtocolVersion
 import com.neogenesis.platform.shared.domain.Run
@@ -66,12 +70,130 @@ fun ProtocolsScreen(
     protocols: List<Protocol>,
     query: String,
     onQueryChange: (String) -> Unit,
+    isCreatingProtocol: Boolean,
     canGoBack: Boolean = false,
     onBack: () -> Unit = {},
     onSelect: (Protocol) -> Unit,
     onRefresh: () -> Unit,
+    onCreateProtocol: (CreateProtocolRequest) -> Unit,
 ) {
     val expanded = remember { mutableStateMapOf<String, Boolean>() }
+    var showCreateDialog by remember { mutableStateOf(false) }
+    var newId by remember { mutableStateOf("") }
+    var newTitle by remember { mutableStateOf("") }
+    var newSummary by remember { mutableStateOf("") }
+    var newContentJson by remember { mutableStateOf("{\"steps\":[],\"metadata\":{}}") }
+    var newAuthor by remember { mutableStateOf("") }
+    var newResultSummary by remember { mutableStateOf("") }
+    var newOutcome by remember { mutableStateOf("SUCCESS") }
+    var metric1Label by remember { mutableStateOf("Yield") }
+    var metric1Value by remember { mutableStateOf("98.0%") }
+    var metric2Label by remember { mutableStateOf("Stability") }
+    var metric2Value by remember { mutableStateOf("0.5% variance") }
+    var metric3Label by remember { mutableStateOf("Cycle Time") }
+    var metric3Value by remember { mutableStateOf("35m") }
+    var evidenceSummary by remember { mutableStateOf("") }
+    var timelineCsv by remember { mutableStateOf("00:00 Init, 00:12 Checkpoint A, 00:24 Complete") }
+
+    val dialogProperties = if (WindowSize.isDesktop()) {
+        DialogProperties(usePlatformDefaultWidth = false)
+    } else {
+        DialogProperties(usePlatformDefaultWidth = false)
+    }
+
+    if (showCreateDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isCreatingProtocol) showCreateDialog = false },
+            properties = dialogProperties,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 560.dp, max = 820.dp),
+            title = { Text("Create Protocol") },
+            text = {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 640.dp),
+                    verticalArrangement = Arrangement.spacedBy(NgSpacing.Small)
+                ) {
+                    item { Text("Identity", style = MaterialTheme.typography.titleSmall) }
+                    item { NgTextField(value = newId, onValueChange = { newId = it.trim() }, label = "Protocol ID (e.g. regenops-001)") }
+                    item { NgTextField(value = newTitle, onValueChange = { newTitle = it }, label = "Title") }
+                    item { NgTextField(value = newAuthor, onValueChange = { newAuthor = it }, label = "Author / Owner") }
+
+                    item { Text("Summary", style = MaterialTheme.typography.titleSmall) }
+                    item {
+                        androidx.compose.material3.OutlinedTextField(
+                            value = newSummary,
+                            onValueChange = { newSummary = it },
+                            label = { Text("Summary") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 3
+                        )
+                    }
+
+                    item { Text("Protocol Content (JSON)", style = MaterialTheme.typography.titleSmall) }
+                    item {
+                        androidx.compose.material3.OutlinedTextField(
+                            value = newContentJson,
+                            onValueChange = { newContentJson = it },
+                            label = { Text("contentJson") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 4
+                        )
+                    }
+
+                    item { Text("Result Overview", style = MaterialTheme.typography.titleSmall) }
+                    item { NgTextField(value = newResultSummary, onValueChange = { newResultSummary = it }, label = "Result Summary") }
+                    item { NgTextField(value = newOutcome, onValueChange = { newOutcome = it }, label = "Outcome (SUCCESS/WARNING/FAILED)") }
+
+                    item { Text("Key Metrics", style = MaterialTheme.typography.titleSmall) }
+                    item { NgTextField(value = metric1Label, onValueChange = { metric1Label = it }, label = "Metric 1 Label") }
+                    item { NgTextField(value = metric1Value, onValueChange = { metric1Value = it }, label = "Metric 1 Value") }
+                    item { NgTextField(value = metric2Label, onValueChange = { metric2Label = it }, label = "Metric 2 Label") }
+                    item { NgTextField(value = metric2Value, onValueChange = { metric2Value = it }, label = "Metric 2 Value") }
+                    item { NgTextField(value = metric3Label, onValueChange = { metric3Label = it }, label = "Metric 3 Label") }
+                    item { NgTextField(value = metric3Value, onValueChange = { metric3Value = it }, label = "Metric 3 Value") }
+
+                    item { Text("Evidence & Timeline", style = MaterialTheme.typography.titleSmall) }
+                    item { NgTextField(value = evidenceSummary, onValueChange = { evidenceSummary = it }, label = "Evidence Summary") }
+                    item { NgTextField(value = timelineCsv, onValueChange = { timelineCsv = it }, label = "Timeline (comma separated)") }
+                }
+            },
+            confirmButton = {
+                val canCreate =
+                    newId.isNotBlank() && newTitle.isNotBlank() && newSummary.isNotBlank() &&
+                        newContentJson.isNotBlank() && newAuthor.isNotBlank()
+                TextButton(
+                    onClick = {
+                        val metrics = listOf(
+                            metric1Label to metric1Value,
+                            metric2Label to metric2Value,
+                            metric3Label to metric3Value
+                        ).filter { it.first.isNotBlank() && it.second.isNotBlank() }.toMap()
+                        val timeline = timelineCsv.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                        onCreateProtocol(
+                            CreateProtocolRequest(
+                                protocolId = newId,
+                                title = newTitle,
+                                summary = newSummary,
+                                contentJson = newContentJson,
+                                author = newAuthor,
+                                resultSummary = newResultSummary.takeIf { it.isNotBlank() },
+                                lastOutcome = newOutcome.takeIf { it.isNotBlank() },
+                                resultMetrics = metrics,
+                                evidenceSummary = evidenceSummary.takeIf { it.isNotBlank() },
+                                lastRunTimeline = timeline
+                            )
+                        )
+                        if (!isCreatingProtocol) {
+                            showCreateDialog = false
+                        }
+                    },
+                    enabled = canCreate && !isCreatingProtocol
+                ) { Text(if (isCreatingProtocol) "Creating..." else "Create") }
+            },
+            dismissButton = {
+                TextButton(onClick = { if (!isCreatingProtocol) showCreateDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
     val filtered =
         if (query.isBlank()) {
             protocols
@@ -100,7 +222,10 @@ fun ProtocolsScreen(
                 }
                 Text("Protocols", style = MaterialTheme.typography.headlineSmall)
             }
-            TextButton(onClick = onRefresh) { Text("Refresh") }
+            Row(horizontalArrangement = Arrangement.spacedBy(NgSpacing.Small)) {
+                TextButton(onClick = onRefresh) { Text("Refresh") }
+                OutlinedButton(onClick = { showCreateDialog = true }) { Text("New Protocol") }
+            }
         }
 
         NgTextField(
@@ -132,8 +257,9 @@ fun ProtocolsScreen(
                             "FAILED", "ABORTED" -> NgStatus.Error
                             else -> NgStatus.Info
                         }
+                    val toggleExpanded = { expanded[protocol.id.value] = !isExpanded }
 
-                    NgCard(onClick = { expanded[protocol.id.value] = !isExpanded }) {
+                    NgCard(onClick = { onSelect(protocol) }) {
                         Column(
                             modifier = Modifier.fillMaxWidth().padding(NgSpacing.Medium),
                             verticalArrangement = Arrangement.spacedBy(NgSpacing.Small),
@@ -147,11 +273,13 @@ fun ProtocolsScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(NgSpacing.Small)
                                 ) {
+                                    IconButton(onClick = toggleExpanded) {
                                     Icon(
                                         imageVector = if (isExpanded) Icons.Default.FolderOpen else Icons.Default.Folder,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary
                                     )
+                                    }
                                     Column {
                                         Text(protocol.name, style = MaterialTheme.typography.titleMedium)
                                         Text(
@@ -176,11 +304,13 @@ fun ProtocolsScreen(
                                     ProtocolBadge(text = latestVersionLabel)
                                 }
 
+                                IconButton(onClick = toggleExpanded) {
                                 Icon(
                                     imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                                }
                             }
 
                             if (!isExpanded) {
@@ -220,13 +350,30 @@ fun ProtocolsScreen(
                                         style = MaterialTheme.typography.bodyMedium,
                                     )
                                 }
+                                protocol.evidenceSummary?.let {
+                                    Text("Evidence: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                if (protocol.lastRunTimeline.isNotEmpty()) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text("Last Run Timeline", style = MaterialTheme.typography.titleSmall)
+                                        protocol.lastRunTimeline.forEach { step -> Text("• $step", style = MaterialTheme.typography.bodySmall) }
+                                    }
+                                }
                                 if (protocol.resultMetrics.isNotEmpty()) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        protocol.resultMetrics.entries.take(4).forEach { (label, value) ->
-                                            NgMetricTile(label = label, value = value, modifier = Modifier.weight(1f))
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            protocol.resultMetrics.entries.take(4).forEach { (label, value) ->
+                                                NgMetricTile(label = label, value = value, modifier = Modifier.weight(1f))
+                                            }
+                                        }
+                                        protocol.resultMetrics.entries.take(3).forEach { (label, value) ->
+                                            val percent = value.trim().removeSuffix("%").toDoubleOrNull()?.div(100.0)
+                                            if (percent != null) {
+                                                KpiBar(label = label, value = value, percent = percent.toFloat().coerceIn(0f, 1f))
+                                            }
                                         }
                                     }
                                 }
@@ -295,6 +442,35 @@ fun ProtocolDetailScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+
+                protocol.resultSummary?.let {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("Result Overview", style = MaterialTheme.typography.titleSmall)
+                    Text(it, style = MaterialTheme.typography.bodyMedium)
+                }
+
+                protocol.evidenceSummary?.let {
+                    Text("Evidence", style = MaterialTheme.typography.titleSmall)
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+
+                if (protocol.lastRunTimeline.isNotEmpty()) {
+                    Text("Last Run Timeline", style = MaterialTheme.typography.titleSmall)
+                    protocol.lastRunTimeline.forEach { step ->
+                        Text("• $step", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+
+                if (protocol.resultMetrics.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        protocol.resultMetrics.entries.take(4).forEach { (label, value) ->
+                            NgMetricTile(label = label, value = value, modifier = Modifier.weight(1f))
+                        }
+                    }
                 }
 
                 protocol.resultSummary?.let {
@@ -409,6 +585,21 @@ fun ProtocolDetailScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun KpiBar(label: String, value: String, percent: Float) {
+    val animated = animateFloatAsState(targetValue = percent, label = "kpi")
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, style = MaterialTheme.typography.labelMedium)
+            Text(value, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        }
+        LinearProgressIndicator(
+            progress = animated.value,
+            modifier = Modifier.fillMaxWidth().height(6.dp),
+        )
     }
 }
 

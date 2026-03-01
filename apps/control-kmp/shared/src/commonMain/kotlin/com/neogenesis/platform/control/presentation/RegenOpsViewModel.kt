@@ -3,6 +3,7 @@ package com.neogenesis.platform.control.presentation
 import com.neogenesis.platform.control.AppConfig
 import com.neogenesis.platform.control.data.RegenOpsRepository
 import com.neogenesis.platform.control.data.remote.CommercialApi
+import com.neogenesis.platform.control.data.remote.CreateProtocolRequest
 import com.neogenesis.platform.control.data.remote.ExportsApi
 import com.neogenesis.platform.control.data.remote.SimulatorApi
 import com.neogenesis.platform.control.data.remote.TraceApi
@@ -193,6 +194,34 @@ class RegenOpsViewModel(
                     _state.update { it.copy(statusMessage = "Protocols refreshed", errorBanner = null) }
                 is ApiResult.Failure ->
                     _state.update { it.copy(errorBanner = mapNetworkError(result.error, "Failed to refresh protocols")) }
+            }
+        }
+    }
+
+    fun createProtocol(request: CreateProtocolRequest) {
+        if (_state.value.isCreatingProtocol) return
+        _state.update { it.copy(isCreatingProtocol = true, errorBanner = null) }
+        scope.launch {
+            when (val result = repository.createProtocol(request)) {
+                is ApiResult.Success -> {
+                    _state.update {
+                        it.copy(
+                            statusMessage = "Protocol created",
+                            isCreatingProtocol = false,
+                            errorBanner = null,
+                            selectedProtocol = result.value,
+                            selectedVersion = result.value.latestVersion
+                        )
+                    }
+                }
+                is ApiResult.Failure -> {
+                    _state.update {
+                        it.copy(
+                            isCreatingProtocol = false,
+                            errorBanner = mapNetworkError(result.error, "Failed to create protocol")
+                        )
+                    }
+                }
             }
         }
     }
