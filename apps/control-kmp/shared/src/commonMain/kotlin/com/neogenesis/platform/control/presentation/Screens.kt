@@ -411,7 +411,14 @@ fun RunControlScreen(
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
                                 val tag = if (v.published) "Published" else "Draft"
-                                Text("v${v.version} • $tag")
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text("v${v.version}")
+                                    Text(tag, style = MaterialTheme.typography.labelMedium)
+                                }
                             }
                         }
                     }

@@ -86,6 +86,8 @@ Client
 - `apps/control-kmp/shared/src/jvmMain/kotlin/com/neogenesis/platform/control/data/remote/GrpcControlApi.kt`: Stub listRuns for platform builds.
 - `docs/qa/UI_ACTIONS_IMPLEMENTED.md`: UI action audit and endpoint mapping.
 - `services/core-server/src/main/kotlin/com/neogenesis/platform/core/modules/TelemetryModule.kt`: Respect `Accept: text/csv` for export.
+- `apps/control-kmp/androidApp/src/main/java/com/neogenesis/platform/control/android/MainActivity.kt`: Map localhost baseUrl to emulator host when needed.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/Screens.kt`: Fix version dialog item alignment.
 
 Server
 - `src/main/kotlin/com/neogenesis/server/config/AppConfig.kt`: Add NG_DEMO_MODE flag (if config lives here).

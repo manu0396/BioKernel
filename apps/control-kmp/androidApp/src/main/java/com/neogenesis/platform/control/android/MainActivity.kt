@@ -3,6 +3,7 @@ package com.neogenesis.platform.control.android
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.neogenesis.platform.control.AppConfig
@@ -17,8 +18,9 @@ import org.koin.core.component.KoinComponent
 class MainActivity : ComponentActivity(), KoinComponent {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val resolvedHttpBaseUrl = resolveHttpBaseUrl(BuildConfig.REGENOPS_HTTP_BASE_URL)
         val appConfig = AppConfig(
-            httpBaseUrl = BuildConfig.REGENOPS_HTTP_BASE_URL,
+            httpBaseUrl = resolvedHttpBaseUrl,
             grpcHost = BuildConfig.REGENOPS_GRPC_HOST,
             grpcPort = BuildConfig.REGENOPS_GRPC_PORT,
             grpcUseTls = BuildConfig.REGENOPS_GRPC_TLS,
@@ -62,5 +64,25 @@ class MainActivity : ComponentActivity(), KoinComponent {
                 )
             }
         }
+    }
+
+    private fun resolveHttpBaseUrl(baseUrl: String): String {
+        val normalized = baseUrl.trim()
+        if (!isEmulator()) return normalized
+        return normalized
+            .replace("http://localhost", "http://10.0.2.2")
+            .replace("http://127.0.0.1", "http://10.0.2.2")
+    }
+
+    private fun isEmulator(): Boolean {
+        val fingerprint = Build.FINGERPRINT
+        return fingerprint.startsWith("generic") ||
+            fingerprint.startsWith("unknown") ||
+            Build.MODEL.contains("google_sdk") ||
+            Build.MODEL.contains("Emulator") ||
+            Build.MODEL.contains("Android SDK built for x86") ||
+            Build.MANUFACTURER.contains("Genymotion") ||
+            Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic") ||
+            "google_sdk" == Build.PRODUCT
     }
 }
