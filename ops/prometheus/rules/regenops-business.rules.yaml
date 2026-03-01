@@ -1,0 +1,25 @@
+groups:
+  - name: regenops-business
+    interval: 1m
+    rules:
+      - record: regenops:runs_started_daily
+        expr: sum by (tenant_id, site_id, cohort_id) (increase(neogenesis_runs_started_total[1d]))
+      - record: regenops:runs_started_weekly
+        expr: sum by (tenant_id, site_id, cohort_id) (increase(neogenesis_runs_started_total[7d]))
+      - record: regenops:runs_completed_daily
+        expr: sum by (tenant_id, site_id, cohort_id) (increase(neogenesis_runs_completed_total[1d]))
+      - record: regenops:runs_failed_daily
+        expr: sum by (tenant_id, site_id, cohort_id) (increase(neogenesis_runs_failed_total[1d]))
+      - record: regenops:run_success_rate_daily
+        expr: regenops:runs_completed_daily / clamp_min(regenops:runs_started_daily, 1)
+      - record: regenops:run_failure_rate_daily
+        expr: regenops:runs_failed_daily / clamp_min(regenops:runs_started_daily, 1)
+      - record: regenops:run_duration_avg_ms_daily
+        expr: sum by (tenant_id, site_id, cohort_id) (increase(neogenesis_run_duration_ms_sum[1d]))
+          / clamp_min(sum by (tenant_id, site_id, cohort_id) (increase(neogenesis_run_duration_ms_count[1d])), 1)
+      - record: regenops:evidence_exports_daily
+        expr: sum by (tenant_id, site_id, cohort_id, outcome) (increase(neogenesis_evidence_exports_total[1d]))
+      - record: regenops:runs_retry_daily
+        expr: sum by (tenant_id, site_id, cohort_id) (increase(neogenesis_runs_retry_total[1d]))
+      - record: regenops:runs_resumed_daily
+        expr: sum by (tenant_id, site_id, cohort_id) (increase(neogenesis_runs_resumed_total[1d]))

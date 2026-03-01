@@ -1,5 +1,7 @@
 package com.neogenesis.platform.core.grpc
 
+import com.neogenesis.platform.core.observability.BusinessMetrics
+import com.neogenesis.platform.core.observability.MetricLabels
 import com.neogenesis.grpc.GatewayRunEvent
 import com.neogenesis.grpc.GatewayTelemetry
 import com.neogenesis.grpc.ListProtocolsResponse
@@ -30,7 +32,7 @@ internal object RegenOpsInMemoryStore {
             .setProtocolId("proto-1")
             .setVersion(1)
             .setTitle("RegenOps Alpha")
-            .setContentJson("{\"pressure\":110}")
+            .setContentJson("""{"pressure":110}""")
             .setCreatedAtMs(System.currentTimeMillis())
             .build()
     )
@@ -78,7 +80,7 @@ internal object RegenOpsInMemoryStore {
             .setProtocolId(protocolId)
             .setVersion(nextVersion)
             .setTitle("RegenOps ${protocolId.uppercase()}")
-            .setContentJson("{\"changelog\":\"$changelog\"}")
+            .setContentJson("""{"changelog":"$changelog"}""")
             .setCreatedAtMs(System.currentTimeMillis())
             .build()
         protocolVersions[protocolId to nextVersion] = record
@@ -86,8 +88,19 @@ internal object RegenOpsInMemoryStore {
         return record
     }
 
-    fun startRun(protocolId: String, version: Int, requestedRunId: String, gatewayId: String): RunRecord {
+    fun startRun(
+        protocolId: String,
+        version: Int,
+        requestedRunId: String,
+        gatewayId: String,
+        labels: MetricLabels
+    ): RunRecord {
         val runId = if (requestedRunId.isNotBlank()) requestedRunId else "run-${UUID.randomUUID()}"
+        val existing = runs[runId]
+        val labelsWithProtocol = labels.withProtocol(protocolId, version)
+        if (existing != null) {
+            BusinessMetrics.runRetried(labelsWithProtocol)
+        }
         val now = System.currentTimeMillis()
         val run = RunRecord.newBuilder()
             .setRunId(runId)
@@ -99,12 +112,13 @@ internal object RegenOpsInMemoryStore {
             .setUpdatedAtMs(now)
             .build()
         runs[runId] = run
+        BusinessMetrics.runStarted(labelsWithProtocol)
         runEvents.tryEmit(
             RunEventRecord.newBuilder()
                 .setRunId(runId)
                 .setEventType("RUN_STARTED")
                 .setSource("core")
-                .setPayloadJson("{\"message\":\"Run started for protocol $protocolId/$version\"}")
+                .setPayloadJson("""{"message":"Run started for protocol $protocolId/$version"}""")
                 .setCreatedAtMs(now)
                 .setSeq(nextSeq())
                 .build()
@@ -112,7 +126,7 @@ internal object RegenOpsInMemoryStore {
         return run
     }
 
-    fun updateRun(runId: String, status: String): RunRecord {
+    fun updateRun(runId: String, status: String, labels: MetricLabels): RunRecord {
         val now = System.currentTimeMillis()
         val existing = runs[runId]
         val builder = (existing?.toBuilder() ?: RunRecord.newBuilder().setRunId(runId))
@@ -126,13 +140,32 @@ internal object RegenOpsInMemoryStore {
             builder.setAbortReason("requested")
         }
         val run = builder.build()
+        val labelsWithProtocol = labels.withProtocol(existing?.protocolId, existing?.protocolVersion)
+        if (status == "PAUSED") {
+            BusinessMetrics.runPaused(labelsWithProtocol)
+        }
+        if (status == "ABORTED") {
+            BusinessMetrics.runFailed(labelsWithProtocol)
+            val startedAt = existing?.startedAtMs ?: now
+            val durationMs = (now - startedAt).coerceAtLeast(0)
+            BusinessMetrics.runDuration(labelsWithProtocol, "failure", durationMs)
+        }
+        if (status == "COMPLETED") {
+            BusinessMetrics.runCompleted(labelsWithProtocol)
+            val startedAt = existing?.startedAtMs ?: now
+            val durationMs = (now - startedAt).coerceAtLeast(0)
+            BusinessMetrics.runDuration(labelsWithProtocol, "success", durationMs)
+        }
+        if (status == "RUNNING" && existing?.status == "PAUSED") {
+            BusinessMetrics.runResumed(labelsWithProtocol)
+        }
         runs[runId] = run
         runEvents.tryEmit(
             RunEventRecord.newBuilder()
                 .setRunId(runId)
                 .setEventType("RUN_$status")
                 .setSource("core")
-                .setPayloadJson("{\"message\":\"Run status changed to $status\"}")
+                .setPayloadJson("""{"message":"Run status changed to $status"}""")
                 .setCreatedAtMs(now)
                 .setSeq(nextSeq())
                 .build()
@@ -148,6 +181,7 @@ internal object RegenOpsInMemoryStore {
 
     fun pushGatewayTelemetry(gatewayId: String, frames: List<GatewayTelemetry>) {
         frames.forEach { frame ->
+            BusinessMetrics.telemetryFrames(frame.metricKey)
             telemetry.tryEmit(
                 TelemetryRecord.newBuilder()
                     .setRunId(frame.runId)
@@ -165,6 +199,7 @@ internal object RegenOpsInMemoryStore {
 
     fun pushGatewayEvents(events: List<GatewayRunEvent>) {
         events.forEach { event ->
+            BusinessMetrics.gatewayEvents(event.eventType, "gateway")
             runEvents.tryEmit(
                 RunEventRecord.newBuilder()
                     .setRunId(event.runId)

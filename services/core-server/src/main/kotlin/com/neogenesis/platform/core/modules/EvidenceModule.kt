@@ -1,6 +1,8 @@
 package com.neogenesis.platform.core.modules
 
 import com.neogenesis.platform.core.audit.AuditLogger
+import com.neogenesis.platform.core.observability.BusinessMetrics
+import com.neogenesis.platform.core.observability.HttpRequestLabels
 import com.neogenesis.platform.core.evidence.EvidencePackageBuilder
 import com.neogenesis.platform.core.http.respondError
 import com.neogenesis.platform.core.security.enforceRole
@@ -56,45 +58,60 @@ object EvidenceModule {
                         call.respond(HttpStatusCode.Created, log)
                     }
                     get("/{jobId}/export") {
-                        if (!call.enforceRole(setOf("ADMIN", "AUDITOR"))) return@get
-                        val jobId = call.parameters["jobId"] ?: return@get call.respondError(
-                            HttpStatusCode.BadRequest,
-                            "missing_job_id",
-                            "Missing jobId"
-                        )
-                        val logs = repository.list(PrintJobId(jobId))
-                        val export = EvidenceExporter.export(logs.map {
-                            com.neogenesis.platform.shared.evidence.EvidenceEvent(
-                                id = it.id,
-                                timestamp = it.timestamp,
-                                actorId = it.actorId.value,
-                                deviceId = it.deviceId.value,
-                                jobId = it.jobId.value,
-                                eventType = it.eventType,
-                                payloadHash = it.payloadHash,
-                                hash = it.hash,
-                                prevHash = it.prevHash
+                        try {
+                            if (!call.enforceRole(setOf("ADMIN", "AUDITOR"))) return@get
+                            val jobId = call.parameters["jobId"] ?: return@get call.respondError(
+                                HttpStatusCode.BadRequest,
+                                "missing_job_id",
+                                "Missing jobId"
                             )
-                        })
-                        call.respond(export)
+                            val labels = HttpRequestLabels.fromCall(call)
+                            val logs = repository.list(PrintJobId(jobId))
+                            val export = EvidenceExporter.export(logs.map {
+                                com.neogenesis.platform.shared.evidence.EvidenceEvent(
+                                    id = it.id,
+                                    timestamp = it.timestamp,
+                                    actorId = it.actorId.value,
+                                    deviceId = it.deviceId.value,
+                                    jobId = it.jobId.value,
+                                    eventType = it.eventType,
+                                    payloadHash = it.payloadHash,
+                                    hash = it.hash,
+                                    prevHash = it.prevHash
+                                )
+                            })
+                            BusinessMetrics.evidenceExport(labels, "success")
+                            call.respond(export)
+                        } catch (err: Throwable) {
+                            val labels = HttpRequestLabels.fromCall(call)
+                            BusinessMetrics.evidenceExport(labels, "failure")
+                            throw err
+                        }
                     }
                     get("/{jobId}/package") {
-                        if (!call.enforceRole(setOf("ADMIN", "AUDITOR"))) return@get
-                        val jobId = call.parameters["jobId"] ?: return@get call.respondError(
-                            HttpStatusCode.BadRequest,
-                            "missing_job_id",
-                            "Missing jobId"
-                        )
-                        val bundle = packageBuilder.build(PrintJobId(jobId))
-                        call.response.headers.append(
-                            "Content-Disposition",
-                            "attachment; filename=\"${bundle.fileName}\""
-                        )
-                        call.respondBytes(bundle.bytes, contentType = ContentType.parse("application/zip"))
+                        try {
+                            if (!call.enforceRole(setOf("ADMIN", "AUDITOR"))) return@get
+                            val jobId = call.parameters["jobId"] ?: return@get call.respondError(
+                                HttpStatusCode.BadRequest,
+                                "missing_job_id",
+                                "Missing jobId"
+                            )
+                            val labels = HttpRequestLabels.fromCall(call)
+                            val bundle = packageBuilder.build(PrintJobId(jobId))
+                            call.response.headers.append(
+                                "Content-Disposition",
+                                "attachment; filename=\"${bundle.fileName}\""
+                            )
+                            BusinessMetrics.evidenceExport(labels, "success")
+                            call.respondBytes(bundle.bytes, contentType = ContentType.parse("application/zip"))
+                        } catch (err: Throwable) {
+                            val labels = HttpRequestLabels.fromCall(call)
+                            BusinessMetrics.evidenceExport(labels, "failure")
+                            throw err
+                        }
                     }
                 }
             }
         }
     }
 }
-

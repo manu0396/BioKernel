@@ -9,7 +9,7 @@ import io.ktor.server.routing.routing
 object AdminOpsModule {
     fun register(app: Application) {
         app.routing {
-            get("/metrics") {
+            get("/admin/metrics") {
                 call.respond(
                     mapOf(
                         "uptime" to System.currentTimeMillis(),

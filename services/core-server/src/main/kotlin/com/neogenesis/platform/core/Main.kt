@@ -6,9 +6,10 @@ import com.neogenesis.platform.core.evidence.EvidencePackageBuilder
 import com.neogenesis.platform.core.grpc.*
 import com.neogenesis.platform.core.http.respondError
 import com.neogenesis.platform.core.modules.*
-import com.neogenesis.platform.core.observability.NoopMetrics
 import com.neogenesis.platform.core.observability.installPrometheusMetrics
 import com.neogenesis.platform.core.observability.OpenTelemetryConfig
+import com.neogenesis.platform.core.observability.PrometheusRequestMetrics
+import com.neogenesis.platform.core.observability.BusinessMetrics
 import com.neogenesis.platform.core.observability.installRequestMetrics
 import com.neogenesis.platform.core.security.TokenStore
 import com.neogenesis.platform.core.security.configureAuth
@@ -60,8 +61,9 @@ fun Application.module(appConfig: AppConfig = AppConfig.fromEnv()) {
         mdc("tenant_id") { call -> call.request.header("X-Tenant-Id") ?: "" }
         mdc("run_id") { call -> call.request.header("X-Run-Id") ?: "" }
     }
-    installRequestMetrics(NoopMetrics())
-    installPrometheusMetrics()
+    val prometheusRegistry = installPrometheusMetrics()
+    installRequestMetrics(PrometheusRequestMetrics(prometheusRegistry))
+    BusinessMetrics.init(prometheusRegistry)
     OpenTelemetryConfig.init("core-server", System.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"))
     install(ContentNegotiation) { json() }
     configureRequestValidation()
@@ -134,7 +136,16 @@ fun Application.module(appConfig: AppConfig = AppConfig.fromEnv()) {
         RegenOpsMetricsService()
     )
     if (appConfig.grpcEnabled) {
-        installGrpcServer(platformServices, port = appConfig.grpcPort)
+        val grpcInterceptors = listOf(
+            GrpcRequestContext.interceptor(),
+            com.neogenesis.platform.core.observability.GrpcMetricsInterceptor(prometheusRegistry)
+        )
+        installGrpcServer(
+            platformServices,
+            port = appConfig.grpcPort,
+            tlsConfig = appConfig.grpcTls,
+            interceptors = grpcInterceptors
+        )
     }
 
     AuthModule.register(this, jwtConfig, userRepository, tokenStore, auditLogger)

@@ -69,13 +69,19 @@ class RegenOpsProtocolService : ProtocolServiceGrpcKt.ProtocolServiceCoroutineIm
 
 class RegenOpsRunService : RunServiceGrpcKt.RunServiceCoroutineImplBase() {
     override suspend fun startRun(request: StartRunRequest): RunRecord =
-        RegenOpsInMemoryStore.startRun(request.protocolId, request.protocolVersion, request.runId, request.gatewayId)
+        RegenOpsInMemoryStore.startRun(
+            protocolId = request.protocolId,
+            version = request.protocolVersion,
+            requestedRunId = request.runId,
+            gatewayId = request.gatewayId,
+            labels = GrpcRequestContext.currentLabels(request.protocolId, request.protocolVersion)
+        )
 
     override suspend fun pauseRun(request: RunControlRequest): RunRecord =
-        RegenOpsInMemoryStore.updateRun(request.runId, "PAUSED")
+        RegenOpsInMemoryStore.updateRun(request.runId, "PAUSED", GrpcRequestContext.currentLabels())
 
     override suspend fun abortRun(request: RunControlRequest): RunRecord =
-        RegenOpsInMemoryStore.updateRun(request.runId, "ABORTED")
+        RegenOpsInMemoryStore.updateRun(request.runId, "ABORTED", GrpcRequestContext.currentLabels())
 
     override suspend fun getRun(request: GetRunRequest): RunRecord =
         RegenOpsInMemoryStore.getRun(request.runId)

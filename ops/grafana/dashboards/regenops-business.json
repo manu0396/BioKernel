@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 38,
+  "title": "RegenOps Business Overview",
+  "timezone": "browser",
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "refresh": "30s",
+  "tags": ["regenops", "business"],
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {
+          "text": "Prometheus",
+          "value": "Prometheus"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Runs Started (Daily)",
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "targets": [
+        {
+          "expr": "regenops:runs_started_daily",
+          "legendFormat": "{{tenant_id}}/{{site_id}}/{{cohort_id}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Runs Started (Weekly)",
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "targets": [
+        {
+          "expr": "regenops:runs_started_weekly",
+          "legendFormat": "{{tenant_id}}/{{site_id}}/{{cohort_id}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Success vs Failure Rate (Daily)",
+      "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "targets": [
+        {"expr": "regenops:run_success_rate_daily", "legendFormat": "success {{tenant_id}}/{{site_id}}/{{cohort_id}}"},
+        {"expr": "regenops:run_failure_rate_daily", "legendFormat": "failure {{tenant_id}}/{{site_id}}/{{cohort_id}}"}
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Mean Run Duration (ms, Daily)",
+      "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "targets": [
+        {"expr": "regenops:run_duration_avg_ms_daily", "legendFormat": "{{tenant_id}}/{{site_id}}/{{cohort_id}}"}
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Evidence Exports (Daily)",
+      "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "targets": [
+        {"expr": "regenops:evidence_exports_daily", "legendFormat": "{{tenant_id}}/{{site_id}}/{{cohort_id}} {{outcome}}"}
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Retry / Resume Counts (Daily)",
+      "gridPos": {"x": 12, "y": 16, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "targets": [
+        {"expr": "regenops:runs_retry_daily", "legendFormat": "retry {{tenant_id}}/{{site_id}}/{{cohort_id}}"},
+        {"expr": "regenops:runs_resumed_daily", "legendFormat": "resume {{tenant_id}}/{{site_id}}/{{cohort_id}}"}
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "gRPC Latency p95 (5m)",
+      "gridPos": {"x": 0, "y": 24, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(neogenesis_grpc_request_duration_ms_bucket[5m])) by (le, grpc_service, grpc_method))",
+          "legendFormat": "{{grpc_service}}/{{grpc_method}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "gRPC Error Rate (5m)",
+      "gridPos": {"x": 12, "y": 24, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "targets": [
+        {
+          "expr": "sum(rate(neogenesis_grpc_requests_total{status!~"OK|UNKNOWN"}[5m])) by (grpc_service, grpc_method) / clamp_min(sum(rate(neogenesis_grpc_requests_total[5m])) by (grpc_service, grpc_method), 1)",
+          "legendFormat": "{{grpc_service}}/{{grpc_method}}"
+        }
+      ]
+    }
+  ]
+}

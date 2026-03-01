@@ -1,6 +1,7 @@
 package com.neogenesis.platform.core.modules
 
 import com.neogenesis.platform.core.grpc.RegenOpsInMemoryStore
+import com.neogenesis.platform.core.observability.HttpRequestLabels
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
@@ -54,17 +55,18 @@ object RegenOpsHttpModule {
                         protocolId = req.protocolId,
                         version = req.protocolVersion,
                         requestedRunId = req.runId.orEmpty(),
-                        gatewayId = req.gatewayId ?: "gateway-http"
+                        gatewayId = req.gatewayId ?: "gateway-http",
+                        labels = HttpRequestLabels.fromCall(call, req.protocolId, req.protocolVersion)
                     )
                     call.respond(HttpStatusCode.Created, run)
                 }
                 post("/runs/{id}/pause") {
                     val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
-                    call.respond(RegenOpsInMemoryStore.updateRun(id, "PAUSED"))
+                    call.respond(RegenOpsInMemoryStore.updateRun(id, "PAUSED", HttpRequestLabels.fromCall(call)))
                 }
                 post("/runs/{id}/abort") {
                     val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
-                    call.respond(RegenOpsInMemoryStore.updateRun(id, "ABORTED"))
+                    call.respond(RegenOpsInMemoryStore.updateRun(id, "ABORTED", HttpRequestLabels.fromCall(call)))
                 }
             }
             route("/api/v1/trace") {
