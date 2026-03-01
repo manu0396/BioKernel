@@ -7,6 +7,7 @@ import com.neogenesis.platform.proto.v1.PairingServiceGrpcKt.PairingServiceCorou
 import com.neogenesis.platform.proto.v1.PrintJobEventServiceGrpcKt.PrintJobEventServiceCoroutineImplBase
 import com.neogenesis.platform.proto.v1.TelemetryStreamServiceGrpcKt.TelemetryStreamServiceCoroutineImplBase
 import com.neogenesis.platform.shared.security.Crypto
+import com.neogenesis.platform.shared.domain.device.Capability
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -19,6 +20,7 @@ class TelemetryStreamServiceImpl(
     private val telemetryBus: TelemetryBus
 ) : TelemetryStreamServiceCoroutineImplBase() {
     override fun streamTelemetry(requests: Flow<TelemetryRequest>): Flow<TelemetryFrame> = channelFlow {
+        GrpcCapabilityGuard.requireCapability(Capability.LIVE_MONITOR)
         var rateMs = 10L
         var jobId = "unknown"
         var deviceId = "unknown"
@@ -54,6 +56,7 @@ class DeviceControlServiceImpl(
     private val commandBus: DeviceCommandBus
 ) : DeviceControlServiceCoroutineImplBase() {
     override fun control(requests: Flow<DeviceControlCommand>): Flow<DeviceControlAck> = channelFlow {
+        GrpcCapabilityGuard.requireCapability(Capability.PRINT_CONTROL)
         requests.collect { cmd ->
             commandBus.emit(cmd)
             send(
@@ -72,6 +75,7 @@ class PrintJobEventServiceImpl(
     private val eventBus: PrintJobEventBus
 ) : PrintJobEventServiceCoroutineImplBase() {
     override fun streamEvents(requests: Flow<PrintJobEvent>): Flow<PrintJobEvent> = channelFlow {
+        GrpcCapabilityGuard.requireCapability(Capability.LIVE_MONITOR)
         launch {
             requests.collect { event ->
                 eventBus.emit(event)
@@ -90,6 +94,7 @@ class PairingServiceImpl(
     private val pairingSecret: String
 ) : PairingServiceCoroutineImplBase() {
     override suspend fun startPairing(request: PairingChallenge): PairingResult {
+        GrpcCapabilityGuard.requireCapability(Capability.ADMIN_SETTINGS)
         val pairingId = if (request.pairingId.isBlank()) UUID.randomUUID().toString() else request.pairingId
         val challenge = if (request.challenge.isBlank()) UUID.randomUUID().toString() else request.challenge
         pairingRepository.create(
@@ -112,6 +117,7 @@ class PairingServiceImpl(
     }
 
     override suspend fun completePairing(request: PairingResponse): PairingResult {
+        GrpcCapabilityGuard.requireCapability(Capability.ADMIN_SETTINGS)
         val pairing = pairingRepository.findById(com.neogenesis.platform.shared.domain.DevicePairingId(request.pairingId))
             ?: return PairingResult.newBuilder()
                 .setPairingId(request.pairingId)

@@ -154,3 +154,72 @@ Server
 - [ ] Milestone 4: Create protocol dialog end-to-end.
 - [ ] Milestone 5: Verification.
 
+# ExecPlan: Device Support Tiers v1.0.0 (BioKernel + NeoGenesis-Core-Server) (2026-03-01)
+
+## Milestones
+1) Define shared device-tier domain model + policy math + tests (BioKernel), and mirror model in NeoGenesis.
+2) Add policy transport (proto + HTTP DTOs) and device header/metadata wiring for clients.
+3) Implement client detection + policy registration + capability gating + device-gateway identification (BioKernel).
+4) Enforce server-side tier capability checks for HTTP + gRPC in both servers with explicit mappings.
+5) Add integration tests (HTTP + gRPC where available) for Tier1/Tier2/Tier3 enforcement.
+
+## File-by-File Change List
+BioKernel
+- `shared/domain/src/commonMain/kotlin/com/neogenesis/platform/shared/domain/device/DevicePolicyModels.kt`: Device tiers/classes/capabilities + DeviceInfo/DevicePolicy.
+- `shared/domain/src/commonMain/kotlin/com/neogenesis/platform/shared/domain/device/DevicePolicyLogic.kt`: defaultCapabilitiesFor + effectiveCapabilities.
+- `shared/domain/src/commonTest/kotlin/com/neogenesis/platform/shared/domain/device/DevicePolicyLogicTest.kt`: Tier/capability tests.
+- `shared/proto/src/main/proto/device_policy.proto`: DevicePolicyService + DeviceInfo/DevicePolicy messages.
+- `shared/network/src/commonMain/kotlin/com/neogenesis/platform/shared/network/DeviceHeaders.kt`: Header names + mapping helpers.
+- `shared/network/src/commonMain/kotlin/com/neogenesis/platform/shared/network/HttpClientFactory.kt`: Attach device headers to all requests.
+- `shared/network/src/commonMain/kotlin/com/neogenesis/platform/shared/network/NetworkConfig.kt`: Add deviceInfoProvider.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/device/DeviceDetection.kt`: expect/actual device detection.
+- `apps/control-kmp/shared/src/androidMain/kotlin/com/neogenesis/platform/control/device/DeviceDetection.android.kt`: Android phone/tablet detection.
+- `apps/control-kmp/shared/src/jvmMain/kotlin/com/neogenesis/platform/control/device/DeviceDetection.jvm.kt`: Desktop detection + overrides.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/device/CapabilityGate.kt`: Capability gating utility + unsupported screen routing.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/DevicePolicyApi.kt`: HTTP register + policy fetch.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/AppState.kt`: Store device policy + effective caps.
+- `apps/control-kmp/androidApp/src/main/AndroidManifest.xml`: Ensure device info sources available if needed.
+- `apps/control-kmp/desktopApp/src/jvmMain/kotlin/com/neogenesis/platform/control/desktop/DesktopApp.kt`: Load overrides + register device policy on startup.
+- `shared/network/src/commonMain/kotlin/com/neogenesis/platform/shared/network/grpc/GrpcDeviceHeaders.kt`: gRPC metadata interceptor.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/device/DevicePolicyRepository.kt`: Policy loading.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/device/DeviceContext.kt`: Parse device headers, compute effective caps.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/security/DeviceCapabilityGuard.kt`: requireCapability for HTTP + gRPC.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/modules/DevicePolicyModule.kt`: HTTP endpoints for policy/register.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/grpc/DevicePolicyGrpcService.kt`: gRPC DevicePolicyService.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/grpc/GrpcRequestContext.kt`: Add device info metadata.
+- `services/core-server/src/main/resources/device-policy.yaml`: Default policy config.
+- `services/core-server/src/test/kotlin/com/neogenesis/platform/core/DeviceTierHttpEnforcementTest.kt`: HTTP enforcement tests.
+- `services/core-server/src/test/kotlin/com/neogenesis/platform/core/DeviceTierGrpcEnforcementTest.kt`: gRPC enforcement tests.
+- `agents/device-gateway/src/main/kotlin/com/neogenesis/platform/gateway/DeviceGateway.kt`: Send device headers + TIER_1 EMBEDDED.
+
+NeoGenesis-Core-Server
+- `src/main/kotlin/com/neogenesis/server/domain/device/DevicePolicyModels.kt`: Device tiers/classes/caps + DeviceInfo/DevicePolicy.
+- `src/main/kotlin/com/neogenesis/server/domain/device/DevicePolicyLogic.kt`: defaultCapabilitiesFor + effectiveCapabilities.
+- `src/main/kotlin/com/neogenesis/server/infrastructure/device/DevicePolicyRepository.kt`: Policy loading.
+- `src/main/kotlin/com/neogenesis/server/infrastructure/device/DeviceContext.kt`: Parse device headers, compute effective caps.
+- `src/main/kotlin/com/neogenesis/server/infrastructure/security/DeviceCapabilityGuard.kt`: requireCapability + audit logging.
+- `src/main/kotlin/com/neogenesis/server/presentation/http/DevicePolicyRoutes.kt`: HTTP GET/POST routes.
+- `src/main/resources/device-policy.yaml`: Default policy config.
+- `src/test/kotlin/com/neogenesis/server/DeviceTierHttpEnforcementTest.kt`: HTTP enforcement tests.
+- `src/test/kotlin/com/neogenesis/server/DeviceTierGrpcEnforcementTest.kt`: gRPC enforcement tests if gRPC exists.
+
+## Verification Commands
+- `./gradlew.bat test`
+- `./gradlew.bat :backend:test`
+- `./gradlew.bat :domain:test`
+- `./gradlew.bat :shared-network:test`
+- `./gradlew.bat :desktopApp:run`
+- `./gradlew.bat :androidApp:assembleDebug`
+
+## Rollback Plan
+- Revert the files listed above in both repos.
+- Remove `device-policy.yaml` if unused and restore prior routing/guards.
+- Re-run verification commands to confirm baseline behavior.
+
+## Progress
+- [x] Milestone 1: Device-tier domain model + tests.
+- [x] Milestone 2: Transport headers/proto/DTOs wired.
+- [x] Milestone 3: Client detection + gating + device-gateway updates.
+- [x] Milestone 4: Server enforcement (HTTP + gRPC).
+- [x] Milestone 5: Integration tests.
+

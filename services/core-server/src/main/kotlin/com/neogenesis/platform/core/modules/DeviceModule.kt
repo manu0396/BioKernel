@@ -3,6 +3,7 @@ package com.neogenesis.platform.core.modules
 import com.neogenesis.platform.core.audit.AuditLogger
 import com.neogenesis.platform.core.http.respondError
 import com.neogenesis.platform.core.security.enforceRole
+import com.neogenesis.platform.core.security.requireCapability
 import com.neogenesis.platform.core.security.jwtSubject
 import com.neogenesis.platform.core.storage.DevicePairingRepositoryImpl
 import com.neogenesis.platform.core.storage.DeviceRepositoryImpl
@@ -15,6 +16,8 @@ import com.neogenesis.platform.shared.domain.PairingStatus
 import com.neogenesis.platform.shared.domain.PrintJobId
 import com.neogenesis.platform.shared.domain.UserId
 import com.neogenesis.platform.shared.security.Crypto
+import com.neogenesis.platform.shared.domain.device.Capability
+import com.neogenesis.platform.core.device.DevicePolicyRepository
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
@@ -40,13 +43,15 @@ object DeviceModule {
         deviceRepository: DeviceRepositoryImpl,
         pairingRepository: DevicePairingRepositoryImpl,
         pairingSecret: String,
-        auditLogger: AuditLogger
+        auditLogger: AuditLogger,
+        policyRepository: DevicePolicyRepository
     ) {
         app.routing {
             authenticate("auth-jwt") {
                 route("/api/v1/devices") {
                     post {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR"))) return@post
+                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository)) return@post
                         val req = call.receive<DeviceRegisterRequest>()
                         val device = Device(
                             id = DeviceId(UUID.randomUUID().toString()),
@@ -69,6 +74,7 @@ object DeviceModule {
                     }
                     post("/{id}/pair/start") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR"))) return@post
+                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository)) return@post
                         val id = call.parameters["id"] ?: return@post call.respondError(
                             HttpStatusCode.BadRequest,
                             "missing_device_id",
@@ -97,6 +103,7 @@ object DeviceModule {
                     }
                     post("/{id}/pair/complete") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR"))) return@post
+                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository)) return@post
                         val deviceId = call.parameters["id"] ?: return@post call.respondError(
                             HttpStatusCode.BadRequest,
                             "missing_device_id",

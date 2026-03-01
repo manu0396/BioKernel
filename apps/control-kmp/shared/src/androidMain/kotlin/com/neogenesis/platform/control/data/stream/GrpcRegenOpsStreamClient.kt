@@ -1,6 +1,8 @@
 package com.neogenesis.platform.control.data.stream
 
 import com.neogenesis.platform.control.AppConfig
+import com.neogenesis.platform.control.device.DeviceInfoStore
+import com.neogenesis.platform.control.device.GrpcDeviceHeaders
 import com.neogenesis.platform.shared.domain.RunEvent
 import com.neogenesis.platform.shared.domain.RunId
 import com.neogenesis.platform.shared.network.AppLogger
@@ -39,7 +41,8 @@ import kotlinx.datetime.Instant
 class GrpcRegenOpsStreamClient(
     private val config: AppConfig,
     private val tokenStorage: TokenStorage,
-    private val logger: AppLogger
+    private val logger: AppLogger,
+    private val deviceInfoStore: DeviceInfoStore
 ) : RegenOpsStreamClient {
     private val channel: ManagedChannel = OkHttpChannelBuilder
         .forAddress(config.grpcHost, config.grpcPort)
@@ -48,7 +51,7 @@ class GrpcRegenOpsStreamClient(
 
     private fun runStub(correlationId: String): RunServiceGrpcKt.RunServiceCoroutineStub {
         return RunServiceGrpcKt.RunServiceCoroutineStub(channel)
-            .withInterceptors(AuthMetadataInterceptor(tokenStorage, correlationId))
+            .withInterceptors(AuthMetadataInterceptor(tokenStorage, correlationId, deviceInfoStore))
     }
 
     override fun streamEvents(runId: String): Flow<RunEvent> = channelFlow {
@@ -104,7 +107,8 @@ private fun backoffDelay(attempt: Int): Long {
 
 private class AuthMetadataInterceptor(
     private val tokenStorage: TokenStorage,
-    private val correlationId: String
+    private val correlationId: String,
+    private val deviceInfoStore: DeviceInfoStore
 ) : ClientInterceptor {
     override fun <ReqT : Any?, RespT : Any?> interceptCall(
         method: MethodDescriptor<ReqT, RespT>,
@@ -119,6 +123,7 @@ private class AuthMetadataInterceptor(
                     headers.put(Metadata.Key.of("Authorization", Metadata.ASCII_STRING_MARSHALLER), "Bearer $auth")
                 }
                 headers.put(Metadata.Key.of("x-correlation-id", Metadata.ASCII_STRING_MARSHALLER), correlationId)
+                GrpcDeviceHeaders.apply(headers, deviceInfoStore.get())
                 call.start(responseListener, headers)
             }
 

@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.neogenesis.platform.control.device.CapabilityGate
 import com.neogenesis.platform.control.presentation.design.NgCard
 import com.neogenesis.platform.control.presentation.design.NgColors
 import com.neogenesis.platform.control.presentation.design.NgMotion
@@ -277,6 +278,13 @@ fun RegenOpsApp(
                                             onRefresh = viewModel::loadTraceSummary,
                                         )
 
+                                    AppScreen.UNSUPPORTED ->
+                                        UnsupportedScreen(
+                                            message = state.unsupportedMessage ?: "Unsupported on this device tier.",
+                                            canGoBack = canGoBack,
+                                            onBack = viewModel::navigateBack
+                                        )
+
                                     else -> Unit
                                 }
                             }
@@ -468,12 +476,40 @@ private data class NavItem(val screen: AppScreen, val label: String, val icon: I
 
 @Composable
 private fun navItems(state: RegenOpsUiState) = buildList {
-    add(NavItem(AppScreen.PROTOCOLS, "Protocols", Icons.Default.List))
-    add(NavItem(AppScreen.RUN_CONTROL, "Control", Icons.Default.PlayArrow))
-    if (state.selectedRunId != null || state.screen == AppScreen.LIVE_RUN) add(NavItem(AppScreen.LIVE_RUN, "Live", Icons.Default.Info))
-    if (state.traceModeEnabled) add(NavItem(AppScreen.TRACE, "Trace", Icons.Default.CheckCircle))
-    add(NavItem(AppScreen.EXPORTS, "Exports", Icons.Default.KeyboardArrowDown))
-    if (state.commercialModeEnabled) add(NavItem(AppScreen.COMMERCIAL, "Pipeline", Icons.Default.Star))
+    val fallbackCaps =
+        if (state.devicePolicy == null) setOf(com.neogenesis.platform.shared.domain.device.Capability.READ_ONLY_DASHBOARD)
+        else state.devicePolicy.effectiveCapabilities
+    val gate = CapabilityGate(fallbackCaps)
+    if (gate.canAccess(AppScreen.PROTOCOLS)) add(NavItem(AppScreen.PROTOCOLS, "Protocols", Icons.Default.List))
+    if (gate.canAccess(AppScreen.RUN_CONTROL)) add(NavItem(AppScreen.RUN_CONTROL, "Control", Icons.Default.PlayArrow))
+    if ((state.selectedRunId != null || state.screen == AppScreen.LIVE_RUN) && gate.canAccess(AppScreen.LIVE_RUN)) {
+        add(NavItem(AppScreen.LIVE_RUN, "Live", Icons.Default.Info))
+    }
+    if (state.traceModeEnabled && gate.canAccess(AppScreen.TRACE)) add(NavItem(AppScreen.TRACE, "Trace", Icons.Default.CheckCircle))
+    if (gate.canAccess(AppScreen.EXPORTS)) add(NavItem(AppScreen.EXPORTS, "Exports", Icons.Default.KeyboardArrowDown))
+    if (state.commercialModeEnabled && gate.canAccess(AppScreen.COMMERCIAL)) add(NavItem(AppScreen.COMMERCIAL, "Pipeline", Icons.Default.Star))
+}
+
+@Composable
+private fun UnsupportedScreen(
+    message: String,
+    canGoBack: Boolean,
+    onBack: () -> Unit
+) {
+    NgCard {
+        Column(
+            modifier = Modifier.padding(NgSpacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(NgSpacing.Medium)
+        ) {
+            Text("Unsupported", style = MaterialTheme.typography.titleMedium)
+            Text(message, style = MaterialTheme.typography.bodyMedium)
+            if (canGoBack) {
+                OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+                    Text("Go Back")
+                }
+            }
+        }
+    }
 }
 
 object WindowSize {

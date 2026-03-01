@@ -1,5 +1,8 @@
 package com.neogenesis.platform.core.modules
 
+import com.neogenesis.platform.core.device.DevicePolicyRepository
+import com.neogenesis.platform.core.security.requireCapability
+import com.neogenesis.platform.shared.domain.device.Capability
 import io.ktor.server.application.*
 import io.ktor.server.response.respondText
 import io.ktor.server.response.respond
@@ -7,9 +10,10 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 
 object AdminOpsModule {
-    fun register(app: Application) {
+    fun register(app: Application, policyRepository: DevicePolicyRepository) {
         app.routing {
             get("/admin/metrics") {
+                if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository)) return@get
                 call.respond(
                     mapOf(
                         "uptime" to System.currentTimeMillis(),

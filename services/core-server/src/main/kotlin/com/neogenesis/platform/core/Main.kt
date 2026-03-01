@@ -101,6 +101,7 @@ fun Application.module(appConfig: AppConfig = AppConfig.fromEnv()) {
     val printJobRepository = PrintJobRepositoryImpl()
     val bioinkRepository = BioinkRepositoryImpl()
     val recipeRepository = RecipeRepositoryImpl()
+    val devicePolicyRepository = com.neogenesis.platform.core.device.DevicePolicyRepository()
 
     val telemetryBus = TelemetryBus()
     val commandBus = DeviceCommandBus()
@@ -133,11 +134,13 @@ fun Application.module(appConfig: AppConfig = AppConfig.fromEnv()) {
         RegenOpsProtocolService(),
         RegenOpsRunService(),
         RegenOpsGatewayService(),
-        RegenOpsMetricsService()
+        RegenOpsMetricsService(),
+        DevicePolicyGrpcService(devicePolicyRepository)
     )
     if (appConfig.grpcEnabled) {
         val grpcInterceptors = listOf(
             GrpcRequestContext.interceptor(),
+            GrpcDeviceContext.interceptor(devicePolicyRepository),
             com.neogenesis.platform.core.observability.GrpcMetricsInterceptor(prometheusRegistry)
         )
         installGrpcServer(
@@ -150,20 +153,21 @@ fun Application.module(appConfig: AppConfig = AppConfig.fromEnv()) {
 
     AuthModule.register(this, jwtConfig, userRepository, tokenStore, auditLogger)
     UserModule.register(this, userRepository)
-    DeviceModule.register(this, deviceRepository, pairingRepository, appConfig.pairingSecret, auditLogger)
-    TelemetryModule.register(this, telemetryRepository, telemetryBus, checkpointTracker)
-    PrintJobModule.register(this, printJobRepository, printJobEventBus, auditLogger)
-    EvidenceModule.register(this, evidenceRepository, auditLogger, evidencePackageBuilder)
-    DigitalTwinModule.register(this)
+    DeviceModule.register(this, deviceRepository, pairingRepository, appConfig.pairingSecret, auditLogger, devicePolicyRepository)
+    TelemetryModule.register(this, telemetryRepository, telemetryBus, checkpointTracker, devicePolicyRepository)
+    PrintJobModule.register(this, printJobRepository, printJobEventBus, auditLogger, devicePolicyRepository)
+    EvidenceModule.register(this, evidenceRepository, auditLogger, evidencePackageBuilder, devicePolicyRepository)
+    DigitalTwinModule.register(this, devicePolicyRepository)
     HospitalIntegrationModule.register(this)
-    AdminOpsModule.register(this)
+    AdminOpsModule.register(this, devicePolicyRepository)
     BioinkModule.register(this, bioinkRepository)
-    RecipeModule.register(this, recipeRepository, auditLogger)
+    RecipeModule.register(this, recipeRepository, auditLogger, devicePolicyRepository)
     HealthModule.register(this)
-    RegenOpsHttpModule.register(this)
-    ExportsAliasModule.register(this, telemetryRepository, evidencePackageBuilder)
+    RegenOpsHttpModule.register(this, devicePolicyRepository)
+    ExportsAliasModule.register(this, telemetryRepository, evidencePackageBuilder, devicePolicyRepository)
+    DevicePolicyModule.register(this, devicePolicyRepository)
     if (appConfig.demoModeEnabled) {
-        MetricsModule.register(this)
+        MetricsModule.register(this, devicePolicyRepository)
         CommercialModule.register(this)
         DemoSimulatorModule.register(this)
     }

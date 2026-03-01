@@ -31,8 +31,8 @@ fun desktopPlatformModule(appConfig: AppConfig): Module = module {
         if (appConfig.grpcHost.isBlank()) {
             HttpControlApi(get())
         } else {
-            GrpcControlApi(appConfig)
+            GrpcControlApi(appConfig, get())
         }
     }
-    single<RegenOpsStreamClient> { GrpcRegenOpsStreamClient(appConfig, get(), get()) }
+    single<RegenOpsStreamClient> { GrpcRegenOpsStreamClient(appConfig, get(), get(), get()) }
 }

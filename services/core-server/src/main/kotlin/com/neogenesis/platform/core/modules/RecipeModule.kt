@@ -2,10 +2,13 @@ package com.neogenesis.platform.core.modules
 
 import com.neogenesis.platform.core.audit.AuditLogger
 import com.neogenesis.platform.core.security.enforceRole
+import com.neogenesis.platform.core.security.requireCapability
 import com.neogenesis.platform.core.security.jwtSubject
 import com.neogenesis.platform.core.storage.RecipeRepositoryImpl
 import com.neogenesis.platform.core.storage.SystemIds
 import com.neogenesis.platform.shared.domain.*
+import com.neogenesis.platform.shared.domain.device.Capability
+import com.neogenesis.platform.core.device.DevicePolicyRepository
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
 import io.ktor.server.auth.authenticate
@@ -44,17 +47,20 @@ object RecipeModule {
     fun register(
         app: Application,
         repository: RecipeRepositoryImpl,
-        auditLogger: AuditLogger
+        auditLogger: AuditLogger,
+        policyRepository: DevicePolicyRepository
     ) {
         app.routing {
             authenticate("auth-jwt") {
                 route("/api/v1/recipes") {
                     get {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER", "AUDITOR"))) return@get
+                        if (!call.requireCapability(Capability.READ_ONLY_DASHBOARD, policyRepository)) return@get
                         call.respond(repository.list())
                     }
                     post {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER"))) return@post
+                        if (!call.requireCapability(Capability.PROTOCOL_EDIT, policyRepository)) return@post
                         val req = call.receive<CreateRecipeRequest>()
                         val now = Clock.System.now()
                         val recipe = Recipe(
@@ -79,6 +85,7 @@ object RecipeModule {
                     }
                     put("/{id}") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER"))) return@put
+                        if (!call.requireCapability(Capability.PROTOCOL_EDIT, policyRepository)) return@put
                         val id = call.parameters["id"] ?: return@put call.respond(HttpStatusCode.BadRequest)
                         val existing = repository.findById(RecipeId(id))
                             ?: return@put call.respond(HttpStatusCode.NotFound)
@@ -106,6 +113,7 @@ object RecipeModule {
                     }
                     post("/{id}/activate") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER"))) return@post
+                        if (!call.requireCapability(Capability.PROTOCOL_EDIT, policyRepository)) return@post
                         val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
                         val req = call.receive<ActivateRecipeRequest>()
                         repository.findById(RecipeId(id))

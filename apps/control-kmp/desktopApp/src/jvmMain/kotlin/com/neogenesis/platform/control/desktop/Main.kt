@@ -25,6 +25,7 @@ fun main() = application {
         grpcHost = getSetting(props, "REGENOPS_GRPC_HOST", "localhost"),
         grpcPort = getSetting(props, "REGENOPS_GRPC_PORT", "9090").toInt(),
         grpcUseTls = getSetting(props, "REGENOPS_GRPC_TLS", "false").toBoolean(),
+        appVersion = getSetting(props, "APP_VERSION", readVersionFile() ?: "1.0.0"),
         oidcIssuer = getSetting(props, "OIDC_ISSUER", ""),
         oidcClientId = getSetting(props, "OIDC_CLIENT_ID", ""),
         oidcAudience = getSetting(props, "OIDC_AUDIENCE", null),
@@ -90,4 +91,16 @@ private fun getSetting(props: Properties, key: String, default: String?): String
         ?: props.getProperty(key.lowercase().replace("_", "."))
         ?: default 
         ?: ""
+}
+
+private fun readVersionFile(): String? {
+    val candidates = listOf(
+        File("VERSION"),
+        File("../VERSION"),
+        File("../../VERSION")
+    )
+    return candidates.firstOrNull { it.exists() }
+        ?.readText()
+        ?.trim()
+        ?.takeIf { it.isNotBlank() }
 }

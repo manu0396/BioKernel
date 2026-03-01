@@ -12,8 +12,10 @@ import com.neogenesis.platform.control.data.remote.CommercialApi
 import com.neogenesis.platform.control.data.remote.SimulatorApi
 import com.neogenesis.platform.control.data.remote.DemoExportsApi
 import com.neogenesis.platform.control.data.remote.DemoTraceApi
+import com.neogenesis.platform.control.data.remote.DevicePolicyApi
 import com.neogenesis.platform.control.data.remote.ExportsApi
 import com.neogenesis.platform.control.data.remote.HttpCommercialApi
+import com.neogenesis.platform.control.data.remote.HttpDevicePolicyApi
 import com.neogenesis.platform.control.data.remote.HttpExportsApi
 import com.neogenesis.platform.control.data.remote.HttpSimulatorApi
 import com.neogenesis.platform.control.data.remote.HttpTraceApi
@@ -25,6 +27,8 @@ import com.neogenesis.platform.control.presentation.RegenOpsViewModel
 import com.neogenesis.platform.control.data.db.RegenOpsDatabase
 import com.neogenesis.platform.control.data.db.Protocol_versions
 import com.neogenesis.platform.control.util.FileNameUtils
+import com.neogenesis.platform.control.device.DeviceInfoStore
+import com.neogenesis.platform.control.device.detectDeviceInfo
 import com.neogenesis.platform.shared.network.AppLogger
 import com.neogenesis.platform.shared.network.HttpClientFactory
 import com.neogenesis.platform.shared.network.NetworkConfig
@@ -55,11 +59,16 @@ fun commonModule(appConfig: AppConfig) = module {
     single { appConfig }
     single<AppLogger> { NoOpLogger }
     single {
+        val initialInfo = detectDeviceInfo(appConfig.appVersion, null)
+        DeviceInfoStore(initialInfo)
+    }
+    single {
         HttpClientFactory.create(
             NetworkConfig(
                 baseUrl = appConfig.httpBaseUrl,
                 allowCleartext = allowCleartextForLocalhost(appConfig.httpBaseUrl),
-                tenantId = appConfig.tenantId
+                tenantId = appConfig.tenantId,
+                deviceInfoProvider = { get<DeviceInfoStore>().get() }
             ),
             tokenStorage = get<TokenStorage>()
         )
@@ -74,6 +83,7 @@ fun commonModule(appConfig: AppConfig) = module {
     single { RegenOpsLocalDataSource(get()) }
     single { OidcDeviceAuthService(get(), get()) }
     single { OidcRepository(get(), get(), get()) }
+    single<DevicePolicyApi> { HttpDevicePolicyApi(get()) }
     single {
         if (appConfig.demoModeEnabled) {
             RegenOpsRepository(DemoControlApi(), get(), DemoStreamClient())
@@ -97,5 +107,5 @@ fun commonModule(appConfig: AppConfig) = module {
     }
     single<CommercialApi> { HttpCommercialApi(get()) }
     single<SimulatorApi> { HttpSimulatorApi(get()) }
-    single { RegenOpsViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { RegenOpsViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 }

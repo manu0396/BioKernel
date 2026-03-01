@@ -3,11 +3,14 @@ package com.neogenesis.platform.core.modules
 import com.neogenesis.platform.core.audit.AuditLogger
 import com.neogenesis.platform.core.grpc.PrintJobEventBus
 import com.neogenesis.platform.core.security.enforceRole
+import com.neogenesis.platform.core.security.requireCapability
 import com.neogenesis.platform.core.security.jwtSubject
 import com.neogenesis.platform.core.storage.SystemIds
 import com.neogenesis.platform.core.storage.PrintJobRepositoryImpl
 import com.neogenesis.platform.proto.v1.PrintJobEvent
 import com.neogenesis.platform.shared.domain.*
+import com.neogenesis.platform.shared.domain.device.Capability
+import com.neogenesis.platform.core.device.DevicePolicyRepository
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
 import io.ktor.server.auth.authenticate
@@ -40,17 +43,20 @@ object PrintJobModule {
         app: Application,
         repository: PrintJobRepositoryImpl,
         bus: PrintJobEventBus,
-        auditLogger: AuditLogger
+        auditLogger: AuditLogger,
+        policyRepository: DevicePolicyRepository
     ) {
         app.routing {
             authenticate("auth-jwt") {
                 route("/api/v1/print-jobs") {
                     get {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER", "AUDITOR"))) return@get
+                        if (!call.requireCapability(Capability.READ_ONLY_DASHBOARD, policyRepository)) return@get
                         call.respond(repository.list(limit = 200))
                     }
                     post {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR"))) return@post
+                        if (!call.requireCapability(Capability.PRINT_CONTROL, policyRepository)) return@post
                         val req = call.receive<CreatePrintJobRequest>()
                         val job = PrintJob(
                             id = PrintJobId(UUID.randomUUID().toString()),
@@ -81,6 +87,7 @@ object PrintJobModule {
                     }
                     put("/{id}/status") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR"))) return@put
+                        if (!call.requireCapability(Capability.PRINT_CONTROL, policyRepository)) return@put
                         val id = call.parameters["id"] ?: return@put call.respond(HttpStatusCode.BadRequest)
                         val job = repository.findById(PrintJobId(id))
                             ?: return@put call.respond(HttpStatusCode.NotFound)

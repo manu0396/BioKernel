@@ -3,7 +3,9 @@ package com.neogenesis.platform.control.presentation
 import com.neogenesis.platform.control.AppConfig
 import com.neogenesis.platform.control.data.RegenOpsRepository
 import com.neogenesis.platform.control.data.oidc.OidcRepository
+import com.neogenesis.platform.control.data.remote.DevicePolicyApi
 import com.neogenesis.platform.control.data.remote.SimulatorApi
+import com.neogenesis.platform.control.device.DeviceInfoStore
 import com.neogenesis.platform.shared.domain.Protocol
 import com.neogenesis.platform.shared.domain.ProtocolId
 import com.neogenesis.platform.shared.domain.ProtocolVersion
@@ -11,6 +13,9 @@ import com.neogenesis.platform.shared.domain.ProtocolVersionId
 import com.neogenesis.platform.shared.domain.Run
 import com.neogenesis.platform.shared.domain.RunId
 import com.neogenesis.platform.shared.domain.RunStatus
+import com.neogenesis.platform.shared.domain.device.DeviceClass
+import com.neogenesis.platform.shared.domain.device.DeviceInfo
+import com.neogenesis.platform.shared.domain.device.DeviceTier
 import com.neogenesis.platform.shared.network.ApiResult
 import com.neogenesis.platform.shared.network.NoOpLogger
 import io.mockk.coEvery
@@ -41,6 +46,8 @@ class RegenOpsViewModelTest {
                 config = sampleConfig(),
                 repository = repository,
                 oidcRepository = mockOidc(),
+                devicePolicyApi = mockk(relaxed = true),
+                deviceInfoStore = sampleDeviceInfoStore(),
                 commercialApi = mockk(relaxed = true),
                 exportsApi = mockk(relaxed = true),
                 traceApi = mockk(relaxed = true),
@@ -74,6 +81,8 @@ class RegenOpsViewModelTest {
                 config = sampleConfig(),
                 repository = repository,
                 oidcRepository = mockOidc(),
+                devicePolicyApi = mockk(relaxed = true),
+                deviceInfoStore = sampleDeviceInfoStore(),
                 commercialApi = mockk(relaxed = true),
                 exportsApi = mockk(relaxed = true),
                 traceApi = mockk(relaxed = true),
@@ -99,6 +108,7 @@ class RegenOpsViewModelTest {
         grpcHost = "localhost",
         grpcPort = 9090,
         grpcUseTls = false,
+        appVersion = "1.0.0",
         oidcIssuer = "",
         oidcClientId = "",
         oidcAudience = null,
@@ -108,6 +118,20 @@ class RegenOpsViewModelTest {
         founderModeEnabled = false,
         commercialModeEnabled = false
     )
+
+    private fun sampleDeviceInfoStore(): DeviceInfoStore =
+        DeviceInfoStore(
+            DeviceInfo(
+                deviceId = "device-1",
+                deviceClass = DeviceClass.WINDOWS_DESKTOP,
+                tier = DeviceTier.TIER_1,
+                appVersion = "1.0.0",
+                platform = "desktop",
+                model = "test",
+                osVersion = "1",
+                policyVersion = null
+            )
+        )
 
     private fun mockRepository(
         protocolFlow: Flow<List<Protocol>>,

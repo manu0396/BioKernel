@@ -81,6 +81,7 @@ dependencies {
     implementation(libs.flyway)
     implementation(libs.jbcrypt)
     implementation(libs.identity.jvm)
+    implementation(libs.snakeyaml)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.grpc.inprocess)

@@ -16,6 +16,7 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 fun androidPlatformModule(context: Context, appConfig: AppConfig): Module = module {
+    com.neogenesis.platform.control.device.AndroidDeviceContext.init(context)
     single<AppLogger> { AndroidAppLogger() }
     single<TokenStorage> { AndroidTokenStorage(context) }
     single<SqlDriver> { AndroidSqliteDriver(RegenOpsDatabase.Schema, context, "regenops.db") }
@@ -23,8 +24,8 @@ fun androidPlatformModule(context: Context, appConfig: AppConfig): Module = modu
         if (appConfig.grpcHost.isBlank()) {
             HttpControlApi(get())
         } else {
-            GrpcControlApi(appConfig)
+            GrpcControlApi(appConfig, get())
         }
     }
-    single<RegenOpsStreamClient> { GrpcRegenOpsStreamClient(appConfig, get(), get()) }
+    single<RegenOpsStreamClient> { GrpcRegenOpsStreamClient(appConfig, get(), get(), get()) }
 }

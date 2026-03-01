@@ -38,6 +38,7 @@ opentelemetry = "1.39.0"
 neogenesisContracts = "1.0.0"
 apachePoi = "5.2.5"
 identityJvm = "202411.1"
+snakeyaml = "2.2"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
@@ -122,6 +123,7 @@ sqldelight-coroutines-extensions = { module = "app.cash.sqldelight:coroutines-ex
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
 identity-jvm = { group = "com.android.identity", name = "identity-jvm", version.ref = "identityJvm" }
+snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

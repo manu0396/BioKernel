@@ -2,17 +2,23 @@ package com.neogenesis.platform.control.presentation
 
 import com.neogenesis.platform.control.AppConfig
 import com.neogenesis.platform.control.data.RegenOpsRepository
+import com.neogenesis.platform.control.data.remote.DevicePolicyApi
 import com.neogenesis.platform.control.data.remote.CommercialApi
 import com.neogenesis.platform.control.data.remote.CreateProtocolRequest
 import com.neogenesis.platform.control.data.remote.ExportsApi
 import com.neogenesis.platform.control.data.remote.SimulatorApi
 import com.neogenesis.platform.control.data.remote.TraceApi
+import com.neogenesis.platform.control.device.CapabilityGate
+import com.neogenesis.platform.control.device.DeviceInfoStore
+import com.neogenesis.platform.control.device.buildDevicePolicyState
 import com.neogenesis.platform.control.data.oidc.DeviceAuthorization
 import com.neogenesis.platform.control.data.oidc.OidcConfig
 import com.neogenesis.platform.control.data.oidc.OidcRepository
 import com.neogenesis.platform.shared.domain.Protocol
 import com.neogenesis.platform.shared.domain.ProtocolVersion
 import com.neogenesis.platform.shared.domain.RunStatus
+import com.neogenesis.platform.shared.domain.device.Capability
+import com.neogenesis.platform.shared.domain.device.effectiveCapabilities
 import com.neogenesis.platform.shared.network.ApiResult
 import com.neogenesis.platform.shared.network.AppLogger
 import com.neogenesis.platform.shared.network.LogLevel
@@ -32,6 +38,8 @@ class RegenOpsViewModel(
     private val config: AppConfig,
     private val repository: RegenOpsRepository,
     private val oidcRepository: OidcRepository,
+    private val devicePolicyApi: DevicePolicyApi,
+    private val deviceInfoStore: DeviceInfoStore,
     private val commercialApi: CommercialApi,
     private val exportsApi: ExportsApi,
     private val traceApi: TraceApi,
@@ -60,6 +68,16 @@ class RegenOpsViewModel(
     val state: StateFlow<RegenOpsUiState> = _state
 
     init {
+        scope.launch {
+            val initialInfo = deviceInfoStore.get()
+            val policyResult = devicePolicyApi.registerDevice(initialInfo)
+            val policy = (policyResult as? ApiResult.Success)?.value
+            deviceInfoStore.updatePolicyVersion(policy?.version)
+            val resolvedInfo = deviceInfoStore.get()
+            val policyState = buildDevicePolicyState(resolvedInfo, policy)
+            _state.update { it.copy(devicePolicy = policyState) }
+        }
+
         scope.launch {
             repository.protocols.collectLatest { protocols ->
                 _state.update { current ->
@@ -130,7 +148,18 @@ class RegenOpsViewModel(
     }
 
     private fun setScreenInternal(screen: AppScreen) {
-        _state.update { it.copy(screen = screen) }
+        val gate = CapabilityGate(currentCapabilities())
+        if (!gate.canAccess(screen)) {
+            _state.update {
+                it.copy(
+                    screen = AppScreen.UNSUPPORTED,
+                    unsupportedMessage = "Unsupported on this device tier."
+                )
+            }
+            return
+        }
+
+        _state.update { it.copy(screen = screen, unsupportedMessage = null) }
 
         // Leaving live stream screen stops streaming
         if (screen != AppScreen.LIVE_RUN) stopStreaming()
@@ -218,6 +247,7 @@ class RegenOpsViewModel(
     }
 
     fun createProtocol(request: CreateProtocolRequest) {
+        if (!requireCapability(Capability.PROTOCOL_EDIT)) return
         if (_state.value.isCreatingProtocol) return
         _state.update { it.copy(isCreatingProtocol = true, errorBanner = null) }
         scope.launch {
@@ -247,6 +277,7 @@ class RegenOpsViewModel(
     }
 
     fun updateProtocolStatus(protocolId: String, status: String) {
+        if (!requireCapability(Capability.PROTOCOL_EDIT)) return
         if (_state.value.isUpdatingProtocolStatus) return
         val currentStatus = _state.value.selectedProtocol?.status ?: "DRAFT"
         val normalized = status.trim().uppercase()
@@ -306,6 +337,7 @@ class RegenOpsViewModel(
     }
 
     fun publishSelectedVersion() {
+        if (!requireCapability(Capability.PROTOCOL_EDIT)) return
         val version = _state.value.selectedVersion ?: return
         scope.launch {
             when (val result = repository.publishVersion(version.protocolId.value, version.id.value)) {
@@ -318,6 +350,7 @@ class RegenOpsViewModel(
     }
 
     fun startRun() {
+        if (!requireCapability(Capability.PRINT_CONTROL)) return
         if (_state.value.isStartingRun) {
             _state.update { it.copy(statusMessage = "Run already starting...") }
             return
@@ -373,6 +406,7 @@ class RegenOpsViewModel(
     }
 
     fun startSimulatedRun(config: SimulationConfig) {
+        if (!requireCapability(Capability.PRINT_CONTROL)) return
         if (_state.value.isStartingRun) {
             _state.update { it.copy(statusMessage = "Simulation already starting...") }
             return
@@ -431,6 +465,7 @@ class RegenOpsViewModel(
     }
 
     fun pauseRun() {
+        if (!requireCapability(Capability.PRINT_CONTROL)) return
         val runId = _state.value.selectedRunId ?: _state.value.runs.firstOrNull()?.id?.value ?: return
         scope.launch {
             when (val result = repository.updateRunStatus(runId, RunStatus.PAUSED)) {
@@ -443,6 +478,7 @@ class RegenOpsViewModel(
     }
 
     fun abortRun() {
+        if (!requireCapability(Capability.PRINT_CONTROL)) return
         val runId = _state.value.selectedRunId ?: _state.value.runs.firstOrNull()?.id?.value ?: return
         scope.launch {
             when (val result = repository.updateRunStatus(runId, RunStatus.ABORTED)) {
@@ -608,6 +644,7 @@ class RegenOpsViewModel(
     // Exports (Report / PDF)
     // -----------------------------------------------------------------------------
     fun exportRunReport(onExport: (ByteArray, String, String) -> Unit) {
+        if (!requireCapability(Capability.QC_REVIEW)) return
         if (!_state.value.founderModeEnabled && !_state.value.demoModeEnabled) {
             _state.update { it.copy(export = it.export.copy(errorMessage = "Exports require demo or founder mode")) }
             return
@@ -649,6 +686,7 @@ class RegenOpsViewModel(
     }
 
     fun exportAuditBundle(onExport: (ByteArray, String, String) -> Unit) {
+        if (!requireCapability(Capability.QC_REVIEW)) return
         if (!_state.value.founderModeEnabled && !_state.value.demoModeEnabled) {
             _state.update { it.copy(export = it.export.copy(errorMessage = "Exports require demo or founder mode")) }
             return
@@ -682,6 +720,7 @@ class RegenOpsViewModel(
     }
 
     fun exportCommercialCsv(onExport: (ByteArray) -> Unit) {
+        if (!requireCapability(Capability.READ_ONLY_DASHBOARD)) return
         if (!_state.value.commercialModeEnabled) return
         scope.launch {
             when (val result = commercialApi.exportCsv()) {
@@ -743,6 +782,29 @@ class RegenOpsViewModel(
                 }
             }
         }
+
+    private fun currentCapabilities(): Set<Capability> {
+        val policyState = _state.value.devicePolicy
+        return policyState?.effectiveCapabilities
+            ?: effectiveCapabilities(
+                deviceInfoStore.get().tier,
+                deviceInfoStore.get().deviceClass,
+                null
+            )
+    }
+
+    private fun requireCapability(required: Capability): Boolean {
+        val allowed = currentCapabilities().contains(required)
+        if (!allowed) {
+            _state.update {
+                it.copy(
+                    errorBanner = "Unsupported on this device tier.",
+                    statusMessage = null
+                )
+            }
+        }
+        return allowed
+    }
 }
 
 

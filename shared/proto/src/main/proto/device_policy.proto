@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package com.neogenesis.platform.proto.v1;
+
+option java_multiple_files = true;
+option java_package = "com.neogenesis.platform.proto.v1";
+
+service DevicePolicyService {
+  rpc GetDevicePolicy(Empty) returns (DevicePolicy);
+  rpc RegisterDevice(DeviceInfo) returns (DevicePolicy);
+}
+
+message Empty {}
+
+enum DeviceTier {
+  TIER_1 = 0;
+  TIER_2 = 1;
+  TIER_3 = 2;
+}
+
+enum DeviceClass {
+  WINDOWS_DESKTOP = 0;
+  MAC_DESKTOP = 1;
+  IPAD_TABLET = 2;
+  ANDROID_TABLET = 3;
+  IOS_PHONE = 4;
+  ANDROID_PHONE = 5;
+  EMBEDDED_TOUCHSCREEN = 6;
+  TV_DISPLAY = 7;
+  UNKNOWN = 8;
+}
+
+enum Capability {
+  PRINT_CONTROL = 0;
+  PROTOCOL_EDIT = 1;
+  QC_REVIEW = 2;
+  QC_APPROVAL = 3;
+  LIVE_MONITOR = 4;
+  ALERTS = 5;
+  READ_ONLY_DASHBOARD = 6;
+  ADMIN_SETTINGS = 7;
+}
+
+message DeviceInfo {
+  string device_id = 1;
+  DeviceClass device_class = 2;
+  DeviceTier tier = 3;
+  string app_version = 4;
+  string platform = 5;
+  string model = 6;
+  string os_version = 7;
+  int32 policy_version = 8;
+}
+
+message TierCapabilities {
+  DeviceTier tier = 1;
+  repeated Capability capabilities = 2;
+}
+
+message ClassCapabilities {
+  DeviceClass device_class = 1;
+  repeated Capability capabilities = 2;
+}
+
+message DevicePolicy {
+  int32 version = 1;
+  string min_app_version = 2;
+  repeated TierCapabilities tier_caps = 3;
+  repeated ClassCapabilities class_caps = 4;
+  bool allow_tier3_alerts = 5;
+}

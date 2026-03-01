@@ -5,6 +5,7 @@ data class AppConfig(
     val grpcHost: String,
     val grpcPort: Int,
     val grpcUseTls: Boolean,
+    val appVersion: String,
     val oidcIssuer: String,
     val oidcClientId: String,
     val oidcAudience: String? = null,

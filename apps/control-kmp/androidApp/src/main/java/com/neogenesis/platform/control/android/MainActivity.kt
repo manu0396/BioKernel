@@ -24,6 +24,7 @@ class MainActivity : ComponentActivity(), KoinComponent {
             grpcHost = BuildConfig.REGENOPS_GRPC_HOST,
             grpcPort = BuildConfig.REGENOPS_GRPC_PORT,
             grpcUseTls = BuildConfig.REGENOPS_GRPC_TLS,
+            appVersion = BuildConfig.VERSION_NAME,
             oidcIssuer = BuildConfig.OIDC_ISSUER,
             oidcClientId = BuildConfig.OIDC_CLIENT_ID,
             oidcAudience = BuildConfig.OIDC_AUDIENCE.takeIf { it.isNotBlank() },

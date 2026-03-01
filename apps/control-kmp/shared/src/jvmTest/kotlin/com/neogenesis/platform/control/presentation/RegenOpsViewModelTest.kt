@@ -8,6 +8,11 @@ import com.neogenesis.platform.control.data.remote.CommercialApi
 import com.neogenesis.platform.control.data.remote.ExportsApi
 import com.neogenesis.platform.control.data.remote.SimulatorApi
 import com.neogenesis.platform.control.data.remote.TraceApi
+import com.neogenesis.platform.control.data.remote.DevicePolicyApi
+import com.neogenesis.platform.control.device.DeviceInfoStore
+import com.neogenesis.platform.shared.domain.device.DeviceClass
+import com.neogenesis.platform.shared.domain.device.DeviceInfo
+import com.neogenesis.platform.shared.domain.device.DeviceTier
 import com.neogenesis.platform.shared.domain.Protocol
 import com.neogenesis.platform.shared.domain.ProtocolId
 import com.neogenesis.platform.shared.domain.ProtocolVersion
@@ -61,6 +66,7 @@ class RegenOpsViewModelTest {
             grpcHost = "localhost",
             grpcPort = 9090,
             grpcUseTls = false,
+            appVersion = "1.0.0",
             oidcIssuer = "",
             oidcClientId = "",
             oidcAudience = null,
@@ -73,11 +79,26 @@ class RegenOpsViewModelTest {
 
         val simulatorApi: SimulatorApi = mockk(relaxed = true)
         val logger: AppLogger = NoOpLogger
+        val devicePolicyApi: DevicePolicyApi = mockk(relaxed = true)
+        val deviceInfoStore = DeviceInfoStore(
+            DeviceInfo(
+                deviceId = "device-1",
+                deviceClass = DeviceClass.WINDOWS_DESKTOP,
+                tier = DeviceTier.TIER_1,
+                appVersion = "1.0.0",
+                platform = "desktop",
+                model = "test",
+                osVersion = "1",
+                policyVersion = null
+            )
+        )
 
         val viewModel = RegenOpsViewModel(
             config = config,
             repository = repository,
             oidcRepository = oidcRepository,
+            devicePolicyApi = devicePolicyApi,
+            deviceInfoStore = deviceInfoStore,
             commercialApi = commercialApi,
             exportsApi = exportsApi,
             traceApi = traceApi,

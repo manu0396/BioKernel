@@ -15,7 +15,8 @@ enum class AppScreen {
     AUTH,
     COMMERCIAL,
     EXPORTS,
-    TRACE
+    TRACE,
+    UNSUPPORTED
 }
 
 data class AuthUiState(
@@ -72,5 +73,7 @@ data class RegenOpsUiState(
     val errorBanner: String? = null,
     val streamStatus: String? = null,
     val auth: AuthUiState = AuthUiState(),
-    val statusMessage: String? = null
+    val statusMessage: String? = null,
+    val devicePolicy: com.neogenesis.platform.control.device.DevicePolicyState? = null,
+    val unsupportedMessage: String? = null
 )

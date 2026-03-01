@@ -8,7 +8,8 @@ data class NetworkConfig(
     val retries: Int = 2,
     val allowCleartext: Boolean = false,
     val tenantId: String? = null,
-    val correlationIdProvider: () -> String = { CorrelationIds.newId() }
+    val correlationIdProvider: () -> String = { CorrelationIds.newId() },
+    val deviceInfoProvider: (() -> com.neogenesis.platform.shared.domain.device.DeviceInfo?)? = null
 )
 
 fun allowCleartextForLocalhost(baseUrl: String): Boolean {

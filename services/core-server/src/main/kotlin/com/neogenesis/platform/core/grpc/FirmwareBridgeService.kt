@@ -8,6 +8,7 @@ import com.neogenesis.platform.firmware.v1.CommandResponse
 import com.neogenesis.platform.firmware.v1.DeviceHealth
 import com.neogenesis.platform.firmware.v1.FirmwareBridgeGrpcKt
 import com.neogenesis.platform.firmware.v1.TelemetryFrame
+import com.neogenesis.platform.shared.domain.device.Capability
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -23,6 +24,7 @@ class FirmwareBridgeService(
 ) : FirmwareBridgeGrpcKt.FirmwareBridgeCoroutineImplBase() {
 
     override fun telemetryStream(requests: Flow<TelemetryFrame>): Flow<CommandRequest> = channelFlow {
+        GrpcCapabilityGuard.requireCapability(Capability.LIVE_MONITOR)
         val watchdog = TelemetryWatchdog(timeoutMs = 500)
         launch {
             while (true) {
@@ -75,6 +77,7 @@ class FirmwareBridgeService(
     }
 
     override suspend fun healthStream(requests: Flow<DeviceHealth>): CommandResponse {
+        GrpcCapabilityGuard.requireCapability(Capability.LIVE_MONITOR)
         var last: DeviceHealth? = null
         requests.collect { health ->
             last = health

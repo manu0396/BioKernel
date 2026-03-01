@@ -3,10 +3,13 @@ package com.neogenesis.platform.core.modules
 import com.neogenesis.platform.core.grpc.TelemetryBus
 import com.neogenesis.platform.core.http.respondError
 import com.neogenesis.platform.core.security.enforceRole
+import com.neogenesis.platform.core.security.requireCapability
 import com.neogenesis.platform.core.storage.TelemetryRepositoryImpl
 import com.neogenesis.platform.core.telemetry.TelemetryCheckpointTracker
 import com.neogenesis.platform.shared.domain.DeviceId
 import com.neogenesis.platform.shared.domain.PrintJobId
+import com.neogenesis.platform.shared.domain.device.Capability
+import com.neogenesis.platform.core.device.DevicePolicyRepository
 import com.neogenesis.platform.shared.errors.DomainResult
 import com.neogenesis.platform.shared.telemetry.TelemetryExport
 import com.neogenesis.platform.shared.telemetry.TelemetryFrame
@@ -29,13 +32,15 @@ object TelemetryModule {
         app: Application,
         repository: TelemetryRepositoryImpl,
         bus: TelemetryBus,
-        checkpointTracker: TelemetryCheckpointTracker
+        checkpointTracker: TelemetryCheckpointTracker,
+        policyRepository: DevicePolicyRepository
     ) {
         app.routing {
             authenticate("auth-jwt") {
                 route("/api/v1/telemetry") {
                     post("/{jobId}/{deviceId}") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR"))) return@post
+                        if (!call.requireCapability(Capability.PRINT_CONTROL, policyRepository)) return@post
                         val jobId = call.parameters["jobId"] ?: return@post call.respondError(
                             HttpStatusCode.BadRequest,
                             "missing_job_id",
@@ -63,6 +68,7 @@ object TelemetryModule {
                     }
                     get("/{jobId}/export") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER", "AUDITOR"))) return@get
+                        if (!call.requireCapability(Capability.QC_REVIEW, policyRepository)) return@get
                         val jobId = call.parameters["jobId"] ?: return@get call.respondError(
                             HttpStatusCode.BadRequest,
                             "missing_job_id",

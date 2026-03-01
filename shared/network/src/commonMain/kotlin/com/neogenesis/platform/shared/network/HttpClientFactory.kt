@@ -42,6 +42,33 @@ object HttpClientFactory {
                 if (!headers.contains("X-Correlation-Id")) {
                     header("X-Correlation-Id", config.correlationIdProvider())
                 }
+                val deviceInfo = config.deviceInfoProvider?.invoke()
+                if (deviceInfo != null) {
+                    if (!headers.contains(DeviceHeaders.DEVICE_ID) && deviceInfo.deviceId != null) {
+                        header(DeviceHeaders.DEVICE_ID, deviceInfo.deviceId)
+                    }
+                    if (!headers.contains(DeviceHeaders.DEVICE_CLASS)) {
+                        header(DeviceHeaders.DEVICE_CLASS, deviceInfo.deviceClass.name)
+                    }
+                    if (!headers.contains(DeviceHeaders.DEVICE_TIER)) {
+                        header(DeviceHeaders.DEVICE_TIER, deviceInfo.tier.name)
+                    }
+                    if (!headers.contains(DeviceHeaders.APP_VERSION)) {
+                        header(DeviceHeaders.APP_VERSION, deviceInfo.appVersion)
+                    }
+                    if (!headers.contains(DeviceHeaders.PLATFORM)) {
+                        header(DeviceHeaders.PLATFORM, deviceInfo.platform)
+                    }
+                    if (!headers.contains(DeviceHeaders.OS_VERSION) && deviceInfo.osVersion != null) {
+                        header(DeviceHeaders.OS_VERSION, deviceInfo.osVersion)
+                    }
+                    if (!headers.contains(DeviceHeaders.DEVICE_MODEL) && deviceInfo.model != null) {
+                        header(DeviceHeaders.DEVICE_MODEL, deviceInfo.model)
+                    }
+                    if (!headers.contains(DeviceHeaders.POLICY_VERSION) && deviceInfo.policyVersion != null) {
+                        header(DeviceHeaders.POLICY_VERSION, deviceInfo.policyVersion.toString())
+                    }
+                }
                 tokenStorage?.readAccessToken()?.let { token ->
                     header(HttpHeaders.Authorization, "Bearer $token")
                 }
