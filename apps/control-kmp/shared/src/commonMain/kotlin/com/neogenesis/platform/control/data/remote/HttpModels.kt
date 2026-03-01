@@ -19,6 +19,7 @@ data class ProtocolSummaryDto(
     val evidenceSummary: String? = null,
     val lastRunTimeline: List<String> = emptyList(),
     val evidenceArtifacts: List<String> = emptyList(),
+    val lastRunId: String? = null,
     val latestVersion: Int
 )
 
@@ -35,7 +36,13 @@ data class CreateProtocolRequest(
     val resultMetrics: Map<String, String> = emptyMap(),
     val evidenceSummary: String? = null,
     val lastRunTimeline: List<String> = emptyList(),
-    val evidenceArtifacts: List<String> = emptyList()
+    val evidenceArtifacts: List<String> = emptyList(),
+    val lastRunId: String? = null
+)
+
+@Serializable
+data class UpdateProtocolStatusRequest(
+    val status: String
 )
 
 @Serializable

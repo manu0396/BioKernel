@@ -45,6 +45,7 @@ class DemoControlApi : ControlApi {
                 "00:18 Export sealed"
             ),
             evidenceArtifacts = listOf("run_report.csv", "audit_bundle.zip"),
+            lastRunId = "run-demo",
             latestVersion = version,
             versions = listOf(version)
         )
@@ -74,11 +75,20 @@ class DemoControlApi : ControlApi {
             evidenceSummary = request.evidenceSummary,
             lastRunTimeline = request.lastRunTimeline,
             evidenceArtifacts = request.evidenceArtifacts,
+            lastRunId = request.lastRunId,
             latestVersion = version,
             versions = listOf(version)
         )
         protocols.add(protocol)
         return ApiResult.Success(protocol)
+    }
+
+    override suspend fun updateProtocolStatus(protocolId: String, status: String): ApiResult<Protocol> {
+        val index = protocols.indexOfFirst { it.id.value == protocolId }
+        if (index == -1) return ApiResult.Failure(NetworkError.UnknownError("protocol_not_found"))
+        val updated = protocols[index].copy(status = status)
+        protocols[index] = updated
+        return ApiResult.Success(updated)
     }
 
     override suspend fun listRuns(): ApiResult<List<Run>> {

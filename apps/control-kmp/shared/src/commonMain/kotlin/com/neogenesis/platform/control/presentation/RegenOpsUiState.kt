@@ -68,6 +68,7 @@ data class RegenOpsUiState(
     val simulatedRunEnabled: Boolean = false,
     val isStartingRun: Boolean = false,
     val isCreatingProtocol: Boolean = false,
+    val isUpdatingProtocolStatus: Boolean = false,
     val errorBanner: String? = null,
     val streamStatus: String? = null,
     val auth: AuthUiState = AuthUiState(),

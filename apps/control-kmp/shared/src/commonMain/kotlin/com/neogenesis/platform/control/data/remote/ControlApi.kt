@@ -9,6 +9,7 @@ import com.neogenesis.platform.shared.network.ApiResult
 interface ControlApi {
     suspend fun listProtocols(): ApiResult<List<Protocol>>
     suspend fun createProtocol(request: CreateProtocolRequest): ApiResult<Protocol>
+    suspend fun updateProtocolStatus(protocolId: String, status: String): ApiResult<Protocol>
     suspend fun listRuns(): ApiResult<List<Run>>
     suspend fun publishVersion(protocolId: String, versionId: String): ApiResult<ProtocolVersion>
     suspend fun startRun(protocolId: String, versionId: String): ApiResult<Run>

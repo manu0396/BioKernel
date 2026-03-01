@@ -39,6 +39,10 @@ class GrpcControlApi(
     override suspend fun createProtocol(request: CreateProtocolRequest): ApiResult<Protocol> =
         ApiResult.Failure(NetworkError.UnknownError("grpc_not_supported"))
 
+    
+    override suspend fun updateProtocolStatus(protocolId: String, status: String): ApiResult<Protocol> =
+        ApiResult.Failure(NetworkError.UnknownError("grpc_not_supported"))
+
     override suspend fun listRuns(): ApiResult<List<Run>> = ApiResult.Success(emptyList())
 
     override suspend fun publishVersion(protocolId: String, versionId: String): ApiResult<ProtocolVersion> = runCatching {

@@ -164,8 +164,12 @@ fun RegenOpsApp(
                                             onSelectVersion = viewModel::selectVersion,
                                             onPublish = viewModel::publishSelectedVersion,
                                             onOpenExports = {
+                                                state.selectedProtocol?.lastRunId?.let { runId ->
+                                                    viewModel.updateExportRunId(runId)
+                                                }
                                                 viewModel.navigateTo(AppScreen.EXPORTS)
                                             },
+                                            onUpdateStatus = viewModel::updateProtocolStatus,
                                         )
 
                                     AppScreen.RUN_CONTROL ->

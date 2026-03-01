@@ -15,6 +15,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.Canvas
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -218,6 +223,21 @@ fun ProtocolsScreen(
             }
         }
 
+    if (showStatusDialog && protocol != null) {
+        AlertDialog(
+            onDismissRequest = { showStatusDialog = false },
+            title = { Text("Update Protocol Status") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(NgSpacing.Small)) {
+                    NgTextField(value = pendingStatus, onValueChange = { pendingStatus = it }, label = "Status (DRAFT/PUBLISHED/ARCHIVED)")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { onUpdateStatus(protocol.id.value, pendingStatus.trim().uppercase()); showStatusDialog = false }) { Text("Apply") }
+            },
+            dismissButton = { TextButton(onClick = { showStatusDialog = false }) { Text("Cancel") } },
+        )
+    }
     Column(verticalArrangement = Arrangement.spacedBy(NgSpacing.Medium)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -426,7 +446,10 @@ fun ProtocolDetailScreen(
     onSelectVersion: (ProtocolVersion) -> Unit,
     onPublish: () -> Unit,
     onOpenExports: () -> Unit,
+    onUpdateStatus: (String, String) -> Unit,
 ) {
+    var showStatusDialog by remember { mutableStateOf(false) }
+    var pendingStatus by remember { mutableStateOf(protocol?.status ?: "DRAFT") }
     Column(verticalArrangement = Arrangement.spacedBy(NgSpacing.Medium)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             if (canGoBack) TextButton(onClick = onBack) { Text("Back") }
@@ -434,6 +457,9 @@ fun ProtocolDetailScreen(
             Text(protocol?.name ?: "Protocol", style = MaterialTheme.typography.headlineSmall)
         }
         protocol?.let { NgStatusChip(text = it.status, status = if (it.status.uppercase() == "PUBLISHED") NgStatus.Success else NgStatus.Info) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = { showStatusDialog = true }) { Text("Change Status") }
+        }
 
         if (protocol == null) {
             NgEmptyState(

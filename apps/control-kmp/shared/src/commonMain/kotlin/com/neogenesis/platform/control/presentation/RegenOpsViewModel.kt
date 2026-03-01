@@ -242,6 +242,34 @@ class RegenOpsViewModel(
         }
     }
 
+    fun updateProtocolStatus(protocolId: String, status: String) {
+        if (_state.value.isUpdatingProtocolStatus) return
+        _state.update { it.copy(isUpdatingProtocolStatus = true, errorBanner = null) }
+        scope.launch {
+            when (val result = repository.updateProtocolStatus(protocolId, status)) {
+                is ApiResult.Success -> {
+                    protocolExtras = protocolExtras + (result.value.id.value to result.value)
+                    _state.update {
+                        it.copy(
+                            statusMessage = "Protocol status updated",
+                            isUpdatingProtocolStatus = false,
+                            errorBanner = null,
+                            selectedProtocol = result.value
+                        )
+                    }
+                }
+                is ApiResult.Failure -> {
+                    _state.update {
+                        it.copy(
+                            isUpdatingProtocolStatus = false,
+                            errorBanner = mapNetworkError(result.error, "Failed to update status")
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     fun refreshRuns() {
         scope.launch {
             when (val result = repository.refreshRuns()) {

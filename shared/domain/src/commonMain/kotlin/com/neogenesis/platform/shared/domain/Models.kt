@@ -145,6 +145,7 @@ data class Protocol(
     val evidenceSummary: String? = null,
     val lastRunTimeline: List<String> = emptyList(),
     val evidenceArtifacts: List<String> = emptyList(),
+    val lastRunId: String? = null,
     val latestVersion: ProtocolVersion?,
     val versions: List<ProtocolVersion> = emptyList()
 )

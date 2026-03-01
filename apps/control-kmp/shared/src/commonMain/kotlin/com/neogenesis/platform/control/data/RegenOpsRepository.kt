@@ -56,6 +56,22 @@ class RegenOpsRepository(
         return result
     }
 
+    suspend fun updateProtocolStatus(protocolId: String, status: String): ApiResult<Protocol> {
+        val result = controlApi.updateProtocolStatus(protocolId, status)
+        if (result is ApiResult.Success) {
+            val protocol = result.value
+            val versions = protocol.versions.toMutableList()
+            protocol.latestVersion?.let { latest ->
+                if (versions.none { it.id == latest.id }) {
+                    versions.add(0, latest)
+                }
+            }
+            localData.insertProtocol(protocol)
+            versions.forEach { localData.insertProtocolVersion(it) }
+        }
+        return result
+    }
+
     suspend fun refreshRuns(): ApiResult<List<Run>> {
         val result = controlApi.listRuns()
         if (result is ApiResult.Success) {
