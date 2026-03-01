@@ -6,8 +6,8 @@ import com.neogenesis.platform.shared.network.safeApiCall
 import io.ktor.client.HttpClient
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.http.parametersOf
-import io.ktor.http.URLBuilder
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 
 interface SimulatorApi {
@@ -42,6 +42,7 @@ class HttpSimulatorApi(
         )
         val result = safeApiCall<SimulatorRunResponse> {
             client.post("/demo/simulator/runs") {
+                contentType(ContentType.Application.Json)
                 setBody(body)
             }
         }
