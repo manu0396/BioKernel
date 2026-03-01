@@ -1,6 +1,7 @@
 package com.neogenesis.platform.control.presentation
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.animateContentSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -230,6 +231,7 @@ fun ProtocolsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(NgSpacing.Small)) {
                     NgTextField(value = pendingStatus, onValueChange = { pendingStatus = it }, label = "Status (DRAFT/PUBLISHED/ARCHIVED)")
+                    Text("Allowed: DRAFT ? PUBLISHED ? ARCHIVED", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             confirmButton = {
@@ -290,7 +292,7 @@ fun ProtocolsScreen(
 
                     NgCard(onClick = { onSelect(protocol) }) {
                         Column(
-                            modifier = Modifier.fillMaxWidth().padding(NgSpacing.Medium),
+                            modifier = Modifier.fillMaxWidth().animateContentSize().padding(NgSpacing.Medium),
                             verticalArrangement = Arrangement.spacedBy(NgSpacing.Small),
                         ) {
                             Row(
@@ -387,11 +389,11 @@ fun ProtocolsScreen(
                 if (protocol.evidenceArtifacts.isNotEmpty()) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         protocol.evidenceArtifacts.forEach { artifact ->
-                            OutlinedButton(onClick = onOpenExports) { Text(artifact) }
+                            OutlinedButton(onClick = { if (artifact.contains("audit", true)) onDownloadAudit() else onDownloadReport() }) { Text(artifact) }
                         }
                     }
                 } else {
-                    OutlinedButton(onClick = onOpenExports) { Text("Open Exports") }
+                    OutlinedButton(onClick = onDownloadReport) { Text("Open Exports") }
                 }
                 if (protocol.lastRunTimeline.isNotEmpty()) {
                     ProtocolTimeline(protocol.lastRunTimeline)
@@ -447,6 +449,8 @@ fun ProtocolDetailScreen(
     onPublish: () -> Unit,
     onOpenExports: () -> Unit,
     onUpdateStatus: (String, String) -> Unit,
+    onDownloadReport: () -> Unit,
+    onDownloadAudit: () -> Unit,
 ) {
     var showStatusDialog by remember { mutableStateOf(false) }
     var pendingStatus by remember { mutableStateOf(protocol?.status ?: "DRAFT") }

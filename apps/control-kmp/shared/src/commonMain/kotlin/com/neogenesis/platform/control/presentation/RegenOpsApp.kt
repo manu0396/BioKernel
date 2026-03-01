@@ -170,6 +170,24 @@ fun RegenOpsApp(
                                                 viewModel.navigateTo(AppScreen.EXPORTS)
                                             },
                                             onUpdateStatus = viewModel::updateProtocolStatus,
+                                            onDownloadReport = {
+                                                val runId = state.selectedProtocol?.lastRunId
+                                                if (runId != null) {
+                                                    viewModel.updateExportRunId(runId)
+                                                    viewModel.exportRunReport(shareFile)
+                                                } else {
+                                                    viewModel.updateStatusMessage("No run ID available for report.")
+                                                }
+                                            },
+                                            onDownloadAudit = {
+                                                val runId = state.selectedProtocol?.lastRunId
+                                                if (runId != null) {
+                                                    viewModel.updateExportRunId(runId)
+                                                    viewModel.exportAuditBundle(shareFile)
+                                                } else {
+                                                    viewModel.updateStatusMessage("No run ID available for audit bundle.")
+                                                }
+                                            },
                                         )
 
                                     AppScreen.RUN_CONTROL ->

@@ -175,6 +175,10 @@ class RegenOpsViewModel(
         _state.update { it.copy(export = it.export.copy(runId = runId)) }
     }
 
+    fun updateStatusMessage(message: String) {
+        _state.update { it.copy(statusMessage = message) }
+    }
+
     fun setSimulatedRunEnabled(enabled: Boolean) {
         logger.log(
             LogLevel.INFO,
@@ -244,6 +248,17 @@ class RegenOpsViewModel(
 
     fun updateProtocolStatus(protocolId: String, status: String) {
         if (_state.value.isUpdatingProtocolStatus) return
+        val currentStatus = _state.value.selectedProtocol?.status ?: "DRAFT"
+        val normalized = status.trim().uppercase()
+        if (!isStatusTransitionAllowed(currentStatus, normalized)) {
+            _state.update {
+                it.copy(
+                    errorBanner = "Invalid status transition: $currentStatus -> $normalized",
+                    isUpdatingProtocolStatus = false
+                )
+            }
+            return
+        }
         _state.update { it.copy(isUpdatingProtocolStatus = true, errorBanner = null) }
         scope.launch {
             when (val result = repository.updateProtocolStatus(protocolId, status)) {
@@ -267,6 +282,15 @@ class RegenOpsViewModel(
                     }
                 }
             }
+        }
+    }
+
+    private fun isStatusTransitionAllowed(current: String, target: String): Boolean {
+        return when (current.uppercase()) {
+            "DRAFT" -> target in setOf("DRAFT", "PUBLISHED")
+            "PUBLISHED" -> target in setOf("PUBLISHED", "ARCHIVED")
+            "ARCHIVED" -> target == "ARCHIVED"
+            else -> true
         }
     }
 

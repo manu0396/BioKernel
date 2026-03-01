@@ -116,3 +116,41 @@ Server
 - [x] Milestone 4: Demo-gated server endpoints (metrics, commercial, exports).
 - [x] Milestone 5: Tests + docs (added coverage; local runs complete).
 
+# ExecPlan: Protocol UX + Demo Server Fixes + Extra Polish (2026-03-01)
+
+## Milestones
+1) Fix demo server compile issues (duplicate fields, missing request DTOs) and ensure protocol status update endpoint works.
+2) Add missing protocol fields in mock/demo data and align UI bindings.
+3) Enhance Protocol list and detail UI polish (folder card, timeline, evidence, animations).
+4) Add create protocol dialog (full-screen-ish) wired to server create endpoint.
+5) Verify build/test commands (targeted) and document run instructions.
+
+## File-by-File Change List
+Client
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/RegenOpsApp.kt`: Protocol list card polish and create protocol dialog.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/screens/ProtocolsScreen.kt`: Folder card expand/collapse + evidence timeline panels.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/screens/ProtocolDetailScreen.kt`: Status updates + evidence actions + timeline.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/design/NgComponents.kt`: Chips/buttons and timeline visuals.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/MockProtocols.kt`: Add missing demo fields (status, lastRunId, evidenceArtifacts).
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/remote/ControlApi.kt`: Add create + status update calls.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/presentation/RegenOpsViewModel.kt`: Status transition logic, errors, and create protocol flow.
+
+Server
+- `src/main/kotlin/com/neogenesis/server/modules/demo/DemoUiModule.kt`: Fix duplicate `status`, add/update request DTOs, and ensure status update endpoint works.
+- `src/main/kotlin/com/neogenesis/server/modules/demo/DemoProtocolStore.kt`: Demo protocol fields and deterministic data.
+
+## Verification Commands
+- `./gradlew.bat :services:core-server:compileKotlin`
+- `./gradlew.bat :apps:control-kmp:shared:test`
+
+## Rollback Plan
+- Revert the files listed above.
+- Re-run the verification commands to confirm baseline stability.
+
+## Progress
+- [x] Milestone 1: Demo server compile fixes.
+- [ ] Milestone 2: Demo protocol data alignment.
+- [ ] Milestone 3: UI polish completion.
+- [ ] Milestone 4: Create protocol dialog end-to-end.
+- [ ] Milestone 5: Verification.
+
