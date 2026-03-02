@@ -321,5 +321,5 @@ NeoGenesis-Core-Server
 
 ## Progress
 - [x] Milestone 1: Review and stage.
-- [ ] Milestone 2: Commit.
-- [ ] Milestone 3: Push.
+- [x] Milestone 2: Commit.
+- [x] Milestone 3: Push.
