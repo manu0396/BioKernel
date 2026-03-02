@@ -1,0 +1,23 @@
+# Gradle + Kotlin caches
+.gradle/
+.gradle-user/
+.kotlin/
+.m2/
+
+# IDE/Android Studio
+.idea/
+.android/
+
+# Build outputs
+**/build/
+build/
+buildSrc/.gradle/
+shared/proto/build/
+agents/device-gateway/build/
+apps/control-kmp/androidApp/build/
+apps/control-kmp/desktopApp/build/
+apps/control-kmp/shared/build/
+services/core-server/build/
+
+# Local machine config
+local.properties
