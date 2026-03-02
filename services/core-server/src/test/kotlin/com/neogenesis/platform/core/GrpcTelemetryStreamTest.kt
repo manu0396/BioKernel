@@ -1,12 +1,16 @@
 package com.neogenesis.platform.core
 
 import com.neogenesis.platform.core.grpc.TelemetryBus
+import com.neogenesis.platform.core.device.DevicePolicyRepository
+import com.neogenesis.platform.core.grpc.GrpcDeviceContext
 import com.neogenesis.platform.core.grpc.TelemetryStreamServiceImpl
 import com.neogenesis.platform.proto.v1.TelemetryRequest
 import com.neogenesis.platform.proto.v1.TelemetryStreamServiceGrpcKt
 import com.neogenesis.platform.shared.telemetry.*
+import io.grpc.Metadata
 import io.grpc.inprocess.InProcessChannelBuilder
 import io.grpc.inprocess.InProcessServerBuilder
+import io.grpc.stub.MetadataUtils
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
@@ -24,15 +28,22 @@ class GrpcTelemetryStreamTest {
     fun telemetryStreamDeliversFrames() = runBlocking {
         val name = InProcessServerBuilder.generateName()
         val bus = TelemetryBus()
+        val policyRepository = DevicePolicyRepository()
         val server = InProcessServerBuilder.forName(name)
             .directExecutor()
-            .addService(TelemetryStreamServiceImpl(bus))
+            .addService(
+                io.grpc.ServerInterceptors.intercept(
+                    TelemetryStreamServiceImpl(bus),
+                    GrpcDeviceContext.interceptor(policyRepository)
+                )
+            )
             .build()
             .start()
         val channel = InProcessChannelBuilder.forName(name).directExecutor().build()
 
         try {
             val stub = TelemetryStreamServiceGrpcKt.TelemetryStreamServiceCoroutineStub(channel)
+                .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(deviceHeaders()))
             val requestFlow = flow {
                 emit(
                     TelemetryRequest.newBuilder()
@@ -72,15 +83,22 @@ class GrpcTelemetryStreamTest {
     fun telemetryStreamNeverUsesUnknownIdsAfterStartRace() = runBlocking {
         val name = InProcessServerBuilder.generateName()
         val bus = TelemetryBus()
+        val policyRepository = DevicePolicyRepository()
         val server = InProcessServerBuilder.forName(name)
             .directExecutor()
-            .addService(TelemetryStreamServiceImpl(bus))
+            .addService(
+                io.grpc.ServerInterceptors.intercept(
+                    TelemetryStreamServiceImpl(bus),
+                    GrpcDeviceContext.interceptor(policyRepository)
+                )
+            )
             .build()
             .start()
         val channel = InProcessChannelBuilder.forName(name).directExecutor().build()
 
         try {
             val stub = TelemetryStreamServiceGrpcKt.TelemetryStreamServiceCoroutineStub(channel)
+                .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(deviceHeaders()))
 
             repeat(25) { index ->
                 val requestFlow = flow {
@@ -123,5 +141,16 @@ class GrpcTelemetryStreamTest {
             server.shutdownNow()
         }
     }
+
+    private fun deviceHeaders(): Metadata {
+        val metadata = Metadata()
+        metadata.put(Metadata.Key.of("x-device-class", Metadata.ASCII_STRING_MARSHALLER), "WINDOWS_DESKTOP")
+        metadata.put(Metadata.Key.of("x-device-tier", Metadata.ASCII_STRING_MARSHALLER), "TIER_1")
+        metadata.put(Metadata.Key.of("x-app-version", Metadata.ASCII_STRING_MARSHALLER), "1.0.0")
+        metadata.put(Metadata.Key.of("x-platform", Metadata.ASCII_STRING_MARSHALLER), "desktop")
+        metadata.put(Metadata.Key.of("x-device-id", Metadata.ASCII_STRING_MARSHALLER), "00000000-0000-0000-0000-000000000002")
+        return metadata
+    }
 }
+
 

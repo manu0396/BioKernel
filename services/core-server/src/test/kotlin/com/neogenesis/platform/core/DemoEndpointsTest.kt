@@ -34,21 +34,25 @@ class DemoEndpointsTest {
 
         val scoreResponse = client.get("/api/v1/metrics/reproducibility-score") {
             header(HttpHeaders.Authorization, "Bearer ${token.accessToken}")
+            deviceHeaders()
         }
         assertEquals(HttpStatusCode.OK, scoreResponse.status)
 
         val alertsResponse = client.get("/api/v1/metrics/drift-alerts") {
             header(HttpHeaders.Authorization, "Bearer ${token.accessToken}")
+            deviceHeaders()
         }
         assertEquals(HttpStatusCode.OK, alertsResponse.status)
 
         val pipelineResponse = client.get("/api/v1/commercial/pipeline") {
             header(HttpHeaders.Authorization, "Bearer ${token.accessToken}")
+            deviceHeaders()
         }
         assertEquals(HttpStatusCode.OK, pipelineResponse.status)
 
         val exportResponse = client.get("/api/v1/commercial/pipeline/export") {
             header(HttpHeaders.Authorization, "Bearer ${token.accessToken}")
+            deviceHeaders()
         }
         assertEquals(HttpStatusCode.OK, exportResponse.status)
     }
@@ -65,6 +69,7 @@ class DemoEndpointsTest {
             client.post("/demo/simulator/runs?tenant_id=tenant-1") {
                 header(HttpHeaders.Authorization, "Bearer ${token.accessToken}")
                 header("X-Correlation-Id", "corr-test-1")
+                deviceHeaders()
                 contentType(ContentType.Application.Json)
                 setBody(
                     DemoSimulatorModule.SimulatorRunRequest(
@@ -97,6 +102,14 @@ class DemoEndpointsTest {
         return login.body()
     }
 
+    private fun io.ktor.client.request.HttpRequestBuilder.deviceHeaders() {
+        header("X-Device-Class", "WINDOWS_DESKTOP")
+        header("X-Device-Tier", "TIER_1")
+        header("X-App-Version", "1.0.0")
+        header("X-Platform", "desktop")
+        header("X-Device-Id", "00000000-0000-0000-0000-000000000002")
+    }
+
     private fun configureTestEnv(demoMode: Boolean) {
         val dbName = "test_demo_${System.currentTimeMillis()}"
         System.setProperty("APP_ENV", "test")
@@ -115,3 +128,4 @@ class DemoEndpointsTest {
         System.setProperty("NG_DEMO_MODE", demoMode.toString())
     }
 }
+

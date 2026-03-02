@@ -223,3 +223,103 @@ NeoGenesis-Core-Server
 - [x] Milestone 4: Server enforcement (HTTP + gRPC).
 - [x] Milestone 5: Integration tests.
 
+# ExecPlan: Phase 4 Finish + Release 1.0.0 (BioKernel + NeoGenesis-Core-Server) (2026-03-02)
+
+## Milestones
+1) Fix remaining test failures in BioKernel.
+2) Run full test suites in both repos and verify green.
+3) Update release artifacts (CHANGELOG/VERSION if needed) and commit/push with required timestamps.
+
+## File-by-File Change List
+BioKernel
+- `apps/control-kmp/shared/src/commonTest/kotlin/com/neogenesis/platform/control/presentation/RegenOpsViewModelTest.kt`: Fix test timeout under Dispatchers.Default.
+
+NeoGenesis-Core-Server
+- (TBD) Only if tests fail and require fixes.
+
+## Verification Commands
+- `./gradlew.bat test`
+
+## Rollback Plan
+- Revert the files listed above.
+- Re-run `./gradlew.bat test` to confirm baseline.
+
+## Progress
+- [x] Milestone 1: Fix remaining test failures in BioKernel.
+- [x] Milestone 2: Run full test suites in both repos and verify green.
+- [x] Milestone 3: Update release artifacts and commit/push with required timestamps.
+
+# ExecPlan: Phase 4 Integrated MVP + Production Hardening (BioKernel + NeoGenesis-Core-Server) (2026-03-02)
+
+## Milestones
+1) Inventory: full HTTP + gRPC endpoint mapping tables in both repos; verify default-deny for mutating endpoints.
+2) Auditability: persistent audit event model + sink; audit success/deny for control/protocol/admin + policy changes.
+3) Reliability: enforce correlation IDs, timeouts, retries/backpressure, and safe reconnect semantics.
+4) Observability/Ops: structured logs, metrics for requests/denies/streams/gateway health, liveness/readiness, runbook docs.
+5) CI + Release: tests for device policy routes + tier enforcement, CI tasks, update CHANGELOG + version 1.0.0, pilot checklist.
+
+## File-by-File Change List
+BioKernel
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/security/DeviceCapabilityGuard.kt`: default-deny handling + audit details.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/audit/*`: audit event model + repository (if missing).
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/modules/*`: ensure requireCapability for all mapped endpoints.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/grpc/*`: enforce capability mapping for all RPCs.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/observability/*`: metrics + structured logging.
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/modules/HealthModule.kt`: liveness/readiness.
+- `services/core-server/src/main/resources/device-policy.yaml`: verify policy config.
+- `services/core-server/src/test/kotlin/com/neogenesis/platform/core/*`: add device policy route + tier enforcement tests.
+- `docs/*`: runbook + pilot install checklist updates.
+- `CHANGELOG.md` and `VERSION`: bump to 1.0.0.
+
+NeoGenesis-Core-Server
+- `src/main/kotlin/com/neogenesis/server/infrastructure/security/DeviceCapabilityGuard.kt`: default-deny + audit details.
+- `src/main/kotlin/com/neogenesis/server/modules/*` + `src/main/kotlin/com/neogenesis/server/infrastructure/grpc/*`: ensure requireCapability for all mapped endpoints.
+- `src/main/kotlin/com/neogenesis/server/observability/*` or existing metrics/logging modules: add metrics + structured logs.
+- `src/main/kotlin/com/neogenesis/server/modules/HealthModule.kt`: liveness/readiness.
+- `src/main/resources/device-policy.yaml`: verify policy config.
+- `src/test/kotlin/com/neogenesis/server/*`: device policy route + tier enforcement tests.
+- `docs/*`: runbook + pilot install checklist updates.
+- `CHANGELOG.md` and version config: bump to 1.0.0.
+
+## Verification Commands
+- `./gradlew.bat test`
+- `./gradlew.bat :services:core-server:test`
+- `./gradlew.bat :backend:test`
+- `./gradlew.bat :domain:test`
+- `./gradlew.bat :shared-network:test`
+- `./gradlew.bat :androidApp:assembleDebug`
+
+## Rollback Plan
+- Revert the files listed above in both repos.
+- Remove added docs/metrics/audit modules if necessary.
+- Re-run verification commands to confirm baseline stability.
+
+## Progress
+- [x] Milestone 1: Inventory and mapping.
+- [x] Milestone 2: Auditability.
+- [x] Milestone 3: Reliability.
+- [x] Milestone 4: Observability/Ops.
+- [x] Milestone 5: CI + Release.
+
+# ExecPlan: Phase 4 Commit + Push (BioKernel) (2026-03-02)
+
+## Milestones
+1) Review working tree and stage Phase 4 changes for core server + KMP app.
+2) Commit with Phase 4 message.
+3) Push to the current branch.
+
+## File-by-File Change List
+- `PLANS.md`: Track this execution plan.
+- (TBD after status) Capture the concrete Phase 4 files to be committed.
+
+## Verification Commands
+- None (commit/push only).
+
+## Rollback Plan
+- `git reset --soft HEAD~1` if the commit needs to be amended.
+- `git push --force-with-lease` only if the remote commit must be replaced.
+
+## Progress
+- [x] Milestone 1: Review and stage.
+- [ ] Milestone 2: Commit.
+- [ ] Milestone 3: Push.

@@ -56,6 +56,7 @@ class EvidenceExportTest {
 
         val export = client.get("/api/v1/evidence/${context.job.id.value}/package") {
             header(HttpHeaders.Authorization, "Bearer ${context.tokens.accessToken}")
+            deviceHeaders()
         }
         assertEquals(HttpStatusCode.OK, export.status)
         val bytes = export.body<ByteArray>()
@@ -83,6 +84,7 @@ class EvidenceExportTest {
 
         val export = client.get("/api/v1/telemetry/${context.job.id.value}/export") {
             header(HttpHeaders.Authorization, "Bearer ${context.tokens.accessToken}")
+            deviceHeaders()
             header(HttpHeaders.Accept, "text/csv")
         }
         assertEquals(HttpStatusCode.OK, export.status)
@@ -116,24 +118,28 @@ class EvidenceExportTest {
 
         val device = client.post("/api/v1/devices") {
             header(HttpHeaders.Authorization, "Bearer ${tokens.accessToken}")
+            deviceHeaders()
             contentType(ContentType.Application.Json)
             setBody(DeviceModule.DeviceRegisterRequest("serial-001", "1.0.0"))
         }.body<Device>()
 
         val profile = client.post("/api/v1/bioink/profiles") {
             header(HttpHeaders.Authorization, "Bearer ${tokens.accessToken}")
+            deviceHeaders()
             contentType(ContentType.Application.Json)
             setBody(BioinkModule.CreateProfileRequest("Test Ink", "NeoGenesis", "{}"))
         }.body<BioinkProfile>()
 
         val batch = client.post("/api/v1/bioink/batches") {
             header(HttpHeaders.Authorization, "Bearer ${tokens.accessToken}")
+            deviceHeaders()
             contentType(ContentType.Application.Json)
             setBody(BioinkModule.CreateBatchRequest(profile.id.value, "lot-1", "NeoGenesis", Clock.System.now().toEpochMilliseconds()))
         }.body<BioinkBatch>()
 
         val job = client.post("/api/v1/print-jobs") {
             header(HttpHeaders.Authorization, "Bearer ${tokens.accessToken}")
+            deviceHeaders()
             contentType(ContentType.Application.Json)
             setBody(
                 PrintJobModule.CreatePrintJobRequest(
@@ -147,6 +153,7 @@ class EvidenceExportTest {
 
         client.post("/api/v1/telemetry/${job.id.value}/${device.id.value}") {
             header(HttpHeaders.Authorization, "Bearer ${tokens.accessToken}")
+            deviceHeaders()
             contentType(ContentType.Application.Json)
             setBody(
                 TelemetryFrame(
@@ -163,6 +170,14 @@ class EvidenceExportTest {
         }
 
         return JobContext(tokens, user, device, job)
+    }
+
+    private fun io.ktor.client.request.HttpRequestBuilder.deviceHeaders() {
+        header("X-Device-Class", "WINDOWS_DESKTOP")
+        header("X-Device-Tier", "TIER_1")
+        header("X-App-Version", "1.0.0")
+        header("X-Platform", "desktop")
+        header("X-Device-Id", "00000000-0000-0000-0000-000000000002")
     }
 
     private fun configureTestEnv() {

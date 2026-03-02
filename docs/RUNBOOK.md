@@ -16,6 +16,11 @@
 - Check `/health` and `/ready`.
 - Inspect logs (JSON) for correlation id `cid`.
 
+## Device Policy
+- Config file: `services/core-server/src/main/resources/device-policy.yaml`
+- Apply changes by redeploying core-server (policy is loaded on startup).
+- If device headers are missing, server defaults to `DeviceClass.UNKNOWN` and `Tier2` safe mode (control/edit/admin denied).
+
 ## Evidence Package
 Export:
 - `GET /api/v1/evidence/{jobId}/package` (requires JWT)

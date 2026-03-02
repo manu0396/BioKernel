@@ -51,7 +51,7 @@ object DeviceModule {
                 route("/api/v1/devices") {
                     post {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR"))) return@post
-                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository)) return@post
+                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository, auditLogger)) return@post
                         val req = call.receive<DeviceRegisterRequest>()
                         val device = Device(
                             id = DeviceId(UUID.randomUUID().toString()),
@@ -74,7 +74,7 @@ object DeviceModule {
                     }
                     post("/{id}/pair/start") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR"))) return@post
-                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository)) return@post
+                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository, auditLogger)) return@post
                         val id = call.parameters["id"] ?: return@post call.respondError(
                             HttpStatusCode.BadRequest,
                             "missing_device_id",
@@ -103,7 +103,7 @@ object DeviceModule {
                     }
                     post("/{id}/pair/complete") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR"))) return@post
-                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository)) return@post
+                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository, auditLogger)) return@post
                         val deviceId = call.parameters["id"] ?: return@post call.respondError(
                             HttpStatusCode.BadRequest,
                             "missing_device_id",
@@ -136,4 +136,3 @@ object DeviceModule {
         }
     }
 }
-

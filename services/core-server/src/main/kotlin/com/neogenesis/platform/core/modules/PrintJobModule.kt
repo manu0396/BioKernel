@@ -51,12 +51,12 @@ object PrintJobModule {
                 route("/api/v1/print-jobs") {
                     get {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER", "AUDITOR"))) return@get
-                        if (!call.requireCapability(Capability.READ_ONLY_DASHBOARD, policyRepository)) return@get
+                        if (!call.requireCapability(Capability.READ_ONLY_DASHBOARD, policyRepository, auditLogger)) return@get
                         call.respond(repository.list(limit = 200))
                     }
                     post {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR"))) return@post
-                        if (!call.requireCapability(Capability.PRINT_CONTROL, policyRepository)) return@post
+                        if (!call.requireCapability(Capability.PRINT_CONTROL, policyRepository, auditLogger)) return@post
                         val req = call.receive<CreatePrintJobRequest>()
                         val job = PrintJob(
                             id = PrintJobId(UUID.randomUUID().toString()),
@@ -87,7 +87,7 @@ object PrintJobModule {
                     }
                     put("/{id}/status") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR"))) return@put
-                        if (!call.requireCapability(Capability.PRINT_CONTROL, policyRepository)) return@put
+                        if (!call.requireCapability(Capability.PRINT_CONTROL, policyRepository, auditLogger)) return@put
                         val id = call.parameters["id"] ?: return@put call.respond(HttpStatusCode.BadRequest)
                         val job = repository.findById(PrintJobId(id))
                             ?: return@put call.respond(HttpStatusCode.NotFound)
@@ -116,4 +116,3 @@ object PrintJobModule {
         }
     }
 }
-

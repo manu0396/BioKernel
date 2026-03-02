@@ -55,12 +55,12 @@ object RecipeModule {
                 route("/api/v1/recipes") {
                     get {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER", "AUDITOR"))) return@get
-                        if (!call.requireCapability(Capability.READ_ONLY_DASHBOARD, policyRepository)) return@get
+                        if (!call.requireCapability(Capability.READ_ONLY_DASHBOARD, policyRepository, auditLogger)) return@get
                         call.respond(repository.list())
                     }
                     post {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER"))) return@post
-                        if (!call.requireCapability(Capability.PROTOCOL_EDIT, policyRepository)) return@post
+                        if (!call.requireCapability(Capability.PROTOCOL_EDIT, policyRepository, auditLogger)) return@post
                         val req = call.receive<CreateRecipeRequest>()
                         val now = Clock.System.now()
                         val recipe = Recipe(
@@ -85,7 +85,7 @@ object RecipeModule {
                     }
                     put("/{id}") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER"))) return@put
-                        if (!call.requireCapability(Capability.PROTOCOL_EDIT, policyRepository)) return@put
+                        if (!call.requireCapability(Capability.PROTOCOL_EDIT, policyRepository, auditLogger)) return@put
                         val id = call.parameters["id"] ?: return@put call.respond(HttpStatusCode.BadRequest)
                         val existing = repository.findById(RecipeId(id))
                             ?: return@put call.respond(HttpStatusCode.NotFound)
@@ -113,7 +113,7 @@ object RecipeModule {
                     }
                     post("/{id}/activate") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER"))) return@post
-                        if (!call.requireCapability(Capability.PROTOCOL_EDIT, policyRepository)) return@post
+                        if (!call.requireCapability(Capability.PROTOCOL_EDIT, policyRepository, auditLogger)) return@post
                         val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
                         val req = call.receive<ActivateRecipeRequest>()
                         repository.findById(RecipeId(id))
@@ -134,4 +134,3 @@ object RecipeModule {
         }
     }
 }
-

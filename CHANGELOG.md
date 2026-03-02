@@ -21,3 +21,12 @@ All notable changes to this project will be documented in this file.
 - Device Gateway agent with register/heartbeat + simulated telemetry/events.
 - Observability baseline: JSON logs, `/metrics` Prometheus, OTEL exporter hook.
 - DevEx: docker-compose, Makefile, and Windows runLocal script.
+
+## 1.0.0 - 2026-03-02
+- Device Support Tiers v1.0.0 with shared domain policy, HTTP + gRPC policy endpoints, and client/device header propagation.
+- Server-enforced capability checks with default-deny for unmapped mutating endpoints.
+- Audited device-tier allow/deny decisions and added capability decision metrics.
+- Tier-aware UI gating in Control KMP (Android/Desktop) with capability-based navigation.
+- Device gateway identifies as `EMBEDDED_TOUCHSCREEN` Tier1 with policy headers.
+- Added tier enforcement tests (HTTP + gRPC) and device-policy contract tests.
+- Updated runbook and pilot install checklist for Phase 4 deployment.

@@ -5,6 +5,7 @@ import com.neogenesis.grpc.ProtocolVersionRecord
 import com.neogenesis.grpc.RunRecord
 import com.neogenesis.platform.core.grpc.RegenOpsInMemoryStore
 import com.neogenesis.platform.core.observability.HttpRequestLabels
+import com.neogenesis.platform.core.audit.AuditLogger
 import com.neogenesis.platform.core.security.requireCapability
 import com.neogenesis.platform.shared.domain.device.Capability
 import com.neogenesis.platform.core.device.DevicePolicyRepository
@@ -77,24 +78,28 @@ object RegenOpsHttpModule {
         val message: String
     )
 
-    fun register(app: Application, policyRepository: DevicePolicyRepository) {
+    fun register(
+        app: Application,
+        policyRepository: DevicePolicyRepository,
+        auditLogger: AuditLogger
+    ) {
         seedMockData()
 
         app.routing {
             route("/api/v1/regenops") {
                 get("/protocols") {
-                    if (!call.requireCapability(Capability.READ_ONLY_DASHBOARD, policyRepository)) return@get
+                    if (!call.requireCapability(Capability.READ_ONLY_DASHBOARD, policyRepository, auditLogger)) return@get
                     val response = ListProtocolsResponseDto(
                         protocols = RegenOpsInMemoryStore.listProtocols().protocolsList.map { it.toDto() }
                     )
                     call.respond(response)
                 }
                 get("/runs") {
-                    if (!call.requireCapability(Capability.READ_ONLY_DASHBOARD, policyRepository)) return@get
+                    if (!call.requireCapability(Capability.READ_ONLY_DASHBOARD, policyRepository, auditLogger)) return@get
                     call.respond(RegenOpsInMemoryStore.listRuns().map { it.toDto() })
                 }
                 post("/runs/start") {
-                    if (!call.requireCapability(Capability.PRINT_CONTROL, policyRepository)) return@post
+                    if (!call.requireCapability(Capability.PRINT_CONTROL, policyRepository, auditLogger)) return@post
                     val req = call.receive<StartRunRequestDto>()
                     val run = RegenOpsInMemoryStore.startRun(
                         protocolId = req.protocolId,
@@ -106,19 +111,19 @@ object RegenOpsHttpModule {
                     call.respond(HttpStatusCode.Created, run.toDto())
                 }
                 post("/runs/{id}/pause") {
-                    if (!call.requireCapability(Capability.PRINT_CONTROL, policyRepository)) return@post
+                    if (!call.requireCapability(Capability.PRINT_CONTROL, policyRepository, auditLogger)) return@post
                     val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
                     val run = RegenOpsInMemoryStore.updateRun(id, "PAUSED", HttpRequestLabels.fromCall(call))
                     call.respond(run.toDto())
                 }
                 post("/runs/{id}/abort") {
-                    if (!call.requireCapability(Capability.PRINT_CONTROL, policyRepository)) return@post
+                    if (!call.requireCapability(Capability.PRINT_CONTROL, policyRepository, auditLogger)) return@post
                     val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
                     val run = RegenOpsInMemoryStore.updateRun(id, "ABORTED", HttpRequestLabels.fromCall(call))
                     call.respond(run.toDto())
                 }
                 post("/protocols/{id}/publish") {
-                    if (!call.requireCapability(Capability.PROTOCOL_EDIT, policyRepository)) return@post
+                    if (!call.requireCapability(Capability.PROTOCOL_EDIT, policyRepository, auditLogger)) return@post
                     val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
                     val req = call.receive<PublishVersionRequestDto>()
                     val record = RegenOpsInMemoryStore.publishVersion(id, req.changelog ?: "Published via control app")
@@ -127,7 +132,7 @@ object RegenOpsHttpModule {
             }
             route("/api/v1/trace") {
                 get("/summary") {
-                    if (!call.requireCapability(Capability.QC_REVIEW, policyRepository)) return@get
+                    if (!call.requireCapability(Capability.QC_REVIEW, policyRepository, auditLogger)) return@get
                     call.respond(
                         TraceSummaryDto(
                             score = 92,

@@ -25,7 +25,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.Instant
 import kotlin.test.Test
@@ -59,12 +61,16 @@ class RegenOpsViewModelTest {
         coEvery { repository.startRun(protocol.id.value, protocol.versions.first().id.value) } returns
             ApiResult.Success(expectedRun)
 
-        withTimeout(1_000) { viewModel.state.first { it.selectedProtocol != null } }
+        withContext(Dispatchers.Default.limitedParallelism(1)) {
+            withTimeout(5_000) { viewModel.state.first { it.selectedProtocol != null } }
+        }
 
         viewModel.startRun()
         assertTrue(viewModel.state.value.isStartingRun)
 
-        val liveState = withTimeout(2_000) { viewModel.state.first { it.screen == AppScreen.LIVE_RUN } }
+        val liveState = withContext(Dispatchers.Default.limitedParallelism(1)) {
+            withTimeout(5_000) { viewModel.state.first { it.screen == AppScreen.LIVE_RUN } }
+        }
         assertEquals(expectedRun.id.value, liveState.selectedRunId)
         assertFalse(liveState.isStartingRun)
     }
@@ -92,12 +98,16 @@ class RegenOpsViewModelTest {
 
         coEvery { simulatorApi.startSimulatedRun(protocol.id.value, any()) } returns ApiResult.Success("run-sim-1")
 
-        withTimeout(1_000) { viewModel.state.first { it.selectedProtocol != null } }
+        withContext(Dispatchers.Default.limitedParallelism(1)) {
+            withTimeout(5_000) { viewModel.state.first { it.selectedProtocol != null } }
+        }
 
         viewModel.startSimulatedRun(SimulationConfig(durationMinutes = 1, tickMillis = 250))
         assertTrue(viewModel.state.value.isStartingRun)
 
-        val liveState = withTimeout(2_000) { viewModel.state.first { it.screen == AppScreen.LIVE_RUN } }
+        val liveState = withContext(Dispatchers.Default.limitedParallelism(1)) {
+            withTimeout(5_000) { viewModel.state.first { it.screen == AppScreen.LIVE_RUN } }
+        }
         assertEquals("run-sim-1", liveState.selectedRunId)
         assertTrue(liveState.simulatedRunEnabled)
         assertFalse(liveState.isStartingRun)

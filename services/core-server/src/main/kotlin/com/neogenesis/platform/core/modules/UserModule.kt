@@ -1,10 +1,14 @@
 package com.neogenesis.platform.core.modules
 
+import com.neogenesis.platform.core.audit.AuditLogger
+import com.neogenesis.platform.core.device.DevicePolicyRepository
 import com.neogenesis.platform.core.http.respondError
 import com.neogenesis.platform.core.security.enforceRole
+import com.neogenesis.platform.core.security.requireCapability
 import com.neogenesis.platform.core.storage.UserRepositoryImpl
 import com.neogenesis.platform.shared.domain.Role
 import com.neogenesis.platform.shared.domain.UserId
+import com.neogenesis.platform.shared.domain.device.Capability
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
 import io.ktor.server.auth.authenticate
@@ -20,7 +24,12 @@ object UserModule {
     @Serializable
     data class RoleUpdateRequest(val userId: String, val role: Role)
 
-    fun register(app: Application, userRepository: UserRepositoryImpl) {
+    fun register(
+        app: Application,
+        userRepository: UserRepositoryImpl,
+        auditLogger: AuditLogger,
+        policyRepository: DevicePolicyRepository
+    ) {
         app.routing {
             authenticate("auth-jwt") {
                 route("/api/v1/users") {
@@ -40,12 +49,14 @@ object UserModule {
                     }
                     post("/assign-role") {
                         if (!call.enforceRole(setOf("ADMIN"))) return@post
+                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository, auditLogger)) return@post
                         val req = call.receive<RoleUpdateRequest>()
                         userRepository.assignRole(UserId(req.userId), req.role)
                         call.respond(HttpStatusCode.OK)
                     }
                     post("/revoke-role") {
                         if (!call.enforceRole(setOf("ADMIN"))) return@post
+                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository, auditLogger)) return@post
                         val req = call.receive<RoleUpdateRequest>()
                         userRepository.revokeRole(UserId(req.userId), req.role)
                         call.respond(HttpStatusCode.OK)

@@ -9,7 +9,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.UUID
 
 object SystemIds {
-    val userId: UUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
+    val userId: UUID = UUID.fromString("00000000-0000-0000-0000-000000000002")
     val deviceId: UUID = UUID.fromString("00000000-0000-0000-0000-000000000002")
     val bioinkProfileId: UUID = UUID.fromString("00000000-0000-0000-0000-000000000003")
     val bioinkBatchId: UUID = UUID.fromString("00000000-0000-0000-0000-000000000004")
@@ -74,4 +74,5 @@ object SystemSeed {
         }
     }
 }
+
 

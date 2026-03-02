@@ -1,5 +1,6 @@
 package com.neogenesis.platform.control.device
 
+import com.neogenesis.platform.shared.domain.device.DeviceInfo
 import io.grpc.Metadata
 
 object GrpcDeviceHeaders {
@@ -31,4 +32,3 @@ object GrpcDeviceHeaders {
     private val POLICY_VERSION: Metadata.Key<String> =
         Metadata.Key.of("x-policy-version", Metadata.ASCII_STRING_MARSHALLER)
 }
-

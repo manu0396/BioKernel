@@ -1,6 +1,10 @@
 package com.neogenesis.platform.core.modules
 
+import com.neogenesis.platform.core.audit.AuditLogger
+import com.neogenesis.platform.core.device.DevicePolicyRepository
 import com.neogenesis.platform.core.security.enforceRole
+import com.neogenesis.platform.core.security.requireCapability
+import com.neogenesis.platform.shared.domain.device.Capability
 import com.neogenesis.platform.core.storage.HospitalIntegrations
 import com.neogenesis.platform.core.storage.IntegrationEvents
 import io.ktor.http.HttpStatusCode
@@ -21,12 +25,17 @@ object HospitalIntegrationModule {
     @Serializable
     data class IntegrationEventRequest(val integrationId: String, val eventType: String, val payloadJson: String)
 
-    fun register(app: Application) {
+    fun register(
+        app: Application,
+        auditLogger: AuditLogger,
+        policyRepository: DevicePolicyRepository
+    ) {
         app.routing {
             authenticate("auth-jwt") {
                 route("/api/v1/hospital") {
                     post("/events") {
                         if (!call.enforceRole(setOf("ADMIN", "RESEARCHER"))) return@post
+                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository, auditLogger)) return@post
                         val req = call.receive<IntegrationEventRequest>()
                         transaction {
                             IntegrationEvents.insert {
@@ -41,6 +50,7 @@ object HospitalIntegrationModule {
                     }
                     post("/status") {
                         if (!call.enforceRole(setOf("ADMIN", "RESEARCHER"))) return@post
+                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository, auditLogger)) return@post
                         call.respond(mapOf("status" to "ok"))
                     }
                 }

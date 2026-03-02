@@ -3,8 +3,8 @@ package com.neogenesis.platform.core
 import com.neogenesis.platform.core.device.DevicePolicyRepository
 import com.neogenesis.platform.core.grpc.GrpcDeviceContext
 import com.neogenesis.platform.core.grpc.RegenOpsRunService
-import com.neogenesis.platform.proto.v1.RunServiceGrpcKt
-import com.neogenesis.platform.proto.v1.StartRunRequest
+import com.neogenesis.grpc.RunServiceGrpcKt
+import com.neogenesis.grpc.StartRunRequest
 import io.grpc.Metadata
 import io.grpc.Status
 import io.grpc.inprocess.InProcessChannelBuilder
@@ -18,7 +18,8 @@ import kotlin.test.assertFailsWith
 
 class DeviceTierGrpcEnforcementTest {
     @Test
-    fun tier2DeniedTier1Allowed() = runBlocking {
+    fun tier2DeniedTier1Allowed() {
+        runBlocking {
         val name = InProcessServerBuilder.generateName()
         val policyRepository = DevicePolicyRepository()
         val service = RegenOpsRunService()
@@ -41,7 +42,7 @@ class DeviceTierGrpcEnforcementTest {
         val tier1Stub = RunServiceGrpcKt.RunServiceCoroutineStub(channel)
             .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(deviceHeaders("WINDOWS_DESKTOP", "TIER_1")))
 
-        val denied = assertFailsWith<io.grpc.StatusRuntimeException> {
+        val denied = assertFailsWith<io.grpc.StatusException> {
             tier2Stub.startRun(
                 StartRunRequest.newBuilder()
                     .setProtocolId("proto-1")
@@ -61,6 +62,7 @@ class DeviceTierGrpcEnforcementTest {
 
         channel.shutdownNow()
         server.shutdownNow()
+        }
     }
 
     private fun deviceHeaders(deviceClass: String, tier: String): Metadata {
@@ -69,7 +71,8 @@ class DeviceTierGrpcEnforcementTest {
         metadata.put(Metadata.Key.of("x-device-tier", Metadata.ASCII_STRING_MARSHALLER), tier)
         metadata.put(Metadata.Key.of("x-app-version", Metadata.ASCII_STRING_MARSHALLER), "1.0.0")
         metadata.put(Metadata.Key.of("x-platform", Metadata.ASCII_STRING_MARSHALLER), "desktop")
-        metadata.put(Metadata.Key.of("x-device-id", Metadata.ASCII_STRING_MARSHALLER), "test-device")
+        metadata.put(Metadata.Key.of("x-device-id", Metadata.ASCII_STRING_MARSHALLER), "00000000-0000-0000-0000-000000000002")
         return metadata
     }
 }
+

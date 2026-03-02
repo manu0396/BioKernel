@@ -1,6 +1,7 @@
 package com.neogenesis.platform.core.audit
 
 import com.neogenesis.platform.core.storage.EvidenceRepositoryImpl
+import com.neogenesis.platform.core.storage.SystemSeed
 import com.neogenesis.platform.shared.domain.AuditLog
 import com.neogenesis.platform.shared.domain.DeviceId
 import com.neogenesis.platform.shared.domain.PrintJobId
@@ -22,6 +23,7 @@ class AuditLogger(
         payload: String,
         timestamp: Instant = Clock.System.now()
     ): AuditLog {
+        SystemSeed.ensureSystemEntities()
         val prevHash = repository.lastHash(jobId)
         val payloadHash = Hashing.sha256(payload)
         val hash = computeEvidenceHash(

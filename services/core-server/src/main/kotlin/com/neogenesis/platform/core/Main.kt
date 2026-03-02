@@ -12,6 +12,7 @@ import com.neogenesis.platform.core.observability.PrometheusRequestMetrics
 import com.neogenesis.platform.core.observability.BusinessMetrics
 import com.neogenesis.platform.core.observability.installRequestMetrics
 import com.neogenesis.platform.core.security.TokenStore
+import com.neogenesis.platform.core.security.DeviceCapabilityEnforcement
 import com.neogenesis.platform.core.security.configureAuth
 import com.neogenesis.platform.core.storage.*
 import com.neogenesis.platform.core.telemetry.TelemetryCheckpointTracker
@@ -87,6 +88,7 @@ fun Application.module(appConfig: AppConfig = AppConfig.fromEnv()) {
         }
     }
 
+
     val jwtConfig = appConfig.jwt
     configureAuth(jwtConfig)
 
@@ -108,6 +110,7 @@ fun Application.module(appConfig: AppConfig = AppConfig.fromEnv()) {
     val printJobEventBus = PrintJobEventBus()
     val tokenStore = TokenStore()
     val auditLogger = AuditLogger(evidenceRepository)
+    GrpcCapabilityGuard.auditLogger = auditLogger
     val checkpointTracker = TelemetryCheckpointTracker(
         auditLogger = auditLogger,
         systemActor = UserId(SystemIds.userId.toString())
@@ -117,6 +120,13 @@ fun Application.module(appConfig: AppConfig = AppConfig.fromEnv()) {
         evidenceRepository = evidenceRepository,
         telemetryRepository = telemetryRepository
     )
+
+    install(DeviceCapabilityEnforcement) {
+        this.auditLogger = auditLogger
+        this.policyRepository = devicePolicyRepository
+        allowlistPaths += Regex("^/api/v1/auth/(register|login|refresh|logout)$")
+        allowlistPaths += Regex("^/api/v1/device/register$")
+    }
 
     val firmwareBridge = FirmwareBridgeService(
         telemetryRepository,
@@ -152,24 +162,23 @@ fun Application.module(appConfig: AppConfig = AppConfig.fromEnv()) {
     }
 
     AuthModule.register(this, jwtConfig, userRepository, tokenStore, auditLogger)
-    UserModule.register(this, userRepository)
+    UserModule.register(this, userRepository, auditLogger, devicePolicyRepository)
     DeviceModule.register(this, deviceRepository, pairingRepository, appConfig.pairingSecret, auditLogger, devicePolicyRepository)
-    TelemetryModule.register(this, telemetryRepository, telemetryBus, checkpointTracker, devicePolicyRepository)
+    TelemetryModule.register(this, telemetryRepository, telemetryBus, checkpointTracker, devicePolicyRepository, auditLogger)
     PrintJobModule.register(this, printJobRepository, printJobEventBus, auditLogger, devicePolicyRepository)
     EvidenceModule.register(this, evidenceRepository, auditLogger, evidencePackageBuilder, devicePolicyRepository)
-    DigitalTwinModule.register(this, devicePolicyRepository)
-    HospitalIntegrationModule.register(this)
-    AdminOpsModule.register(this, devicePolicyRepository)
-    BioinkModule.register(this, bioinkRepository)
+    DigitalTwinModule.register(this, devicePolicyRepository, auditLogger)
+    HospitalIntegrationModule.register(this, auditLogger, devicePolicyRepository)
+    AdminOpsModule.register(this, devicePolicyRepository, auditLogger)
+    BioinkModule.register(this, bioinkRepository, auditLogger, devicePolicyRepository)
     RecipeModule.register(this, recipeRepository, auditLogger, devicePolicyRepository)
     HealthModule.register(this)
-    RegenOpsHttpModule.register(this, devicePolicyRepository)
-    ExportsAliasModule.register(this, telemetryRepository, evidencePackageBuilder, devicePolicyRepository)
+    RegenOpsHttpModule.register(this, devicePolicyRepository, auditLogger)
+    ExportsAliasModule.register(this, telemetryRepository, evidencePackageBuilder, devicePolicyRepository, auditLogger)
     DevicePolicyModule.register(this, devicePolicyRepository)
     if (appConfig.demoModeEnabled) {
-        MetricsModule.register(this, devicePolicyRepository)
+        MetricsModule.register(this, devicePolicyRepository, auditLogger)
         CommercialModule.register(this)
-        DemoSimulatorModule.register(this)
+        DemoSimulatorModule.register(this, auditLogger, devicePolicyRepository)
     }
 }
-

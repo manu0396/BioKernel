@@ -46,7 +46,7 @@ object EvidenceModule {
                 route("/api/v1/evidence") {
                     post("/{jobId}/log") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "AUDITOR"))) return@post
-                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository)) return@post
+                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository, auditLogger)) return@post
                         val jobId = call.parameters["jobId"] ?: return@post call.respondError(
                             HttpStatusCode.BadRequest,
                             "missing_job_id",
@@ -65,7 +65,7 @@ object EvidenceModule {
                     get("/{jobId}/export") {
                         try {
                             if (!call.enforceRole(setOf("ADMIN", "AUDITOR"))) return@get
-                            if (!call.requireCapability(Capability.QC_REVIEW, policyRepository)) return@get
+                            if (!call.requireCapability(Capability.QC_REVIEW, policyRepository, auditLogger)) return@get
                             val jobId = call.parameters["jobId"] ?: return@get call.respondError(
                                 HttpStatusCode.BadRequest,
                                 "missing_job_id",
@@ -97,7 +97,7 @@ object EvidenceModule {
                     get("/{jobId}/package") {
                         try {
                             if (!call.enforceRole(setOf("ADMIN", "AUDITOR"))) return@get
-                            if (!call.requireCapability(Capability.QC_REVIEW, policyRepository)) return@get
+                            if (!call.requireCapability(Capability.QC_REVIEW, policyRepository, auditLogger)) return@get
                             val jobId = call.parameters["jobId"] ?: return@get call.respondError(
                                 HttpStatusCode.BadRequest,
                                 "missing_job_id",

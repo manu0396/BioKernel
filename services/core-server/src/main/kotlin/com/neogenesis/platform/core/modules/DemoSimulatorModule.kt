@@ -4,7 +4,11 @@ import com.neogenesis.grpc.GatewayRunEvent
 import com.neogenesis.grpc.GatewayTelemetry
 import com.neogenesis.platform.core.grpc.RegenOpsInMemoryStore
 import com.neogenesis.platform.core.observability.HttpRequestLabels
+import com.neogenesis.platform.core.audit.AuditLogger
+import com.neogenesis.platform.core.device.DevicePolicyRepository
 import com.neogenesis.platform.core.security.enforceRole
+import com.neogenesis.platform.core.security.requireCapability
+import com.neogenesis.platform.shared.domain.device.Capability
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
@@ -34,12 +38,17 @@ object DemoSimulatorModule {
         val runId: String
     )
 
-    fun register(app: Application) {
+    fun register(
+        app: Application,
+        auditLogger: AuditLogger,
+        policyRepository: DevicePolicyRepository
+    ) {
         app.routing {
             authenticate("auth-jwt") {
                 route("/demo/simulator") {
                     post("/runs") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR"))) return@post
+                        if (!call.requireCapability(Capability.PRINT_CONTROL, policyRepository, auditLogger)) return@post
                         val tenantId = call.request.queryParameters["tenant_id"]
                         if (tenantId.isNullOrBlank()) {
                             return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "missing_tenant_id"))

@@ -1,6 +1,7 @@
 package com.neogenesis.platform.core.modules
 
 import com.neogenesis.platform.core.evidence.EvidencePackageBuilder
+import com.neogenesis.platform.core.audit.AuditLogger
 import com.neogenesis.platform.core.security.enforceRole
 import com.neogenesis.platform.core.security.requireCapability
 import com.neogenesis.platform.core.storage.TelemetryRepositoryImpl
@@ -22,13 +23,14 @@ object ExportsAliasModule {
         app: Application,
         telemetryRepository: TelemetryRepositoryImpl,
         evidencePackageBuilder: EvidencePackageBuilder,
-        policyRepository: DevicePolicyRepository
+        policyRepository: DevicePolicyRepository,
+        auditLogger: AuditLogger
     ) {
         app.routing {
             authenticate("auth-jwt") {
                 get("/evidence-pack/job/{runId}/report.csv") {
                     if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER", "AUDITOR"))) return@get
-                    if (!call.requireCapability(Capability.QC_REVIEW, policyRepository)) return@get
+                    if (!call.requireCapability(Capability.QC_REVIEW, policyRepository, auditLogger)) return@get
                     val runId = call.parameters["runId"] ?: return@get
                     val frames = telemetryRepository.list(PrintJobId(runId), 10_000)
                     val csv = TelemetryExport.toCsv(frames)
@@ -37,7 +39,7 @@ object ExportsAliasModule {
                 }
                 get("/audit-bundle/job/{runId}.zip") {
                     if (!call.enforceRole(setOf("ADMIN", "AUDITOR"))) return@get
-                    if (!call.requireCapability(Capability.QC_REVIEW, policyRepository)) return@get
+                    if (!call.requireCapability(Capability.QC_REVIEW, policyRepository, auditLogger)) return@get
                     val runId = call.parameters["runId"] ?: return@get
                     val bundle = evidencePackageBuilder.build(PrintJobId(runId))
                     call.response.header("Content-Disposition", "attachment; filename=\"${bundle.fileName}\"")
@@ -45,7 +47,7 @@ object ExportsAliasModule {
                 }
                 get("/api/v1/telemetry/{runId}/export") {
                     if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER", "AUDITOR"))) return@get
-                    if (!call.requireCapability(Capability.QC_REVIEW, policyRepository)) return@get
+                    if (!call.requireCapability(Capability.QC_REVIEW, policyRepository, auditLogger)) return@get
                     val runId = call.parameters["runId"] ?: return@get
                     val frames = telemetryRepository.list(PrintJobId(runId), 10_000)
                     val csv = TelemetryExport.toCsv(frames)
@@ -54,7 +56,7 @@ object ExportsAliasModule {
                 }
                 get("/api/v1/evidence/{runId}/package") {
                     if (!call.enforceRole(setOf("ADMIN", "AUDITOR"))) return@get
-                    if (!call.requireCapability(Capability.QC_REVIEW, policyRepository)) return@get
+                    if (!call.requireCapability(Capability.QC_REVIEW, policyRepository, auditLogger)) return@get
                     val runId = call.parameters["runId"] ?: return@get
                     val bundle = evidencePackageBuilder.build(PrintJobId(runId))
                     call.response.header("Content-Disposition", "attachment; filename=\"${bundle.fileName}\"")
@@ -64,6 +66,5 @@ object ExportsAliasModule {
         }
     }
 }
-
 
 

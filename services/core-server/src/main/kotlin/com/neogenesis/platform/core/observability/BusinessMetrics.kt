@@ -75,6 +75,13 @@ object BusinessMetrics {
         registry?.counter("neogenesis_telemetry_frames_total", *listOf("metric_key", metricKey).toTypedArray())?.increment()
     }
 
+    fun deviceCapabilityDecision(capability: String, outcome: String) {
+        registry?.counter(
+            "neogenesis_device_capability_total",
+            *listOf("capability", capability, "outcome", outcome).toTypedArray()
+        )?.increment()
+    }
+
     private fun MetricLabels.tags(): List<String> = listOf(
         "tenant_id", tenantId.ifBlank { UNKNOWN },
         "site_id", siteId.ifBlank { UNKNOWN },

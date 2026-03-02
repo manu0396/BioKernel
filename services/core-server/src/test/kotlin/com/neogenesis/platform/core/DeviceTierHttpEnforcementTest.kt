@@ -6,6 +6,7 @@ import com.neogenesis.platform.shared.domain.Role
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -32,7 +33,7 @@ class DeviceTierHttpEnforcementTest {
             contentType(ContentType.Application.Json)
             header(HttpHeaders.Authorization, "Bearer $token")
             deviceHeaders("ANDROID_TABLET", "TIER_2")
-            setBody(mapOf("protocolId" to "proto-1", "protocolVersion" to 1))
+            setBody("""{"protocolId":"proto-1","protocolVersion":1}""")
         }
         assertEquals(HttpStatusCode.Forbidden, tier2Control.status)
 
@@ -75,7 +76,7 @@ class DeviceTierHttpEnforcementTest {
         header("X-Device-Tier", tier)
         header("X-App-Version", "1.0.0")
         header("X-Platform", "desktop")
-        header("X-Device-Id", "test-device")
+        header("X-Device-Id", "00000000-0000-0000-0000-000000000002")
     }
 
     private fun configureTestEnv() {
@@ -96,3 +97,4 @@ class DeviceTierHttpEnforcementTest {
         System.setProperty("NG_DEMO_MODE", "true")
     }
 }
+

@@ -1,6 +1,10 @@
 package com.neogenesis.platform.core.modules
 
+import com.neogenesis.platform.core.audit.AuditLogger
+import com.neogenesis.platform.core.device.DevicePolicyRepository
 import com.neogenesis.platform.core.security.enforceRole
+import com.neogenesis.platform.core.security.requireCapability
+import com.neogenesis.platform.shared.domain.device.Capability
 import com.neogenesis.platform.core.storage.BioinkRepositoryImpl
 import com.neogenesis.platform.shared.domain.*
 import io.ktor.http.HttpStatusCode
@@ -23,12 +27,18 @@ object BioinkModule {
     @Serializable
     data class CreateBatchRequest(val profileId: String, val lotNumber: String, val manufacturer: String, val expiresAtMs: Long)
 
-    fun register(app: Application, repository: BioinkRepositoryImpl) {
+    fun register(
+        app: Application,
+        repository: BioinkRepositoryImpl,
+        auditLogger: AuditLogger,
+        policyRepository: DevicePolicyRepository
+    ) {
         app.routing {
             authenticate("auth-jwt") {
                 route("/api/v1/bioink") {
                     post("/profiles") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER"))) return@post
+                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository, auditLogger)) return@post
                         val req = call.receive<CreateProfileRequest>()
                         val profile = BioinkProfile(
                             id = BioinkProfileId(UUID.randomUUID().toString()),
@@ -45,6 +55,7 @@ object BioinkModule {
                     }
                     post("/batches") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR"))) return@post
+                        if (!call.requireCapability(Capability.ADMIN_SETTINGS, policyRepository, auditLogger)) return@post
                         val req = call.receive<CreateBatchRequest>()
                         val batch = BioinkBatch(
                             id = BioinkBatchId(UUID.randomUUID().toString()),

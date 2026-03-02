@@ -1,5 +1,6 @@
 package com.neogenesis.platform.core.modules
 
+import com.neogenesis.platform.core.audit.AuditLogger
 import com.neogenesis.platform.core.security.enforceRole
 import com.neogenesis.platform.core.security.requireCapability
 import com.neogenesis.platform.shared.digitaltwin.DigitalTwinEngine
@@ -15,7 +16,11 @@ import io.ktor.server.request.*
 import io.ktor.http.*
 
 object DigitalTwinModule {
-    fun register(app: Application, policyRepository: DevicePolicyRepository) {
+    fun register(
+        app: Application,
+        policyRepository: DevicePolicyRepository,
+        auditLogger: AuditLogger
+    ) {
         val engine = DigitalTwinEngine(
             DigitalTwinParameters(
                 nozzleRadiusMicrometers = 200.0,
@@ -30,14 +35,14 @@ object DigitalTwinModule {
                 route("/api/v1/digital-twin") {
                     post("/simulate") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER"))) return@post
-                        if (!call.requireCapability(Capability.LIVE_MONITOR, policyRepository)) return@post
+                        if (!call.requireCapability(Capability.LIVE_MONITOR, policyRepository, auditLogger)) return@post
                         val frame = call.receive<TelemetryFrame>()
                         val result = engine.simulate(frame)
                         call.respond(HttpStatusCode.OK, result)
                     }
                     get("/status") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "RESEARCHER"))) return@get
-                        if (!call.requireCapability(Capability.LIVE_MONITOR, policyRepository)) return@get
+                        if (!call.requireCapability(Capability.LIVE_MONITOR, policyRepository, auditLogger)) return@get
                         call.respond(mapOf("status" to "ok"))
                     }
                 }
@@ -45,4 +50,3 @@ object DigitalTwinModule {
         }
     }
 }
-

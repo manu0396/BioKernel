@@ -1,6 +1,7 @@
 package com.neogenesis.platform.core.modules
 
 import com.neogenesis.platform.core.grpc.RegenOpsInMemoryStore
+import com.neogenesis.platform.core.audit.AuditLogger
 import com.neogenesis.platform.core.security.enforceRole
 import com.neogenesis.platform.core.security.requireCapability
 import com.neogenesis.platform.shared.domain.device.Capability
@@ -30,20 +31,24 @@ object MetricsModule {
     @Serializable
     data class DriftAlertsResponse(val alerts: List<DriftAlertResponse>)
 
-    fun register(app: Application, policyRepository: DevicePolicyRepository) {
+    fun register(
+        app: Application,
+        policyRepository: DevicePolicyRepository,
+        auditLogger: AuditLogger
+    ) {
         app.routing {
             authenticate("auth-jwt") {
                 route("/api/v1/metrics") {
                     get("/reproducibility-score") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "AUDITOR", "RESEARCHER"))) return@get
-                        if (!call.requireCapability(Capability.QC_REVIEW, policyRepository)) return@get
+                        if (!call.requireCapability(Capability.QC_REVIEW, policyRepository, auditLogger)) return@get
                         val runCount = RegenOpsInMemoryStore.runCount()
                         val score = (88 + (runCount % 10)).coerceIn(60, 99)
                         call.respond(ReproducibilityScoreResponse(score))
                     }
                     get("/drift-alerts") {
                         if (!call.enforceRole(setOf("ADMIN", "OPERATOR", "AUDITOR", "RESEARCHER"))) return@get
-                        if (!call.requireCapability(Capability.QC_REVIEW, policyRepository)) return@get
+                        if (!call.requireCapability(Capability.QC_REVIEW, policyRepository, auditLogger)) return@get
                         val alerts = listOf(
                             DriftAlertResponse(
                                 id = "drift-001",
