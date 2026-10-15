@@ -67,7 +67,6 @@ dependencies {
     implementation(libs.grpc.stub)
     implementation(libs.grpc.kotlin)
     implementation(libs.protobuf.java)
-    implementation(libs.neogenesis.contracts)
 
     implementation(libs.logback)
     implementation(libs.logstash)

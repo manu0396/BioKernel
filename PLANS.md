@@ -1,3 +1,36 @@
+# ExecPlan: Resolve CI Build Failure - Missing neogenesis-contracts (2026-10-15)
+
+## Root Cause
+CI and fresh checkouts failed with `Could not find com.neogenesis:neogenesis-contracts:1.0.0` because `agents/device-gateway`, `services/core-server`, and `apps/control-kmp/shared` referenced an external `mavenLocal()` dependency for `com.neogenesis.grpc` protobuf/gRPC stubs. When `shared:proto` was restructured, `bioprint.proto` was missing from `shared/proto/src/main/proto/`, forcing consumers to search for the published artifact in local maven cache.
+
+## Milestones
+1) Restore `bioprint.proto` into `shared/proto/src/main/proto/` to compile `com.neogenesis.grpc` directly in `:shared:proto`.
+2) Remove unresolvable `libs.neogenesis.contracts` dependency from `agents/device-gateway/build.gradle.kts`, `services/core-server/build.gradle.kts`, `apps/control-kmp/shared/build.gradle.kts`, and `gradle/libs.versions.toml`.
+3) Ensure Gradle wrapper executable permission (`chmod +x gradlew`).
+4) Verify build and full test suite with `./gradlew test --no-daemon`.
+
+## File-by-File Change List
+- `shared/proto/src/main/proto/bioprint.proto`: Add gRPC/Protobuf definitions for `com.neogenesis.grpc` services and records.
+- `agents/device-gateway/build.gradle.kts`: Remove `libs.neogenesis.contracts` dependency; use `:shared:proto`.
+- `services/core-server/build.gradle.kts`: Remove `libs.neogenesis.contracts` dependency; use `:shared:proto`.
+- `apps/control-kmp/shared/build.gradle.kts`: Remove `libs.neogenesis.contracts` dependency; use `:shared:proto`.
+- `gradle/libs.versions.toml`: Remove `neogenesisContracts` version and `neogenesis-contracts` library alias.
+- `gradlew`: Set executable permissions (mode 755).
+- `PLANS.md`: Track CI fix and verification results.
+
+## Verification Commands
+- `./gradlew test --no-daemon`
+- `git status`
+
+## Rollback Plan
+- Revert changes via `git checkout` and restore previous configuration.
+
+## Progress
+- [x] Sourced `bioprint.proto` in `shared/proto/src/main/proto/`.
+- [x] Removed `libs.neogenesis.contracts` from consuming modules.
+- [x] Verified full build and test suite passing (`./gradlew test --no-daemon`).
+- [x] Updated `PLANS.md`.
+
 # ExecPlan: Repository Cleanup - Remove .patch and Unneeded .md Files (2026-10-15)
 
 ## Milestones
