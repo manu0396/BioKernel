@@ -1,3 +1,49 @@
+# ExecPlan: Repository Cleanup - Remove .patch and Unneeded .md Files (2026-10-15)
+
+## Milestones
+1) Identify all `.patch` files and obsolete/unneeded `.md` files across the repository.
+2) Remove unneeded `.patch` files from git tracking and disk.
+3) Remove obsolete scratch/audit `.md` files from git tracking and disk.
+4) Verify repository status, build health, and test suites.
+
+## File-by-File Change List
+- `PLANS.md`: Document execution plan, progress, verification commands, and rollback strategy.
+- Deletions (.patch files):
+  - `Add_backend_complete_Phase_5_integrity_audit_and_prepare_Phase_6_release_resolve_serializa1.patch`
+  - `chore__commit_remaining_branch_changes_feat(kmp)__add_billing_UX_gating_and_stabilize_tele.patch`
+  - `feat(kmp)__implement_BioKernel_Control_1_0_0_platform_fix(android)__Resolve_Koin_dependenc.patch`
+- Deletions (.md files):
+  - `AUDIT_REPORT.md` (legacy Windows audit report from early stage development)
+  - `FIX_LOG.md` (scratch fix notes from past troubleshooting)
+  - `GAP_LIST.md` (legacy gap notes)
+  - `README-DEMO.md` (redundant demo note with encoding artifacts, covered in README.md)
+  - `RELEASE_PLAN_1.0.0.md` (legacy scratch release plan from /tmp/ environment)
+  - `docs/PRODUCTIZATION_PLAN_APP_1.0.0.md` (completed feature implementation plan)
+- Retained core files:
+  - `AGENTS.md` (agent rules and verification commands)
+  - `PLANS.md` (persistent change plan tracking)
+  - `README.md` (project overview and monorepo structure)
+  - `CHANGELOG.md` (user-visible release notes)
+  - `CONTRIBUTING.md` (contributor guidelines)
+  - `SECURITY.md` (vulnerability disclosure policy)
+  - `.agents/skills/engram-progress/SKILL.md` (agent memory skill)
+  - `ops/k8s/README.md` (kubernetes documentation)
+  - Core architecture/policy docs in `docs/` (`ARCHITECTURE.md`, `ADR/`, `REGULATORY_TRACEABILITY.md`, `RUNBOOK.md`, `RELEASING.md`, `SECURITY.md`, `ANDROID_BACKUP_POLICY.md`, `BILLING_CLIENT.md`, `OBSERVABILITY_*.md`, `PILOT_INSTALL_CHECKLIST.md`, `qa/UI_ACTIONS_IMPLEMENTED.md`)
+
+## Verification Commands
+- `git status`
+- `./gradlew test`
+
+## Rollback Plan
+- Run `git restore --staged . && git checkout -- .` to restore removed files.
+- Re-run verification commands to confirm baseline state.
+
+## Progress
+- [x] Prepend ExecPlan to `PLANS.md`.
+- [x] Remove `.patch` files.
+- [x] Remove unneeded `.md` files.
+- [x] Run verification commands and confirm git status.
+
 # ExecPlan: Enterprise Client-Ready Gaps (SEC-05, SRE-04, Android Backup, Audit Pass) (2026-03-01)
 
 ## Milestones
