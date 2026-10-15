@@ -73,7 +73,8 @@ class GrpcMtlsTest {
         certFile.writeText("initial")
         val watcher = TlsFileWatcher(listOf(certFile.absolutePath))
         assertFalse(watcher.hasChanges())
-        certFile.writeText("updated")
+        certFile.writeText("updated-content")
+        certFile.setLastModified(certFile.lastModified() + 2000)
         assertTrue(watcher.hasChanges())
     }
 
