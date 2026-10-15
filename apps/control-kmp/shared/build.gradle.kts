@@ -83,7 +83,6 @@ kotlin {
                 implementation(libs.grpc.okhttp)
                 implementation(libs.grpc.kotlin)
                 implementation(libs.protobuf.java)
-                implementation(libs.neogenesis.contracts)
                 implementation(libs.androidx.security.crypto)
                 implementation(libs.koin.android)
             }
@@ -109,7 +108,6 @@ kotlin {
                 implementation(libs.grpc.protobuf)
                 implementation(libs.grpc.stub)
                 implementation(libs.protobuf.java)
-                implementation(libs.neogenesis.contracts)
                 implementation(libs.org.apache.poi)
             }
         }

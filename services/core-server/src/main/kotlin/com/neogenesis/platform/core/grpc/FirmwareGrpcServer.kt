@@ -101,13 +101,19 @@ fun Application.installGrpcServer(
 }
 
 class TlsFileWatcher(private val paths: List<String>) {
-    private var lastModified: Map<String, Long> = paths.associateWith { File(it).lastModified() }
+    private var state: Map<String, Pair<Long, Long>> = paths.associateWith {
+        val file = File(it)
+        file.lastModified() to file.length()
+    }
 
     fun hasChanges(): Boolean {
-        val next = paths.associateWith { File(it).lastModified() }
-        val changed = next.any { (path, time) -> time != (lastModified[path] ?: -1) }
+        val next = paths.associateWith {
+            val file = File(it)
+            file.lastModified() to file.length()
+        }
+        val changed = next.any { (path, s) -> s != (state[path] ?: (-1L to -1L)) }
         if (changed) {
-            lastModified = next
+            state = next
         }
         return changed
     }

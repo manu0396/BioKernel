@@ -1,3 +1,93 @@
+# ExecPlan: Resolve CI Build and Test Failures (2026-10-15)
+
+## Root Causes
+1. **Missing contracts dependency**: CI failed with `Could not find com.neogenesis:neogenesis-contracts:1.0.0` because `agents/device-gateway`, `services/core-server`, and `apps/control-kmp/shared` referenced an external `mavenLocal()` dependency for `com.neogenesis.grpc` protobuf/gRPC stubs. When `shared:proto` was restructured, `bioprint.proto` was missing from `shared/proto/src/main/proto/`, forcing consumers to search for the published artifact in the local maven cache.
+2. **Linux filesystem timestamp coarseness in `GrpcMtlsTest`**: Fast sequential file modifications during unit tests resulted in identical `lastModified` millisecond timestamps, preventing `TlsFileWatcher` from detecting updated TLS certificates on GitHub Actions runners.
+3. **Asynchronous race condition in `RegenOpsViewModelTest`**: In `startRunNavigatesToLive` and `startSimulatedRunNavigatesToLive`, the ViewModel launched an asynchronous coroutine on `Dispatchers.Default`. Because mocked API calls returned immediately, the coroutine could finish and set `isStartingRun = false` before the calling test thread evaluated `assertTrue(viewModel.state.value.isStartingRun)`.
+
+## Milestones
+1) Restore `bioprint.proto` into `shared/proto/src/main/proto/` to compile `com.neogenesis.grpc` directly in `:shared:proto`.
+2) Remove unresolvable `libs.neogenesis.contracts` dependency from `agents/device-gateway/build.gradle.kts`, `services/core-server/build.gradle.kts`, `apps/control-kmp/shared/build.gradle.kts`, and `gradle/libs.versions.toml`.
+3) Ensure Gradle wrapper executable permission (`chmod +x gradlew`).
+4) Harden `TlsFileWatcher` to check both file size and `lastModified`, and ensure test files have distinct timestamps.
+5) Harden `RegenOpsViewModelTest` with `CompletableDeferred` gating to deterministically synchronize `isStartingRun` and `LIVE_RUN` screen transitions without race conditions.
+6) Verify build and full test suite with `./gradlew test --no-daemon` locally and in GitHub Actions CI.
+
+## File-by-File Change List
+- `shared/proto/src/main/proto/bioprint.proto`: Add gRPC/Protobuf definitions for `com.neogenesis.grpc` services and records.
+- `agents/device-gateway/build.gradle.kts`: Remove `libs.neogenesis.contracts` dependency; use `:shared:proto`.
+- `services/core-server/build.gradle.kts`: Remove `libs.neogenesis.contracts` dependency; use `:shared:proto`.
+- `apps/control-kmp/shared/build.gradle.kts`: Remove `libs.neogenesis.contracts` dependency; use `:shared:proto`.
+- `gradle/libs.versions.toml`: Remove `neogenesisContracts` version and `neogenesis-contracts` library alias.
+- `gradlew`: Set executable permissions (mode 755).
+- `services/core-server/src/main/kotlin/com/neogenesis/platform/core/grpc/FirmwareGrpcServer.kt`: Enhance `TlsFileWatcher` to monitor `(lastModified, length)` pairs.
+- `services/core-server/src/test/kotlin/com/neogenesis/platform/core/GrpcMtlsTest.kt`: Advance `lastModified` by 2000ms and write distinct content for reliable test execution.
+- `apps/control-kmp/shared/src/commonTest/kotlin/com/neogenesis/platform/control/presentation/RegenOpsViewModelTest.kt`: Add `CompletableDeferred` synchronization gates to eliminate test race conditions.
+- `PLANS.md`: Track CI fix, test stabilization, and verification results.
+
+## Verification Commands
+- `./gradlew test --no-daemon`
+- `./gradlew :apps:control-kmp:shared:cleanTestReleaseUnitTest :apps:control-kmp:shared:testReleaseUnitTest`
+- `gh run view <run-id>`
+- `gh pr view 2`
+
+## Rollback Plan
+- Revert changes via `git checkout` and restore previous configuration.
+
+## Progress
+- [x] Sourced `bioprint.proto` in `shared/proto/src/main/proto/`.
+- [x] Removed `libs.neogenesis.contracts` from consuming modules.
+- [x] Hardened `TlsFileWatcher` and `GrpcMtlsTest` against filesystem timestamp granularity.
+- [x] Hardened `RegenOpsViewModelTest` against asynchronous coroutine races.
+- [x] Verified full build and test suite passing locally (`./gradlew test --no-daemon`).
+- [x] Updated `PLANS.md`.
+
+# ExecPlan: Repository Cleanup - Remove .patch and Unneeded .md Files (2026-10-15)
+
+## Milestones
+1) Identify all `.patch` files and obsolete/unneeded `.md` files across the repository.
+2) Remove unneeded `.patch` files from git tracking and disk.
+3) Remove obsolete scratch/audit `.md` files from git tracking and disk.
+4) Verify repository status, build health, and test suites.
+
+## File-by-File Change List
+- `PLANS.md`: Document execution plan, progress, verification commands, and rollback strategy.
+- Deletions (.patch files):
+  - `Add_backend_complete_Phase_5_integrity_audit_and_prepare_Phase_6_release_resolve_serializa1.patch`
+  - `chore__commit_remaining_branch_changes_feat(kmp)__add_billing_UX_gating_and_stabilize_tele.patch`
+  - `feat(kmp)__implement_BioKernel_Control_1_0_0_platform_fix(android)__Resolve_Koin_dependenc.patch`
+- Deletions (.md files):
+  - `AUDIT_REPORT.md` (legacy Windows audit report from early stage development)
+  - `FIX_LOG.md` (scratch fix notes from past troubleshooting)
+  - `GAP_LIST.md` (legacy gap notes)
+  - `README-DEMO.md` (redundant demo note with encoding artifacts, covered in README.md)
+  - `RELEASE_PLAN_1.0.0.md` (legacy scratch release plan from /tmp/ environment)
+  - `docs/PRODUCTIZATION_PLAN_APP_1.0.0.md` (completed feature implementation plan)
+- Retained core files:
+  - `AGENTS.md` (agent rules and verification commands)
+  - `PLANS.md` (persistent change plan tracking)
+  - `README.md` (project overview and monorepo structure)
+  - `CHANGELOG.md` (user-visible release notes)
+  - `CONTRIBUTING.md` (contributor guidelines)
+  - `SECURITY.md` (vulnerability disclosure policy)
+  - `.agents/skills/engram-progress/SKILL.md` (agent memory skill)
+  - `ops/k8s/README.md` (kubernetes documentation)
+  - Core architecture/policy docs in `docs/` (`ARCHITECTURE.md`, `ADR/`, `REGULATORY_TRACEABILITY.md`, `RUNBOOK.md`, `RELEASING.md`, `SECURITY.md`, `ANDROID_BACKUP_POLICY.md`, `BILLING_CLIENT.md`, `OBSERVABILITY_*.md`, `PILOT_INSTALL_CHECKLIST.md`, `qa/UI_ACTIONS_IMPLEMENTED.md`)
+
+## Verification Commands
+- `git status`
+- `./gradlew test`
+
+## Rollback Plan
+- Run `git restore --staged . && git checkout -- .` to restore removed files.
+- Re-run verification commands to confirm baseline state.
+
+## Progress
+- [x] Prepend ExecPlan to `PLANS.md`.
+- [x] Remove `.patch` files.
+- [x] Remove unneeded `.md` files.
+- [x] Run verification commands and confirm git status.
+
 # ExecPlan: Enterprise Client-Ready Gaps (SEC-05, SRE-04, Android Backup, Audit Pass) (2026-03-01)
 
 ## Milestones
