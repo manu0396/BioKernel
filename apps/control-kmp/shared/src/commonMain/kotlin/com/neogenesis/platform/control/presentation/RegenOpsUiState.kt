@@ -21,9 +21,16 @@ enum class AppScreen {
 
 data class AuthUiState(
     val isAuthenticated: Boolean = false,
+    val isDemoSession: Boolean = false,
     val deviceAuthorization: DeviceAuthorization? = null,
     val statusMessage: String? = null
 )
+
+enum class RunMode(val label: String) {
+    CONNECTED("CONNECTED DEVICE"),
+    SIMULATED("SIMULATION"),
+    DEMO("DEMO RUN")
+}
 
 data class ExportUiState(
     val runId: String = "",
@@ -54,6 +61,7 @@ data class RegenOpsUiState(
     val selectedProtocol: Protocol? = null,
     val selectedVersion: ProtocolVersion? = null,
     val selectedRunId: String? = null,
+    val activeRunMode: RunMode? = null,
     val protocolQuery: String = "",
     val runEvents: List<RunEvent> = emptyList(),
     val telemetryFrames: List<TelemetryFrame> = emptyList(),

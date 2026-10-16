@@ -41,7 +41,7 @@ import kotlinx.datetime.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class RegenOpsViewModelTest {
+class RegenOpsViewModelJvmTest {
 
     @Test
     fun startStreamingCollectsTelemetry() = runTest {
@@ -53,7 +53,7 @@ class RegenOpsViewModelTest {
 
         val protocolsFlow = MutableStateFlow(emptyList<Protocol>())
         val runsFlow = MutableStateFlow(emptyList<Run>())
-        val telemetryStream = MutableSharedFlow<TelemetryFrame>()
+        val telemetryStream = MutableSharedFlow<TelemetryFrame>(replay = 1)
 
         every { repository.protocols } returns protocolsFlow
         every { repository.runs } returns runsFlow
@@ -125,3 +125,4 @@ class RegenOpsViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+}

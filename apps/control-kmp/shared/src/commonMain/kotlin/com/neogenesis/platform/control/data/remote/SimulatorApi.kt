@@ -46,9 +46,19 @@ class HttpSimulatorApi(
                 setBody(body)
             }
         }
+
         return when (result) {
             is ApiResult.Success -> ApiResult.Success(result.value.runId)
             is ApiResult.Failure -> result
         }
+    }
+}
+
+class DemoSimulatorApi : SimulatorApi {
+    private var sequence = 0
+
+    override suspend fun startSimulatedRun(protocolId: String, config: SimulationConfig): ApiResult<String> {
+        sequence += 1
+        return ApiResult.Success("run-simulated-demo-$sequence")
     }
 }

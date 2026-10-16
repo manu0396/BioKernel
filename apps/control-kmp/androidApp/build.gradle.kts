@@ -14,6 +14,32 @@ val localProperties = Properties().apply {
     }
 }
 
+val dotEnvProperties: Properties = Properties()
+rootProject.file(".env").let { dotEnvFile ->
+    if (dotEnvFile.exists()) {
+        dotEnvFile.forEachLine { line ->
+            val entry = line.trim()
+            if (entry.isNotEmpty() && !entry.startsWith("#")) {
+                val separator = entry.indexOf('=')
+                if (separator > 0) {
+                    val key: String = entry.substring(0, separator).trim().removePrefix("export").trim()
+                    val rawValue: String = entry.substring(separator + 1).trim()
+                    val value: String = if (
+                        rawValue.length >= 2 &&
+                        rawValue.first() == rawValue.last() &&
+                        rawValue.first() in listOf('"', '\'')
+                    ) {
+                        rawValue.substring(1, rawValue.length - 1)
+                    } else {
+                        rawValue
+                    }
+                    dotEnvProperties.setProperty(key, value)
+                }
+            }
+        }
+    }
+}
+
 fun propertyOrEnv(key: String, default: String): String {
     val camelKey = key.lowercase().split("_").joinToString("") { it.replaceFirstChar { c -> c.uppercase() } }.replaceFirstChar { it.lowercase() }
     
@@ -22,8 +48,13 @@ fun propertyOrEnv(key: String, default: String): String {
         ?: (findProperty(key) as? String)
         ?: (findProperty(camelKey) as? String)
         ?: System.getenv(key)
+        ?: dotEnvProperties.getProperty(key)
+        ?: dotEnvProperties.getProperty(camelKey)
         ?: default
 }
+
+fun String.toBuildConfigLiteral(): String =
+    "\"${replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")}\""
 
 fun propertyOrEnvInt(key: String, default: Int): Int {
     val value = propertyOrEnv(key, default.toString())
@@ -43,19 +74,19 @@ android {
         applicationId = "com.neogenesis.platform.control.android"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Map configuration to BuildConfig
-        buildConfigField("String", "OIDC_ISSUER", "\"${propertyOrEnv("OIDC_ISSUER", "")}\"")
-        buildConfigField("String", "OIDC_CLIENT_ID", "\"${propertyOrEnv("OIDC_CLIENT_ID", "")}\"")
-        buildConfigField("String", "OIDC_AUDIENCE", "\"${propertyOrEnv("OIDC_AUDIENCE", "")}\"")
+        buildConfigField("String", "OIDC_ISSUER", propertyOrEnv("OIDC_ISSUER", "").toBuildConfigLiteral())
+        buildConfigField("String", "OIDC_CLIENT_ID", propertyOrEnv("OIDC_CLIENT_ID", "").toBuildConfigLiteral())
+        buildConfigField("String", "OIDC_AUDIENCE", propertyOrEnv("OIDC_AUDIENCE", "").toBuildConfigLiteral())
 
-        buildConfigField("String", "REGENOPS_HTTP_BASE_URL", "\"${propertyOrEnv("REGENOPS_HTTP_BASE_URL", "http://10.0.2.2:8080")}\"")
-        buildConfigField("String", "REGENOPS_GRPC_HOST", "\"${propertyOrEnv("REGENOPS_GRPC_HOST", "10.0.2.2")}\"")
-        buildConfigField("int", "REGENOPS_GRPC_PORT", "${propertyOrEnvInt("REGENOPS_GRPC_PORT", 50051)}")
+        buildConfigField("String", "REGENOPS_HTTP_BASE_URL", propertyOrEnv("REGENOPS_HTTP_BASE_URL", "http://10.0.2.2:8080").toBuildConfigLiteral())
+        buildConfigField("String", "REGENOPS_GRPC_HOST", propertyOrEnv("REGENOPS_GRPC_HOST", "10.0.2.2").toBuildConfigLiteral())
+        buildConfigField("int", "REGENOPS_GRPC_PORT", "${propertyOrEnvInt("REGENOPS_GRPC_PORT", 9090)}")
         buildConfigField("boolean", "REGENOPS_GRPC_TLS", "${propertyOrEnvBool("REGENOPS_GRPC_TLS", false)}")
 
         buildConfigField("boolean", "TRACE_MODE", "${propertyOrEnvBool("TRACE_MODE", false)}")
@@ -137,5 +168,10 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
 
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.kotlinx.datetime)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

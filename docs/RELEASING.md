@@ -2,6 +2,13 @@
 
 This document describes the production release flow for `v1.0.0` and later.
 
+The current Android `1.0.0` artifact is explicitly a mock-backed demo/test
+build, not a production or controlled-pilot release. Do not tag or distribute
+it as a pilot-accepted release until the real identity-provider, connected
+device/gateway, telemetry-freshness, operator-usability, and security/privacy
+gates in the MVP readiness matrix have been completed. Automated test mocks
+must not be packaged as authentication or hardware acceptance.
+
 ## Prerequisites
 - JDK 17 available.
 - Android SDK installed.

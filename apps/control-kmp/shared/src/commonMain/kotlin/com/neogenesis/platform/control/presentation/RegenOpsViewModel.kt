@@ -149,7 +149,9 @@ class RegenOpsViewModel(
 
     private fun setScreenInternal(screen: AppScreen) {
         val gate = CapabilityGate(currentCapabilities())
-        if (!gate.canAccess(screen)) {
+        val demoControlAllowed =
+            config.demoModeEnabled && _state.value.auth.isDemoSession && screen == AppScreen.RUN_CONTROL
+        if (!gate.canAccess(screen) && !demoControlAllowed) {
             _state.update {
                 it.copy(
                     screen = AppScreen.UNSUPPORTED,
@@ -350,7 +352,15 @@ class RegenOpsViewModel(
     }
 
     fun startRun() {
-        if (!requireCapability(Capability.PRINT_CONTROL)) return
+        if (_state.value.auth.isDemoSession || config.demoModeEnabled) {
+            _state.update { it.copy(errorBanner = "Connected-device runs are unavailable in demo mode.") }
+            return
+        }
+        startRun(RunMode.CONNECTED)
+    }
+
+    private fun startRun(runMode: RunMode) {
+        if (runMode != RunMode.DEMO && !requireCapability(Capability.PRINT_CONTROL)) return
         if (_state.value.isStartingRun) {
             _state.update { it.copy(statusMessage = "Run already starting...") }
             return
@@ -363,7 +373,7 @@ class RegenOpsViewModel(
         }
 
         logger.log(LogLevel.INFO, "Start mission clicked", mapOf("protocolId" to protocolId, "versionId" to versionId))
-        _state.update { it.copy(isStartingRun = true, errorBanner = null) }
+        _state.update { it.copy(isStartingRun = true, activeRunMode = null, errorBanner = null) }
 
         scope.launch {
             try {
@@ -371,13 +381,12 @@ class RegenOpsViewModel(
                 when (val result = repository.startRun(protocolId, versionId)) {
                     is ApiResult.Success -> {
                         val runId = result.value.id.value
-                        val message =
-                            if (_state.value.simulatedRunEnabled) "Simulated run requested" else "Run started"
                         logger.log(LogLevel.INFO, "Run started", mapOf("runId" to Redaction.value(runId)))
                         _state.update {
                             it.copy(
                                 selectedRunId = runId,
-                                statusMessage = message,
+                                activeRunMode = runMode,
+                                statusMessage = if (runMode == RunMode.DEMO) "Demo run started" else "Run started",
                                 errorBanner = null,
                                 isStartingRun = false
                             )
@@ -402,11 +411,11 @@ class RegenOpsViewModel(
 
     fun startDemoRun() {
         if (!_state.value.demoModeEnabled) return
-        startRun()
+        startRun(RunMode.DEMO)
     }
 
     fun startSimulatedRun(config: SimulationConfig) {
-        if (!requireCapability(Capability.PRINT_CONTROL)) return
+        if (!_state.value.auth.isDemoSession && !requireCapability(Capability.PRINT_CONTROL)) return
         if (_state.value.isStartingRun) {
             _state.update { it.copy(statusMessage = "Simulation already starting...") }
             return
@@ -429,6 +438,7 @@ class RegenOpsViewModel(
                 statusMessage =
                     "Starting simulation: ${config.durationMinutes}m @${config.speedFactor}x (${config.tickMillis}ms tick)",
                 isStartingRun = true,
+                activeRunMode = null,
                 errorBanner = null
             )
         }
@@ -443,6 +453,7 @@ class RegenOpsViewModel(
                         _state.update {
                             it.copy(
                                 selectedRunId = runId,
+                                activeRunMode = RunMode.SIMULATED,
                                 statusMessage = "Simulation started",
                                 errorBanner = null,
                                 isStartingRun = false
@@ -465,7 +476,7 @@ class RegenOpsViewModel(
     }
 
     fun pauseRun() {
-        if (!requireCapability(Capability.PRINT_CONTROL)) return
+        if (!canControlSyntheticRun() && !requireCapability(Capability.PRINT_CONTROL)) return
         val runId = _state.value.selectedRunId ?: _state.value.runs.firstOrNull()?.id?.value ?: return
         scope.launch {
             when (val result = repository.updateRunStatus(runId, RunStatus.PAUSED)) {
@@ -478,7 +489,7 @@ class RegenOpsViewModel(
     }
 
     fun abortRun() {
-        if (!requireCapability(Capability.PRINT_CONTROL)) return
+        if (!canControlSyntheticRun() && !requireCapability(Capability.PRINT_CONTROL)) return
         val runId = _state.value.selectedRunId ?: _state.value.runs.firstOrNull()?.id?.value ?: return
         scope.launch {
             when (val result = repository.updateRunStatus(runId, RunStatus.ABORTED)) {
@@ -551,6 +562,37 @@ class RegenOpsViewModel(
         }
     }
 
+    fun cancelDeviceAuth() {
+        if (_state.value.auth.deviceAuthorization == null) return
+        _state.update {
+            it.copy(
+                auth = it.auth.copy(
+                    deviceAuthorization = null,
+                    statusMessage = "Authorization cancelled",
+                ),
+            )
+        }
+    }
+
+    fun enterDemoSession() {
+        if (!config.demoModeEnabled) {
+            _state.update { it.copy(auth = it.auth.copy(statusMessage = "Demo mode is not enabled for this build.")) }
+            return
+        }
+        backStack.clear()
+        _state.update {
+            it.copy(
+                screen = AppScreen.PROTOCOLS,
+                auth = AuthUiState(isDemoSession = true, statusMessage = "Demo session - not authenticated"),
+                activeRunMode = null,
+                statusMessage = null,
+                errorBanner = null,
+            )
+        }
+        refreshProtocols()
+        refreshRuns()
+    }
+
     fun pollDeviceAuth() {
         val device = _state.value.auth.deviceAuthorization ?: return
         val issuer = config.oidcIssuer
@@ -590,7 +632,16 @@ class RegenOpsViewModel(
         oidcRepository.clearTokens()
         backStack.clear()
         stopStreaming()
-        _state.update { it.copy(auth = AuthUiState(isAuthenticated = false), statusMessage = "Logged out") }
+        _state.update {
+            it.copy(
+                auth = AuthUiState(isAuthenticated = false),
+                activeRunMode = null,
+                selectedRunId = null,
+                runEvents = emptyList(),
+                telemetryFrames = emptyList(),
+                statusMessage = "Logged out",
+            )
+        }
     }
 
     // -----------------------------------------------------------------------------
@@ -793,6 +844,11 @@ class RegenOpsViewModel(
             )
     }
 
+    private fun canControlSyntheticRun(): Boolean =
+        config.demoModeEnabled &&
+            _state.value.auth.isDemoSession &&
+            _state.value.activeRunMode in setOf(RunMode.DEMO, RunMode.SIMULATED)
+
     private fun requireCapability(required: Capability): Boolean {
         val allowed = currentCapabilities().contains(required)
         if (!allowed) {
@@ -806,9 +862,5 @@ class RegenOpsViewModel(
         return allowed
     }
 }
-
-
-
-
 
 

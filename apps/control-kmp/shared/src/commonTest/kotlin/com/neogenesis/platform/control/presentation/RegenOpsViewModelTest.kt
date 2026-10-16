@@ -35,8 +35,46 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import io.mockk.coVerify
 
 class RegenOpsViewModelTest {
+    @Test
+    fun demoEntryRemainsUnauthenticatedAndBlocksConnectedRuns() = runTest {
+        val protocol = sampleProtocol()
+        val repository = mockRepository(
+            MutableStateFlow(listOf(protocol)),
+            MutableStateFlow(emptyList())
+        )
+        coEvery { repository.refreshProtocols() } returns ApiResult.Success(listOf(protocol))
+        coEvery { repository.refreshRuns() } returns ApiResult.Success(emptyList())
+        val viewModel = RegenOpsViewModel(
+            config = sampleConfig(demoModeEnabled = true),
+            repository = repository,
+            oidcRepository = mockOidc(),
+            devicePolicyApi = mockk(relaxed = true),
+            deviceInfoStore = sampleDeviceInfoStore(),
+            commercialApi = mockk(relaxed = true),
+            exportsApi = mockk(relaxed = true),
+            traceApi = mockk(relaxed = true),
+            simulatorApi = mockk(relaxed = true),
+            logger = NoOpLogger
+        )
+
+        try {
+            viewModel.enterDemoSession()
+            assertTrue(viewModel.state.value.auth.isDemoSession)
+            assertFalse(viewModel.state.value.auth.isAuthenticated)
+            assertEquals(AppScreen.PROTOCOLS, viewModel.state.value.screen)
+
+            viewModel.startRun()
+
+            assertEquals("Connected-device runs are unavailable in demo mode.", viewModel.state.value.errorBanner)
+            coVerify(exactly = 0) { repository.startRun(any(), any()) }
+        } finally {
+            viewModel.close()
+        }
+    }
+
     @Test
     fun startRunNavigatesToLive() = runTest {
         val protocol = sampleProtocol()
@@ -139,7 +177,7 @@ class RegenOpsViewModelTest {
         }
     }
 
-    private fun sampleConfig() = AppConfig(
+    private fun sampleConfig(demoModeEnabled: Boolean = false) = AppConfig(
         httpBaseUrl = "http://localhost",
         grpcHost = "localhost",
         grpcPort = 9090,
@@ -150,7 +188,7 @@ class RegenOpsViewModelTest {
         oidcAudience = null,
         tenantId = "tenant-1",
         traceModeEnabled = false,
-        demoModeEnabled = false,
+        demoModeEnabled = demoModeEnabled,
         founderModeEnabled = false,
         commercialModeEnabled = false
     )

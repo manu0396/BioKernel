@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0 Mock-backed Demo/Test Build - 2026-10-16
+- Align Android demo/test artifact metadata to versionName `1.0.0` (versionCode 2).
+- Add deterministic Ktor-mocked OIDC device-flow tests and mock gateway telemetry association tests.
+- Remove the production `http://mock-auth` token/authorization success bypass; mock identity responses now come only from test engines.
+- This artifact is for demo and test use; OIDC provider acceptance, connected lab-device/gateway acceptance, telemetry freshness SLA, and operator pilot approval remain incomplete.
+
 ## 1.0.0 - 2026-02-23
 - Production-ready backend config with required secrets and env-driven runtime.
 - Hash-chained audit logging for login, pairing, recipes, jobs, and telemetry checkpoints.

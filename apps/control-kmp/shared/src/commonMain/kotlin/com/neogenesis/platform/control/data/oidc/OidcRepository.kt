@@ -13,19 +13,6 @@ class OidcRepository(
     private val logger: AppLogger
 ) {
     suspend fun startDeviceAuthorization(config: OidcConfig): ApiResult<DeviceAuthorization> {
-        if (config.issuer == "http://mock-auth") {
-            return ApiResult.Success(
-                DeviceAuthorization(
-                    deviceCode = "mock_device_code",
-                    userCode = "MOCK-123",
-                    verificationUri = "http://mock-auth/verify",
-                    verificationUriComplete = "http://mock-auth/verify?code=MOCK-123",
-                    expiresIn = 300,
-                    intervalSeconds = 1
-                )
-            )
-        }
-        
         return when (val response = service.requestDeviceAuthorization(config)) {
             is ApiResult.Success -> {
                 ApiResult.Success(
@@ -44,12 +31,6 @@ class OidcRepository(
     }
 
     suspend fun pollForTokens(config: OidcConfig, deviceCode: String, intervalSeconds: Int): ApiResult<AuthTokens> {
-        if (config.issuer == "http://mock-auth") {
-            val mockToken = "mock_access_token_${System.currentTimeMillis()}"
-            tokenStorage.writeTokens(mockToken, "mock_refresh_token")
-            return ApiResult.Success(AuthTokens(mockToken, "mock_refresh_token"))
-        }
-
         repeat(60) {
             when (val response = service.pollToken(config, deviceCode)) {
                 is ApiResult.Success -> {

@@ -32,11 +32,10 @@ kotlin {
 
     sourceSets {
         val commonMain by getting {
-            // Collapse shared Gradle modules into this KMP module for IDE stability
-            kotlin.srcDir("../../../shared/domain/src/commonMain/kotlin")
-            kotlin.srcDir("../../../shared/data/src/commonMain/kotlin")
-            kotlin.srcDir("../../../shared/network/src/commonMain/kotlin")
             dependencies {
+                api(project(":shared:domain"))
+                api(project(":shared:data"))
+                api(project(":shared:network"))
                 api(project(":shared:proto"))
                 implementation(libs.kotlinx.coroutines)
                 implementation(libs.kotlinx.datetime)
@@ -55,9 +54,6 @@ kotlin {
             }
         }
         val commonTest by getting {
-            kotlin.srcDir("../../../shared/domain/src/commonTest/kotlin")
-            kotlin.srcDir("../../../shared/data/src/commonTest/kotlin")
-            kotlin.srcDir("../../../shared/network/src/commonTest/kotlin")
             dependencies {
                 implementation(kotlin("test"))
                 implementation(libs.kotlinx.coroutines.test)
@@ -68,15 +64,9 @@ kotlin {
         }
         val jvmSharedMain by creating {
             dependsOn(commonMain)
-            kotlin.srcDir("../../../shared/domain/src/jvmSharedMain/kotlin")
-            kotlin.srcDir("../../../shared/data/src/jvmSharedMain/kotlin")
-            kotlin.srcDir("../../../shared/network/src/jvmSharedMain/kotlin")
         }
         val androidMain by getting {
             dependsOn(jvmSharedMain)
-            kotlin.srcDir("../../../shared/domain/src/androidMain/kotlin")
-            kotlin.srcDir("../../../shared/data/src/androidMain/kotlin")
-            kotlin.srcDir("../../../shared/network/src/androidMain/kotlin")
             dependencies {
                 implementation(libs.ktor.client.okhttp)
                 implementation(libs.sqldelight.android.driver)
@@ -97,9 +87,6 @@ kotlin {
         }
         val jvmMain by getting {
             dependsOn(jvmSharedMain)
-            kotlin.srcDir("../../../shared/domain/src/desktopMain/kotlin")
-            kotlin.srcDir("../../../shared/data/src/desktopMain/kotlin")
-            kotlin.srcDir("../../../shared/network/src/desktopMain/kotlin")
             dependencies {
                 implementation(libs.ktor.client.cio)
                 implementation(libs.sqldelight.sqlite.driver)

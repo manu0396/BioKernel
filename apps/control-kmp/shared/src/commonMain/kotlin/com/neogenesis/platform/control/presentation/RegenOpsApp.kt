@@ -74,27 +74,28 @@ fun RegenOpsApp(
     NgTheme {
         val isDesktop = WindowSize.isDesktop()
         val canGoBack = viewModel.canGoBack()
+        val hasControlAccess = state.auth.isAuthenticated || state.auth.isDemoSession
 
         NgScaffold(
             title = "BioKernel Control",
             actions = {
-                if (state.auth.isAuthenticated) {
+                if (hasControlAccess) {
                     IconButton(onClick = { viewModel.refreshProtocols() }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
                     TextButton(onClick = { viewModel.logout() }) {
-                        Text("Logout", color = MaterialTheme.colorScheme.error)
+                        Text(if (state.auth.isDemoSession) "Exit demo" else "Logout", color = MaterialTheme.colorScheme.error)
                     }
                 }
             },
             bottomBar = {
-                if (!isDesktop && state.auth.isAuthenticated) {
+                if (!isDesktop && hasControlAccess) {
                     NgBottomNavigation(state.screen, viewModel::setScreen, state)
                 }
             },
         ) { paddingValues ->
             Row(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                if (isDesktop && state.auth.isAuthenticated) {
+                if (isDesktop && hasControlAccess) {
                     NgNavigationRail(state.screen, viewModel::setScreen, state)
                 }
 
@@ -116,6 +117,7 @@ fun RegenOpsApp(
                             Row(horizontalArrangement = Arrangement.spacedBy(NgSpacing.Small)) {
                                 if (state.traceModeEnabled) NgStatusChip(text = "TRACE ENABLED", status = NgStatus.Success)
                                 if (state.demoModeEnabled) NgStatusChip(text = "DEMO MODE", status = NgStatus.Info)
+                                if (state.auth.isDemoSession) NgStatusChip(text = "DEMO SESSION - NOT AUTHENTICATED", status = NgStatus.Warning)
                                 if (state.simulatedRunEnabled) {
                                     NgStatusChip(
                                         text = "SIMULATION",
@@ -131,12 +133,15 @@ fun RegenOpsApp(
                                 }
                             }
 
-                            if (!state.auth.isAuthenticated) {
+                            if (!hasControlAccess) {
                                 AuthScreen(
                                     state = state.auth,
                                     onStart = { viewModel.beginDeviceAuth { } },
                                     onOpen = openExternalUrl,
                                     onPoll = { viewModel.pollDeviceAuth() },
+                                    onCancel = viewModel::cancelDeviceAuth,
+                                    showDemoEntry = state.demoModeEnabled,
+                                    onEnterDemo = viewModel::enterDemoSession,
                                 )
                             } else {
                                 when (screen) {
@@ -224,6 +229,7 @@ fun RegenOpsApp(
                                             runEvents = state.runEvents,
                                             telemetryFrames = state.telemetryFrames,
                                             streamStatus = state.streamStatus,
+                                            runModeLabel = state.activeRunMode?.label,
                                             onPause = viewModel::pauseRun,
                                             onStop = viewModel::abortRun,
                                             onDownloadReport = {
@@ -317,6 +323,9 @@ fun AuthScreen(
     onStart: () -> Unit,
     onOpen: (String) -> Unit,
     onPoll: () -> Unit,
+    onCancel: () -> Unit = {},
+    showDemoEntry: Boolean = false,
+    onEnterDemo: () -> Unit = {},
 ) {
     val background = Brush.linearGradient(
         colors = listOf(
@@ -358,7 +367,7 @@ fun AuthScreen(
                 Text("NeoGenesis RegenOps", style = MaterialTheme.typography.labelLarge, color = NgColors.Primary)
                 Text("Precision Control Access", style = MaterialTheme.typography.displaySmall)
                 Text(
-                    "Secure device authorization for mission-critical workflows.",
+                    "Secure device authorization for operational workflows. Demo sessions use synthetic data only and are not authenticated.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -380,6 +389,14 @@ fun AuthScreen(
                             )
                         } else {
                             NgPrimaryButton(text = "Begin Authorization", onClick = onStart)
+                        }
+                        if (showDemoEntry) {
+                            OutlinedButton(
+                                onClick = onEnterDemo,
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                            ) {
+                                Text("Enter Demo Session")
+                            }
                         }
                     } else {
                         val device = state.deviceAuthorization
@@ -407,6 +424,9 @@ fun AuthScreen(
                             modifier = Modifier.fillMaxWidth().height(48.dp)
                         ) {
                             Text("Confirm Authorization")
+                        }
+                        TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
+                            Text("Cancel Authorization")
                         }
 
                         LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(2.dp))
@@ -480,8 +500,11 @@ private fun navItems(state: RegenOpsUiState) = buildList {
         if (state.devicePolicy == null) setOf(com.neogenesis.platform.shared.domain.device.Capability.READ_ONLY_DASHBOARD)
         else state.devicePolicy.effectiveCapabilities
     val gate = CapabilityGate(fallbackCaps)
+    val demoControlAllowed = state.demoModeEnabled && state.auth.isDemoSession
     if (gate.canAccess(AppScreen.PROTOCOLS)) add(NavItem(AppScreen.PROTOCOLS, "Protocols", Icons.Default.List))
-    if (gate.canAccess(AppScreen.RUN_CONTROL)) add(NavItem(AppScreen.RUN_CONTROL, "Control", Icons.Default.PlayArrow))
+    if (gate.canAccess(AppScreen.RUN_CONTROL) || demoControlAllowed) {
+        add(NavItem(AppScreen.RUN_CONTROL, "Control", Icons.Default.PlayArrow))
+    }
     if ((state.selectedRunId != null || state.screen == AppScreen.LIVE_RUN) && gate.canAccess(AppScreen.LIVE_RUN)) {
         add(NavItem(AppScreen.LIVE_RUN, "Live", Icons.Default.Info))
     }

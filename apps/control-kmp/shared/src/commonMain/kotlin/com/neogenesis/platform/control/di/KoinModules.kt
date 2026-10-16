@@ -10,6 +10,7 @@ import com.neogenesis.platform.control.data.remote.ControlApi
 import com.neogenesis.platform.control.data.remote.DemoControlApi
 import com.neogenesis.platform.control.data.remote.CommercialApi
 import com.neogenesis.platform.control.data.remote.SimulatorApi
+import com.neogenesis.platform.control.data.remote.DemoSimulatorApi
 import com.neogenesis.platform.control.data.remote.DemoExportsApi
 import com.neogenesis.platform.control.data.remote.DemoTraceApi
 import com.neogenesis.platform.control.data.remote.DevicePolicyApi
@@ -105,7 +106,9 @@ fun commonModule(appConfig: AppConfig) = module {
             HttpTraceApi(get())
         }
     }
+    single<SimulatorApi> {
+        if (appConfig.demoModeEnabled) DemoSimulatorApi() else HttpSimulatorApi(get())
+    }
     single<CommercialApi> { HttpCommercialApi(get()) }
-    single<SimulatorApi> { HttpSimulatorApi(get()) }
     single { RegenOpsViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 }

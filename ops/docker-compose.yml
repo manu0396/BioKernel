@@ -4,7 +4,7 @@ services:
     image: postgres:16
     container_name: regenops-postgres
     env_file:
-      - .env
+      - ../.env
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -16,11 +16,11 @@ services:
 
   core-server:
     build:
-      context: .
+      context: ..
       dockerfile: services/core-server/Dockerfile
     container_name: regenops-core-server
     env_file:
-      - .env
+      - ../.env
     environment:
       DB_URL: ${DB_URL}
       DB_USER: ${DB_USER}
@@ -43,11 +43,11 @@ services:
 
   device-gateway:
     build:
-      context: .
+      context: ..
       dockerfile: agents/device-gateway/Dockerfile
     container_name: regenops-device-gateway
     env_file:
-      - .env
+      - ../.env
     environment:
       CORE_GRPC_HOST: ${CORE_GRPC_HOST}
       CORE_GRPC_PORT: ${CORE_GRPC_PORT}

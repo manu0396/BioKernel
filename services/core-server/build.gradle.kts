@@ -31,15 +31,6 @@ kotlin {
     jvmToolchain(21)
 }
 
-sourceSets {
-    val main by getting {
-        kotlin.srcDir("../../agents/device-gateway/src/main/kotlin")
-    }
-    val test by getting {
-        kotlin.srcDir("../../agents/device-gateway/src/test/kotlin")
-    }
-}
-
 dependencies {
     implementation(project(":shared:proto"))
     implementation(project(":apps:control-kmp:shared"))

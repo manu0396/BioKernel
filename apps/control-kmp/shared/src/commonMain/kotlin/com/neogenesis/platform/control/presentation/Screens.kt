@@ -839,16 +839,22 @@ fun RunControlScreen(
 
                 Row(horizontalArrangement = Arrangement.spacedBy(NgSpacing.Small)) {
                     NgPrimaryButton(
-                        text = if (simulatedRunEnabled) "Start Simulation" else "Start Mission",
-                        onClick = { if (simulatedRunEnabled) showSimConfig = true else onStartRun() },
+                        text = when {
+                            simulatedRunEnabled -> "Start Simulation"
+                            demoModeEnabled -> "Start Demo Run"
+                            else -> "Start Mission"
+                        },
+                        onClick = {
+                            when {
+                                simulatedRunEnabled -> showSimConfig = true
+                                demoModeEnabled -> onStartDemoRun()
+                                else -> onStartRun()
+                            }
+                        },
                         modifier = Modifier.weight(1f),
                         isLoading = isStartingRun,
                         enabled = selectedVersion != null,
                     )
-
-                    if (demoModeEnabled) {
-                        OutlinedButton(onClick = onStartDemoRun, modifier = Modifier.height(48.dp)) { Text("Demo") }
-                    }
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(NgSpacing.Small)) {
@@ -904,6 +910,7 @@ fun LiveRunScreen(
     onDownloadReport: (() -> Unit)? = null,
     canGoBack: Boolean = false,
     onBack: () -> Unit = {},
+    runModeLabel: String? = null,
 ) {
     val isFinished =
         runEvents.any { e ->
@@ -963,6 +970,7 @@ fun LiveRunScreen(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     LivePulseBadge()
                     NgStatusChip(text = "LIVE STREAM", status = NgStatus.Success)
+                    runModeLabel?.let { NgStatusChip(text = it, status = NgStatus.Warning) }
                     Spacer(modifier = Modifier.width(NgSpacing.Small))
                     Text(runId, style = MaterialTheme.typography.labelSmall)
                 }

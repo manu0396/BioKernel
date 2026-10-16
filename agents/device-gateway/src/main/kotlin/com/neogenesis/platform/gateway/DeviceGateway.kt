@@ -69,41 +69,18 @@ object DeviceGateway {
             )
             println("Heartbeat: ${heartbeat.status}")
 
-            val event = GatewayRunEvent.newBuilder()
-                .setRunId(runId)
-                .setEventType("GATEWAY_TICK")
-                .setPayloadJson("""{"message":"Tick $tick"}""")
-                .setCreatedAtMs(Instant.now().toEpochMilli())
-                .setSeq(tick.toLong())
-                .build()
+            val payload = createGatewayTick(runId, tick, Instant.now().toEpochMilli())
             stub.pushRunEvents(
                 PushRunEventsRequest.newBuilder()
                     .setGatewayId(gatewayId)
-                    .addEvents(event)
+                    .addEvents(payload.event)
                     .build()
             )
 
-            val pressureTelemetry = GatewayTelemetry.newBuilder()
-                .setRunId(runId)
-                .setMetricKey("pressure_kpa")
-                .setMetricValue(110.0 + tick)
-                .setUnit("kPa")
-                .setRecordedAtMs(Instant.now().toEpochMilli())
-                .setSeq(tick.toLong())
-                .build()
-            val flowTelemetry = GatewayTelemetry.newBuilder()
-                .setRunId(runId)
-                .setMetricKey("flow_rate")
-                .setMetricValue(4.0 + tick * 0.1)
-                .setUnit("l/min")
-                .setRecordedAtMs(Instant.now().toEpochMilli())
-                .setSeq(tick.toLong())
-                .build()
             stub.pushTelemetry(
                 PushTelemetryRequest.newBuilder()
                     .setGatewayId(gatewayId)
-                    .addTelemetry(pressureTelemetry)
-                    .addTelemetry(flowTelemetry)
+                    .addAllTelemetry(payload.telemetry)
                     .build()
             )
 
@@ -111,6 +88,44 @@ object DeviceGateway {
             delay(5_000)
         }
     }
+}
+
+internal data class GatewayTick(
+    val event: GatewayRunEvent,
+    val telemetry: List<GatewayTelemetry>
+)
+
+internal fun createGatewayTick(runId: String, tick: Int, recordedAtMs: Long): GatewayTick {
+    require(runId.isNotBlank()) { "runId must not be blank" }
+    require(tick >= 0) { "tick must not be negative" }
+    val sequence = tick.toLong()
+    return GatewayTick(
+        event = GatewayRunEvent.newBuilder()
+            .setRunId(runId)
+            .setEventType("GATEWAY_TICK")
+            .setPayloadJson("""{"message":"Tick $tick"}""")
+            .setCreatedAtMs(recordedAtMs)
+            .setSeq(sequence)
+            .build(),
+        telemetry = listOf(
+            GatewayTelemetry.newBuilder()
+                .setRunId(runId)
+                .setMetricKey("pressure_kpa")
+                .setMetricValue(110.0 + tick)
+                .setUnit("kPa")
+                .setRecordedAtMs(recordedAtMs)
+                .setSeq(sequence)
+                .build(),
+            GatewayTelemetry.newBuilder()
+                .setRunId(runId)
+                .setMetricKey("flow_rate")
+                .setMetricValue(4.0 + tick * 0.1)
+                .setUnit("l/min")
+                .setRecordedAtMs(recordedAtMs)
+                .setSeq(sequence)
+                .build()
+        )
+    )
 }
 
 private class DeviceMetadataInterceptor(

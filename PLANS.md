@@ -1,3 +1,182 @@
+# ExecPlan: Implement RegenOps Control App MVP (2026-10-16)
+
+## Follow-up: Resolve Android OIDC Build Configuration
+
+### Milestones
+1) Trace Android OIDC values from Gradle configuration to `AppConfig` and identify missing local configuration sources.
+2) Load non-committed root `.env` values for Android builds, preserve explicit Gradle/local/environment overrides, and safely encode configured strings in `BuildConfig`.
+3) Document how to configure and rebuild/sync the Android app; validate generated BuildConfig and the affected demo build.
+
+### File-by-File Change List
+- `apps/control-kmp/androidApp/build.gradle.kts`: Load `.env` values as a fallback and escape BuildConfig string literals.
+- `.env.example`, `README.md`: Document Android OIDC configuration sources and how to regenerate the app configuration.
+- `PLANS.md`: Record diagnosis, verification, and rollback.
+
+### Verification Commands
+- `./gradlew :apps:control-kmp:androidApp:generateDemoGoogleDebugBuildConfig -POIDC_ISSUER=https://issuer.example -POIDC_CLIENT_ID=example-client --rerun-tasks`
+- Inspect generated BuildConfig using only synthetic test values.
+- `./gradlew :apps:control-kmp:androidApp:assembleDemoGoogleDebug -PDEMO_MODE=true --rerun-tasks --no-daemon --console=plain`
+- `git diff --check`
+
+### Rollback Plan
+- Revert only the `.env` loading/BuildConfig encoding changes and associated README/plan text; preserve existing uncommitted work and local configuration files.
+
+### Progress
+- [x] Trace confirmed Android reads `local.properties`, Gradle properties, and process environment, but not the root `.env` copied as instructed in the README; this checkout has no `.env` and no local OIDC client ID key.
+- [x] Add root `.env` fallback after existing local properties, Gradle properties, and process environment; safely encode configured strings and document Android rebuild/sync steps.
+- [x] Verify generated BuildConfig using both synthetic Gradle properties and a temporary synthetic root `.env`; the demo variant assembles successfully. Removed the temporary `.env` after verification.
+
+## Milestones
+1) Establish repository, runtime, device/emulator, and Gradle baselines; populate the readiness matrix with observed facts.
+2) Resolve available identity, device/gateway, run handoff, and telemetry prerequisites; record externally blocked gates without fabricating acceptance evidence.
+3) Implement and test the stories in order: access, protocol/run start, monitoring/control, then history/export.
+4) Complete security, build/release, documentation, and available virtual-device acceptance checks; reconcile task status and evidence.
+5) Remove duplicate gateway/KMP source-root ownership reported by Android Studio, validate module boundaries, and smoke-test on the connected Moto G55.
+6) Add deterministic OIDC and device/gateway telemetry test doubles; keep telemetry freshness acceptance blocked until a pilot owner agrees the cadence and threshold. Set Android app metadata to 1.0.0 while clearly retaining the controlled-pilot blockers.
+
+## File-by-File Change List
+- `PLANS.md`: Track implementation milestones, exact project/test commands, and rollback.
+- `specs/001-control-app-mvp/tasks.md`: Mark only evidenced tasks complete and correct any discovered path or dependency errors.
+- `specs/001-control-app-mvp/readiness-matrix.md`: Record baseline, task evidence, virtual-device results, and unresolved owner/hardware blockers.
+- `specs/001-control-app-mvp/contracts/`, `specs/001-control-app-mvp/quickstart.md`, and `docs/PILOT_INSTALL_CHECKLIST.md`: Record verified integration/configuration and pilot setup decisions.
+- Existing Android, desktop, shared KMP, core-server, gateway, and test files named by the implementation tasks: Make only changes supported by the readiness findings.
+- `README.md`, `CHANGELOG.md`, version metadata, and `ops/docker-compose.yml`: Update only when the corresponding release/configuration gates pass.
+- `services/core-server/build.gradle.kts`: Stop importing the separately included device-gateway module's main/test directories as core-server source roots.
+- `apps/control-kmp/shared/build.gradle.kts`: Replace manually aggregated `shared/{domain,data,network}` source directories with project dependencies, leaving source ownership with each module.
+- `apps/control-kmp/androidApp/build.gradle.kts`, `apps/control-kmp/desktopApp/build.gradle.kts`, `build.gradle.kts`, `VERSION`, `CHANGELOG.md`: Align 1.0.0 artifact metadata and record a mock-backed demo/test build; do not tag or describe it as pilot acceptance.
+- `apps/control-kmp/shared/src/commonMain/kotlin/com/neogenesis/platform/control/data/oidc/OidcRepository.kt`: Remove the production mock-auth bypass so OIDC success can only come from a configured endpoint.
+- `apps/control-kmp/shared/src/commonTest/kotlin/com/neogenesis/platform/control/data/oidc/OidcRepositoryTest.kt`, `agents/device-gateway/src/test/kotlin/com/neogenesis/platform/gateway/DeviceGatewayTest.kt`, `services/core-server/src/test/kotlin/com/neogenesis/platform/core/MockGatewayTelemetryFlowTest.kt`: Add deterministic fake identity, gateway, and telemetry behavior with synthetic-only data.
+- `agents/device-gateway/src/main/kotlin/com/neogenesis/platform/gateway/DeviceGateway.kt`: Extract and reuse a deterministic tick payload builder for unit tests without changing its simulated operating mode.
+- `README.md`, `CHANGELOG.md`, `docs/RELEASING.md`, `specs/001-control-app-mvp/quickstart.md`: Document mock-profile setup and reproducible verification, and distinguish mocked acceptance from the still-required real pilot checks.
+- `specs/001-control-app-mvp/readiness-matrix.md`, `specs/001-control-app-mvp/quickstart.md`, `.env.example`, `README.md`: Document mock-profile setup and reproducible verification, and distinguish mocked acceptance from the still-required real pilot checks.
+
+## Verification Commands
+- `./gradlew test --no-daemon`
+- `./gradlew :apps:control-kmp:androidApp:assembleDebug`
+- `./gradlew :apps:control-kmp:shared:allTests`
+- `./gradlew :apps:control-kmp:desktopApp:test`
+- `./gradlew :services:core-server:test`
+- `./gradlew :agents:device-gateway:test`
+- `./gradlew :services:core-server:test :agents:device-gateway:test`
+- `./gradlew :apps:control-kmp:shared:allTests :apps:control-kmp:androidApp:assembleDemoGoogleDebug :apps:control-kmp:desktopApp:compileKotlin`
+- Install and launch the demo APK on the attached Moto G55 5G using ADB; verify process stays alive and the explicit demo entry is rendered.
+- `./gradlew test --no-daemon`
+- `./gradlew :apps:control-kmp:shared:allTests :apps:control-kmp:androidApp:connectedDemoGoogleDebugAndroidTest :apps:control-kmp:desktopApp:test :services:core-server:test :agents:device-gateway:test --no-daemon --console=plain`
+- Verify mock profile reports its provenance and never claims authenticated OIDC, physical device execution, or pilot acceptance.
+- `docker compose --env-file .env -f ops/docker-compose.yml config` (only when a safe local `.env` is available)
+- Android virtual-device install/launch and user-flow checks, using an already available emulator/AVD; do not claim physical-device acceptance from emulator evidence.
+- `git diff --check`
+
+## Rollback Plan
+- Revert only implementation and test changes introduced for this MVP; preserve pre-existing staged/unstaged work and the existing generated specification/Spec Kit files.
+- Restore task checkboxes and readiness entries to their prior state if implementation is rolled back; retain observed baseline failures and external blockers as evidence.
+- Do not remove, overwrite, or reset unrelated repository files; do not roll back version or deployment configuration without confirming it was changed for this plan.
+
+## Progress
+- [x] Establish readiness/baseline and confirm virtual-device availability; the post-change root test suite and focused shared JVM tests pass.
+- [x] Record the external identity-provider, physical-device/gateway, run-handoff, and telemetry-threshold blockers.
+- [x] Implement a clearly labeled unauthenticated demo session and isolated synthetic-run paths; add common, JVM, and Android coverage.
+- [x] Run all 7 Android instrumentation tests successfully on `Medium_Phone` (API 36), forcing `DEMO_MODE=true` in generated BuildConfig.
+- [x] Remove duplicate device-gateway/KMP source roots; the demo Android assembly, core-server tests, and root test suite pass. Android Studio Gradle sync is still needed to refresh the IDE model.
+- [x] Install and launch the demo build on the attached Moto G55 5G (Android 16/API 36); all 7 instrumentation tests passed on both the phone and AVD. Record handset evidence without presenting it as lab-device/gateway acceptance.
+- [x] Remove the production `http://mock-auth` token shortcut and add Ktor MockEngine authorization, pending, success, and denial tests; add deterministic gateway tick and run-filtered core telemetry tests.
+- [x] Align Android metadata to `1.0.0`/versionCode 2 and document the mock/demo-only scope plus outstanding controlled-pilot gates.
+- [x] Verify shared multiplatform/root tests, core-server/gateway tests, desktop compilation, and the Android demo instrumentation suite (7/7 on both the Moto G55 and Medium Phone AVD).
+- [ ] Implement and verify US1 through US4 end-to-end in dependency order; connected, monitoring, and export acceptance remain incomplete.
+- [ ] Complete applicable pilot/release gates and reconcile every task/evidence status.
+
+# ExecPlan: Specify the RegenOps Control App MVP (2026-10-16)
+
+## Milestones
+1) Review project product, architecture, UX, security, and release documentation.
+2) Write a bounded, testable v1.0.0 MVP specification for the main Control app.
+3) Clarify the release posture, app workflow, hardware validation scope, and usability gate.
+4) Create and review the Spec Kit requirements-quality checklist and persist feature location.
+5) Validate scope, acceptance scenarios, measurable outcomes, and generated artifacts.
+
+## File-by-File Change List
+- `specs/001-control-app-mvp/spec.md`: Specify user-facing MVP scope, requirements, success criteria, assumptions, and boundaries.
+- `specs/001-control-app-mvp/checklists/requirements.md`: Record specification-quality review results.
+- `.specify/feature.json`: Persist the feature directory for downstream Spec Kit commands.
+- `PLANS.md`: Track specification work and validation.
+- `specs/001-control-app-mvp/plan.md`: Step-by-step technical delivery plan, design gates, and phases.
+- `specs/001-control-app-mvp/research.md`: Repository-grounded decisions, constraints, and unresolved planning risks.
+- `specs/001-control-app-mvp/data-model.md`: MVP-facing entities, relationships, and lifecycle/state expectations.
+- `specs/001-control-app-mvp/contracts/`: Compatibility surfaces to validate against existing contracts and endpoints.
+- `specs/001-control-app-mvp/quickstart.md`: End-to-end pilot validation sequence.
+- `specs/001-control-app-mvp/readiness-matrix.md`: Requirement-to-code/evidence audit and pilot/release blockers.
+- `specs/001-control-app-mvp/tasks.md`: Dependency-ordered implementation tasks grouped by readiness and user story.
+- `PLANS.md`: Track planning artifact generation and validation.
+
+## Verification Commands
+- `.specify/scripts/bash/resolve-template.sh spec-template --json`
+- `.specify/scripts/bash/resolve-template.sh checklist-template --json`
+- `.specify/scripts/bash/setup-plan.sh --json`
+- `git diff --check`
+- Validate plan/design artifact consistency, no template placeholders, checklist findings, and feature metadata.
+
+## Rollback Plan
+- Remove only the plan/research/design/contract/quickstart artifacts created for `001-control-app-mvp` and revert this ExecPlan entry. Preserve the pre-existing specification, requirements checklist, `.specify/feature.json`, Spec Kit installation files, and all unrelated worktree changes.
+
+## Progress
+- [x] Reviewed README, architecture, ADR, UI action inventory, security, release, pilot, and regulatory documentation.
+- [x] Create the v1.0.0 Control app MVP specification and requirements checklist.
+- [x] Clarified that both simulated and real connected-device runs are required.
+- [x] Clarified controlled pilot/demo release, RegenOps Control workflow, one representative physical device/gateway, and the 4-of-5 usability gate.
+- [x] Generated repository-grounded implementation phases, research decisions, data model, HTTP/gRPC compatibility notes, and pilot quickstart.
+- [x] Generate task list by readiness gate and user story, with exact file paths and independent acceptance checks.
+- [x] Validate task IDs, labels, paths, dependencies, requirement coverage, and story-level testability.
+
+# ExecPlan: Establish the BioKernel Project Constitution (2026-10-16)
+
+## Milestones
+1) Resolve the active Spec Kit constitution template and derive guardrails from existing project docs.
+2) Replace the generated constitution scaffold with repo-grounded principles and governance.
+3) Validate placeholders, dates, version report, and final diff.
+
+## File-by-File Change List
+- `.specify/memory/constitution.md`: Define project principles, security constraints, development workflow, and governance.
+- `PLANS.md`: Track this constitution task and its validation.
+
+## Verification Commands
+- `.specify/scripts/bash/resolve-template.sh constitution-template --json`
+- `git diff --check`
+- Search `.specify/memory/constitution.md` for unresolved placeholders and validate its version/date metadata.
+
+## Rollback Plan
+- Restore only `.specify/memory/constitution.md` to the generated scaffold and remove this ExecPlan entry; preserve all unrelated worktree changes.
+
+## Progress
+- [x] Resolved the active template and reviewed README, contributing guidance, security policy, and CI conventions.
+- [x] Replace constitution scaffold using established project practices.
+- [x] Validate constitution structure and metadata; the original ratification date remains an explicit TODO.
+
+# ExecPlan: Adopt GitHub Spec Kit in the Existing Repository (2026-10-16)
+
+## Milestones
+1) Confirm Spec Kit CLI availability and identify existing project-file conflicts.
+2) Initialize Spec Kit in place for GitHub Copilot without changing application code.
+3) Review generated files and validate the CLI/project setup.
+
+## File-by-File Change List
+- `PLANS.md`: Record this adoption plan and progress.
+- `.specify/` and Copilot integration skill/command files: Add Spec Kit's shared project configuration, templates, scripts, and workflow skills.
+
+## Verification Commands
+- `specify --version`
+- `specify check`
+- `git status --short`
+- `git diff --check`
+
+## Rollback Plan
+- Remove only the Spec Kit files introduced by this initialization, after verifying their paths against the resulting diff/status.
+- Leave all pre-existing work untouched, including the staged deletion of `fix_docx_autonomo_preslu.py`.
+
+## Progress
+- [x] Confirmed the Spec Kit CLI is installed and no tracked `.specify` or Copilot Spec Kit integration files exist.
+- [x] Initialize the existing repository for GitHub Copilot.
+- [x] Review generated files and validate setup with `specify check`; no application source files were changed.
+
 # ExecPlan: Resolve CI Build and Test Failures (2026-10-15)
 
 ## Root Causes
